@@ -1111,6 +1111,8 @@ function renderShopSettings(){
       <label style="font-size:12px;white-space:nowrap;font-weight:400"><input type="checkbox"${p.active?' checked':''} onchange="shopDB.payments[${i}].active=this.checked;saveShopDB()"> 啟用</label>
     </div>`).join('');
 }
+
+function addGift(){
   shopDB.gifts.push({name:'新贈品',minSpend:5000,active:true});
   saveShopDB();renderShopSettings();
 }
