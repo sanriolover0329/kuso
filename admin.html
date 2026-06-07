@@ -1255,23 +1255,63 @@ function exportConfig(){
 }
 
 // Auth
-async function hashPassword(pwd){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd)).then(buf=>Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''));}
-async function doLogin(){
-  const pwd=document.getElementById('loginPwd').value;const errEl=document.getElementById('loginErr');if(!pwd){errEl.textContent='請輸入密碼';return;}
-  const hash=await hashPassword(pwd);const stored=localStorage.getItem('admin_pwd_hash');const defaultHash=await hashPassword('admin888');const correct=stored?hash===stored:hash===defaultHash;
-  if(correct){sessionStorage.setItem('admin_authed',Date.now().toString());document.getElementById('loginOverlay').classList.add('hidden');errEl.textContent='';}
-  else{errEl.textContent='密碼錯誤，請重試';document.getElementById('loginPwd').value='';document.getElementById('loginPwd').focus();}
+// 簡易雜湊（不依賴 crypto.subtle，相容 file:// 開啟）
+function simpleHash(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+    h = h >>> 0;
+  }
+  return h.toString(16);
 }
-async function checkAuth(){const authed=sessionStorage.getItem('admin_authed');if(authed&&Date.now()-parseInt(authed)<8*60*60*1000)document.getElementById('loginOverlay').classList.add('hidden');}
-async function changePassword(){
-  const current=prompt('請輸入目前的密碼：');if(!current)return;
-  const currentHash=await hashPassword(current);const stored=localStorage.getItem('admin_pwd_hash');const defaultHash=await hashPassword('admin888');const correct=stored?currentHash===stored:currentHash===defaultHash;
-  if(!correct){toast('目前密碼錯誤');return;}
-  const newPwd=prompt('請輸入新密碼（至少6位）：');if(!newPwd||newPwd.length<6){toast('新密碼至少需要6位數');return;}
-  const confirm=prompt('請再次輸入新密碼確認：');if(newPwd!==confirm){toast('兩次輸入的密碼不同');return;}
-  const newHash=await hashPassword(newPwd);localStorage.setItem('admin_pwd_hash',newHash);toast('✓ 密碼已更新');
+
+function doLogin(){
+  const pwd = document.getElementById('loginPwd').value;
+  const errEl = document.getElementById('loginErr');
+  if (!pwd) { errEl.textContent = '請輸入密碼'; return; }
+  const hash = simpleHash(pwd);
+  const stored = localStorage.getItem('admin_pwd_hash');
+  const defaultHash = simpleHash('admin888');
+  const correct = stored ? hash === stored : hash === defaultHash;
+  if (correct) {
+    sessionStorage.setItem('admin_authed', Date.now().toString());
+    document.getElementById('loginOverlay').classList.add('hidden');
+    errEl.textContent = '';
+  } else {
+    errEl.textContent = '密碼錯誤，請重試';
+    document.getElementById('loginPwd').value = '';
+    document.getElementById('loginPwd').focus();
+  }
 }
-function logout(){if(!confirm('確定要登出嗎？'))return;sessionStorage.removeItem('admin_authed');location.reload();}
+
+function checkAuth() {
+  const authed = sessionStorage.getItem('admin_authed');
+  if (authed && Date.now() - parseInt(authed) < 8 * 60 * 60 * 1000) {
+    document.getElementById('loginOverlay').classList.add('hidden');
+  }
+}
+
+function changePassword() {
+  const current = prompt('請輸入目前的密碼：');
+  if (!current) return;
+  const currentHash = simpleHash(current);
+  const stored = localStorage.getItem('admin_pwd_hash');
+  const defaultHash = simpleHash('admin888');
+  const correct = stored ? currentHash === stored : currentHash === defaultHash;
+  if (!correct) { toast('目前密碼錯誤'); return; }
+  const newPwd = prompt('請輸入新密碼（至少6位）：');
+  if (!newPwd || newPwd.length < 6) { toast('新密碼至少需要6位數'); return; }
+  const confirm2 = prompt('請再次輸入新密碼確認：');
+  if (newPwd !== confirm2) { toast('兩次輸入的密碼不同'); return; }
+  localStorage.setItem('admin_pwd_hash', simpleHash(newPwd));
+  toast('✓ 密碼已更新');
+}
+
+function logout() {
+  if (!confirm('確定要登出嗎？')) return;
+  sessionStorage.removeItem('admin_authed');
+  location.reload();
+}
 
 // Close modals on bg click
 document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open');}));
@@ -1283,6 +1323,9 @@ buildColorRow();
 updateStats();
 updateFilterDropdowns();
 updateFetchBtn();
+// 清除舊版 SHA-256 hash（若長度為64代表舊格式，重設）
+const oldHash = localStorage.getItem('admin_pwd_hash');
+if (oldHash && oldHash.length === 64) localStorage.removeItem('admin_pwd_hash');
 checkAuth();
 renderOverview();
 updateRequestsBadge();
