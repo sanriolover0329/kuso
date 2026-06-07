@@ -338,6 +338,9 @@ body { overflow-y: auto; }
         <div class="f-group"><label>Email</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
         <div class="f-group"><label>密碼</label><input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
         <button class="btn-full" onclick="doLogin()">🌸 登入</button>
+        <div style="text-align:center;margin-top:10px">
+          <button onclick="closeModal('authModal');openModal('forgotModal')" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;text-decoration:underline">忘記密碼？</button>
+        </div>
         <div class="auth-hint">
           測試帳號：<br>
           member@test.com / 123456（一般會員）<br>
@@ -377,6 +380,56 @@ body { overflow-y: auto; }
       <button class="modal-close-btn" onclick="closeModal('memberModal')">×</button>
     </div>
     <div class="modal-body" id="memberModalBody"></div>
+  </div>
+</div>
+
+<!-- Order Query Modal (訂單查詢 - 訪客+會員) -->
+<div class="modal-bg" id="orderQueryModal">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-head">
+      <h2>訂單查詢 📦</h2>
+      <button class="modal-close-btn" onclick="closeModal('orderQueryModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <div class="f-group" style="flex:1;margin:0"><label>輸入電話號碼</label><input type="tel" id="queryPhone" placeholder="0912-345-678" style="margin-top:6px"></div>
+        <button class="btn-full" style="width:auto;padding:0 20px;margin-top:24px;border-radius:8px" onclick="doOrderQuery()">🔍 查詢</button>
+      </div>
+      <div id="orderQueryResult"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal-bg" id="forgotModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-head">
+      <h2>忘記密碼 🔑</h2>
+      <button class="modal-close-btn" onclick="closeModal('forgotModal');openAuthModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-banner" style="margin-bottom:14px">填寫您的 Email 與電話，送出後管理員將協助重設密碼，請耐心等候通知。</div>
+      <div class="f-group"><label>Email *</label><input type="email" id="forgotEmail" placeholder="your@email.com"></div>
+      <div class="f-group"><label>電話 *</label><input type="tel" id="forgotPhone" placeholder="0912-345-678"></div>
+      <div class="f-group"><label>新密碼 *（管理員確認後生效）</label><input type="password" id="forgotNewPwd" placeholder="請輸入新密碼（至少6碼）"></div>
+      <button class="btn-full" onclick="doForgotPassword()">📨 送出密碼重設申請</button>
+      <div id="forgotResult" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Wholesale Upgrade Request Modal -->
+<div class="modal-bg" id="wsUpgradeModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-head">
+      <h2>申請批發升等 🏭</h2>
+      <button class="modal-close-btn" onclick="closeModal('wsUpgradeModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-banner" style="margin-bottom:14px">申請成為批發會員後，可看到批發價格並依數量享有階梯折扣。管理員審核後開通。</div>
+      <div class="f-group"><label>申請原因（選填）</label><textarea id="wsReason" placeholder="例如：經營實體店面、長期大量採購…" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--sans);resize:vertical"></textarea></div>
+      <button class="btn-full" onclick="doWsUpgradeRequest()">📨 送出申請</button>
+    </div>
   </div>
 </div>
 
@@ -592,7 +645,8 @@ async function init() {
 }
 
 function showLoading() {
-  document.getElementById('app').innerHTML = `<div style="text-align:center;padding:80px 20px;"><div style="font-size:3rem;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block;">🧸</div><div style="font-size:15px;color:var(--text2);">商品載入中，請稍候…</div></div><style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>`;
+  const styleClose = '</' + 'style>';
+  document.getElementById('app').innerHTML = `<div style="text-align:center;padding:80px 20px;"><div style="font-size:3rem;margin-bottom:16px;animation:spin 1.5s linear infinite;display:inline-block;">🧸</div><div style="font-size:15px;color:var(--text2);">商品載入中，請稍候…</div></div><style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}${styleClose}`;
 }
 function showError(msg) {
   document.getElementById('app').innerHTML = `<div style="max-width:500px;margin:60px auto;text-align:center;padding:40px 24px;background:var(--surface);border:1px solid var(--border);border-radius:16px;"><div style="font-size:3rem;margin-bottom:12px;">😢</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;">圖片載入失敗</div><div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px;">${msg}</div><button onclick="init()" style="padding:10px 28px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">重試</button></div>`;
@@ -607,8 +661,10 @@ function renderApp() {
   const cartCount = cart.reduce((a,c)=>a+c.qty,0);
   const userBtnHtml = currentUser
     ? `<button class="hdr-btn" onclick="openMemberModal()">👤 <span>${currentUser.name}</span></button>
+       <button class="hdr-btn" onclick="openModal('orderQueryModal')">📦 <span>查訂單</span></button>
        <button class="hdr-btn primary" onclick="openCartModal()">🛒 <span>購物車</span>${cartCount>0?'<span class="cart-badge">'+cartCount+'</span>':''}</button>`
     : `<button class="hdr-btn" onclick="openAuthModal()">🌸 <span>登入/加入</span></button>
+       <button class="hdr-btn" onclick="openModal('orderQueryModal')">📦 <span>查訂單</span></button>
        <button class="hdr-btn primary" onclick="openCartModal()">🛒 <span>購物車</span>${cartCount>0?'<span class="cart-badge">'+cartCount+'</span>':''}</button>`;
 
   document.getElementById('app').innerHTML = `
@@ -919,13 +975,17 @@ function renderCartModal() {
       <div class="section-title">配送方式</div>
       <div class="radio-group">${activeLogs.map((l,i)=>`<label class="radio-item"><input type="radio" name="logistics" value="${l.id}" ${i===0?'checked':''}><span class="radio-label">${l.name}${l.fee>0?`<span style="color:var(--text3);font-size:11px;margin-left:6px">+${fmt(l.fee)}</span>`:'<span style="color:var(--success);font-size:11px;margin-left:6px"> 免費</span>'}</span></label>`).join('')}</div>
       <div class="section-title" style="margin-top:16px">付款方式</div>
-      <div class="radio-group">${activePays.map((p,i)=>`<label class="radio-item"><input type="radio" name="payment" value="${p.id}" ${i===0?'checked':''}><span class="radio-label">${p.name}</span></label>`).join('')}</div>
+      <div class="radio-group">${activePays.map((p,i)=>`<label class="radio-item"><input type="radio" name="payment" value="${p.id}" ${i===0?'checked':''} onchange="toggleTransferField()"><span class="radio-label">${p.name}</span></label>`).join('')}</div>
+      <div id="transferCodeWrap" style="display:none;margin-top:10px">
+        <div class="f-group"><label>匯款後五碼 *</label><input type="text" id="transferCode" maxlength="5" placeholder="請輸入匯款帳號後五碼" style="letter-spacing:4px;font-family:var(--mono);font-size:16px"></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">請先完成匯款，填入後五碼供核對</div>
+      </div>
       <div class="section-title" style="margin-top:16px">收件資訊</div>
-      <div class="f-group"><label>收件人姓名</label><input type="text" id="shipName" value="${currentUser?currentUser.name:''}"></div>
-      <div class="f-group"><label>聯絡電話</label><input type="tel" id="shipPhone" value="${currentUser?currentUser.phone:''}"></div>
-      <div class="f-group"><label>收件地址</label><input type="text" id="shipAddr" placeholder="完整收件地址"></div>
+      <div class="f-group"><label>收件人姓名 *</label><input type="text" id="shipName" value="${currentUser?currentUser.name:''}" placeholder="收件人姓名"></div>
+      <div class="f-group"><label>聯絡電話 *</label><input type="tel" id="shipPhone" value="${currentUser?currentUser.phone:''}" placeholder="0912-345-678"></div>
+      <div class="f-group"><label>收件地址 *</label><input type="text" id="shipAddr" placeholder="完整收件地址"></div>
       <button class="btn-full" style="margin-top:16px" onclick="submitOrder()">🌸 確認下單</button>
-      ${!currentUser?'<p style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px">請先<button onclick="closeModal(\'cartModal\');openAuthModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;text-decoration:underline">登入</button>再下單，以享有會員折扣</p>':''}
+      ${!currentUser?'<p style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px">訪客可直接下單，<button onclick="closeModal(\'cartModal\');openAuthModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;text-decoration:underline">登入</button>可享會員折扣</p>':''}
     </div>`;
 }
 
@@ -941,12 +1001,28 @@ function removeFromCart(id) {
   renderCartModal();
 }
 
+function toggleTransferField() {
+  const pay = document.querySelector('input[name=payment]:checked')?.value || '';
+  const needsCode = pay === 'prepay' || pay === 'transfer_face';
+  const wrap = document.getElementById('transferCodeWrap');
+  if (wrap) wrap.style.display = needsCode ? 'block' : 'none';
+}
+
 function submitOrder() {
+  const shipName = document.getElementById('shipName')?.value.trim();
+  const shipPhone = document.getElementById('shipPhone')?.value.trim();
   const addr = document.getElementById('shipAddr')?.value.trim();
+  if (!shipName) { showToast('❌ 請填寫收件人姓名'); return; }
+  if (!shipPhone) { showToast('❌ 請填寫聯絡電話'); return; }
   if (!addr) { showToast('❌ 請填寫收件地址'); return; }
   const logEl = document.querySelector('input[name=logistics]:checked');
   const payEl = document.querySelector('input[name=payment]:checked');
   if (!logEl || !payEl) { showToast('❌ 請選擇配送與付款方式'); return; }
+  // 先付款類型需要後五碼
+  const needsCode = payEl.value === 'prepay' || payEl.value === 'transfer_face';
+  const transferCode = document.getElementById('transferCode')?.value.trim() || '';
+  if (needsCode && !transferCode) { showToast('❌ 請填寫匯款後五碼'); return; }
+  if (needsCode && transferCode.length !== 5) { showToast('❌ 匯款後五碼需為5位數字'); return; }
   const disc = isMemberRole() ? getTierDiscount(currentUser) : 0;
   let subtotal = 0;
   const items = cart.map(c => {
@@ -960,10 +1036,13 @@ function submitOrder() {
   const order = {
     id: genOrderId(),
     userId: currentUser ? currentUser.id : 0,
-    userName: document.getElementById('shipName')?.value || (currentUser?.name || '訪客'),
+    userName: shipName,
+    userPhone: shipPhone,
     items, subtotal, discount: discAmt, finalTotal: final,
     status: 'pending', logistics: logEl.value, logisticsNum: '',
-    payment: payEl.value, payStatus: payEl.value === 'cod' ? 'unpaid' : 'pending_payment',
+    payment: payEl.value,
+    payStatus: payEl.value === 'cod' ? 'unpaid' : (needsCode ? 'pending_verify' : 'pending_payment'),
+    transferCode: needsCode ? transferCode : '',
     note: '', createdAt: new Date().toISOString().split('T')[0],
     isPreorder: hasPreorder, deposit: hasPreorder ? Math.round(final*0.5) : 0,
     address: addr
@@ -971,12 +1050,15 @@ function submitOrder() {
   shopDB.orders.push(order);
   if (currentUser) {
     const u = shopDB.users.find(x => x.id === currentUser.id);
-    if (u && order.payStatus !== 'unpaid') u.totalSpent += final;
+    if (u && order.payStatus === 'pending_verify') u.totalSpent += final;
   }
   saveShopDB();
   cart = [];
   closeModal('cartModal');
-  showToast('✅ 訂單送出！' + order.id, 4000);
+  const msg = needsCode
+    ? `✅ 訂單送出！${order.id}｜後五碼 ${transferCode} 已記錄，待管理員核對`
+    : `✅ 訂單送出！${order.id}`;
+  showToast(msg, 5000);
   renderApp();
 }
 
@@ -1100,6 +1182,7 @@ function renderMemberModal() {
       <div class="prog-bar-outer"><div class="prog-bar-inner" style="width:${progPct}%"></div></div>
     </div>`:''}
     ${gifts?`<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">🎁 滿額贈品</div>${gifts}</div>`:''}
+    ${(shopDB.settings?.allowWsUpgrade !== false)?`<div style="background:linear-gradient(135deg,#e8f0fe,#d4e4ff);border:1.5px solid #a0c0f0;border-radius:10px;padding:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div style="font-size:13px;font-weight:600;color:#2850b0">🏭 升等批發會員</div><div style="font-size:11px;color:#5070a0;margin-top:2px">享批發階梯價格，大量購買更優惠</div></div><button style="padding:8px 16px;background:#2850b0;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)" onclick="openWsUpgradeModal()">申請升等 →</button></div>`:''}
     <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:13px;font-weight:600;color:var(--text)">我的訂單</div>
       <button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer" onclick="currentUser=null;renderApp();closeModal('memberModal')">登出</button>
@@ -1108,8 +1191,91 @@ function renderMemberModal() {
 }
 
 // ═══════════════════════════════════════
-// LINE MODAL
+// ORDER QUERY (訂單查詢 - 訪客+會員用電話)
 // ═══════════════════════════════════════
+function doOrderQuery() {
+  const phone = document.getElementById('queryPhone').value.trim().replace(/[-\s]/g,'');
+  if (!phone || phone.length < 8) { document.getElementById('orderQueryResult').innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 請輸入完整電話號碼</p>'; return; }
+  const matched = shopDB.orders.filter(o => (o.userPhone||'').replace(/[-\s]/g,'') === phone);
+  const res = document.getElementById('orderQueryResult');
+  if (matched.length === 0) { res.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">查無此電話號碼的訂單記錄</div>'; return; }
+  const statusMap = { pending:'<span class="badge badge-warn">待確認</span>', confirmed:'<span class="badge badge-info">已確認</span>', packing:'<span class="badge badge-info">備貨中</span>', shipping:'<span class="badge badge-info">運送中</span>', delivered:'<span class="badge badge-ok">已到貨</span>', cancelled:'<span class="badge" style="background:#fef0f0;color:#c04040">已取消</span>' };
+  const payMap = { paid:'<span class="badge badge-ok">已付款</span>', unpaid:'<span class="badge badge-warn" style="background:#fef0f0;color:#c04040">未付款</span>', pending_payment:'<span class="badge badge-warn">待付款</span>', pending_verify:'<span class="badge badge-warn">核對中</span>' };
+  const logMap = { blackcat:'黑貓宅急便', '711':'7-11超商', family:'全家超商', face:'面交', hilife:'萊爾富', ok:'OK超商' };
+  res.innerHTML = `<div style="font-size:12px;color:var(--text3);margin-bottom:10px">共找到 ${matched.length} 筆訂單</div>` +
+    matched.reverse().map(o => `
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-family:var(--mono);font-weight:700;font-size:13px;color:var(--accent-dark)">${o.id}</span>
+        <span style="font-size:11px;color:var(--text3)">${o.createdAt}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${o.items.map(i=>i.name+'×'+i.qty).join('、')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
+        <div style="display:flex;gap:6px;align-items:center">${statusMap[o.status]||o.status} ${payMap[o.payStatus]||''}</div>
+        <div style="font-weight:700;font-size:14px;color:var(--accent-dark)">${fmt(o.finalTotal)}</div>
+      </div>
+      ${o.logisticsNum?`<div style="margin-top:6px;font-size:11px;color:var(--text3)">📦 ${logMap[o.logistics]||o.logistics} 單號：<span style="font-family:var(--mono)">${o.logisticsNum}</span></div>`:''}
+      ${o.transferCode?`<div style="margin-top:4px;font-size:11px;color:var(--text3)">💳 匯款後五碼：<span style="font-family:var(--mono)">${o.transferCode}</span></div>`:''}
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════
+// FORGOT PASSWORD
+// ═══════════════════════════════════════
+function doForgotPassword() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const phone = document.getElementById('forgotPhone').value.trim();
+  const newPwd = document.getElementById('forgotNewPwd').value;
+  const res = document.getElementById('forgotResult');
+  if (!email || !phone) { res.innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 請填寫 Email 與電話</p>'; return; }
+  if (!newPwd || newPwd.length < 6) { res.innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 新密碼至少需要6碼</p>'; return; }
+  const user = shopDB.users.find(u => u.email === email && (u.phone||'').replace(/[-\s]/g,'') === phone.replace(/[-\s]/g,''));
+  if (!user) { res.innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 查無符合的帳號，請確認 Email 與電話是否正確</p>'; return; }
+  // 建立申請記錄
+  if (!shopDB.pwdResetRequests) shopDB.pwdResetRequests = [];
+  shopDB.pwdResetRequests.push({
+    id: Date.now(),
+    userId: user.id,
+    userName: user.name,
+    email: user.email,
+    phone: user.phone,
+    newPwd: newPwd,
+    status: 'pending',
+    createdAt: new Date().toISOString().split('T')[0]
+  });
+  saveShopDB();
+  res.innerHTML = '<div style="background:#eef7f2;border:1px solid #b8dfc9;border-radius:8px;padding:12px;font-size:13px;color:#2d8a5e">✅ 申請已送出！管理員確認後將重設您的密碼，請留意通知。</div>';
+  document.getElementById('forgotEmail').value = '';
+  document.getElementById('forgotPhone').value = '';
+  document.getElementById('forgotNewPwd').value = '';
+}
+
+// ═══════════════════════════════════════
+// WHOLESALE UPGRADE REQUEST
+// ═══════════════════════════════════════
+function openWsUpgradeModal() { closeModal('memberModal'); openModal('wsUpgradeModal'); }
+
+function doWsUpgradeRequest() {
+  if (!currentUser) return;
+  if (!shopDB.wsUpgradeRequests) shopDB.wsUpgradeRequests = [];
+  // 檢查是否已有待審核申請
+  const existing = shopDB.wsUpgradeRequests.find(r => r.userId === currentUser.id && r.status === 'pending');
+  if (existing) { showToast('⏳ 您已有待審核的批發升等申請'); closeModal('wsUpgradeModal'); return; }
+  const reason = document.getElementById('wsReason').value.trim();
+  shopDB.wsUpgradeRequests.push({
+    id: Date.now(),
+    userId: currentUser.id,
+    userName: currentUser.name,
+    email: currentUser.email,
+    phone: currentUser.phone,
+    reason,
+    status: 'pending',
+    createdAt: new Date().toISOString().split('T')[0]
+  });
+  saveShopDB();
+  closeModal('wsUpgradeModal');
+  showToast('✅ 批發升等申請已送出，等待管理員審核！', 4000);
+}
 function openLineModal() { document.getElementById('lineModal').classList.add('open'); document.getElementById('lineJoinBtn').onclick = () => window.open(LINE_URL,'_blank','noopener'); }
 function closeLineModal(e) { if (e.target === document.getElementById('lineModal')) document.getElementById('lineModal').classList.remove('open'); }
 function closeLineModalDirect() { document.getElementById('lineModal').classList.remove('open'); }

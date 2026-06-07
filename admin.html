@@ -192,6 +192,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
     <button class="nav-btn" onclick="showPanel('members',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>會員管理
     </button>
+    <button class="nav-btn" onclick="showPanel('requests',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>待處理申請 <span id="requestsBadge" style="background:#e05555;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;display:none">0</span>
+    </button>
     <button class="nav-btn" onclick="showPanel('accounting',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>帳務報表
     </button>
@@ -358,8 +361,35 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       </div>
     </div>
 
-    <!-- PRICES -->
-    <div class="panel" id="panel-prices">
+    <!-- REQUESTS (密碼重設 + 批發升等 + 待審核會員) -->
+    <div class="panel" id="panel-requests">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <!-- 待審核會員 -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">🕐 待審核會員申請</div></div>
+          <div class="card-body" style="padding:0;overflow-x:auto">
+            <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>邀請人</th><th>申請日期</th><th>操作</th></tr></thead>
+            <tbody id="pendingMembersTbody"></tbody></table>
+          </div>
+        </div>
+        <!-- 密碼重設申請 -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">🔑 密碼重設申請</div></div>
+          <div class="card-body" style="padding:0;overflow-x:auto">
+            <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>新密碼（申請人填寫）</th><th>申請日期</th><th>操作</th></tr></thead>
+            <tbody id="pwdResetTbody"></tbody></table>
+          </div>
+        </div>
+        <!-- 批發升等申請 -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">🏭 批發升等申請</div></div>
+          <div class="card-body" style="padding:0;overflow-x:auto">
+            <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>申請原因</th><th>申請日期</th><th>操作</th></tr></thead>
+            <tbody id="wsUpgradeTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
       <div class="info-box" style="margin-bottom:16px">
         💡 在此設定每件商品的<strong>零售價、批發起價、成本</strong>（成本僅後台可見）及庫存數量。批發階梯可設定「購買 N 件以上」的價格。
       </div>
@@ -483,6 +513,35 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
           <div class="card">
             <div class="card-header"><div class="card-title">🎁 滿額贈品</div><button class="btn btn-ghost btn-sm" onclick="addGift()">+ 新增</button></div>
             <div class="card-body" id="giftsBody"></div>
+          </div>
+          <!-- 批發升等開關 -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">🏭 批發升等申請設定</div></div>
+            <div class="card-body">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+                <div>
+                  <div style="font-size:13px;font-weight:500">開放會員自行申請批發升等</div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:3px">開啟後，一般會員可在會員中心送出批發升等申請，由後台審核</div>
+                </div>
+                <label style="position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0">
+                  <input type="checkbox" id="wsUpgradeToggle" style="opacity:0;width:0;height:0" onchange="saveWsUpgradeSetting(this.checked)">
+                  <span id="wsToggleKnob" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s">
+                    <span style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;display:block" id="wsKnob"></span>
+                  </span>
+                </label>
+              </div>
+              <div class="hint" style="margin-top:4px">申請後至「待處理申請」頁面審核，可直接升等或拒絕</div>
+            </div>
+          </div>
+          <!-- 管理員修改任意密碼 -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">🔑 直接修改會員密碼</div></div>
+            <div class="card-body">
+              <div class="form-group"><label>選擇會員</label><select id="adminPwdUserSelect"></select></div>
+              <div class="form-group"><label>新密碼</label><input type="password" id="adminNewPwd" placeholder="輸入新密碼（至少6碼）"></div>
+              <div class="form-group"><label>確認新密碼</label><input type="password" id="adminNewPwd2" placeholder="再次輸入新密碼"></div>
+              <button class="btn btn-primary" onclick="adminResetPassword()">🔑 修改密碼</button>
+            </div>
           </div>
         </div>
         <div>
@@ -627,9 +686,9 @@ function showPanel(id,btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
-  const titles={overview:'總覽',orders:'訂單管理',members:'會員管理',accounting:'帳務報表',prices:'商品價格',products:'商品管理',categories:'分類管理',cloudinary:'Cloudinary 設定',display:'展示設定',shopsettings:'商店設定'};
+  const titles={overview:'總覽',orders:'訂單管理',members:'會員管理',requests:'待處理申請',accounting:'帳務報表',prices:'商品價格',products:'商品管理',categories:'分類管理',cloudinary:'Cloudinary 設定',display:'展示設定',shopsettings:'商店設定'};
   document.getElementById('pageTitle').textContent=titles[id]||id;
-  const fns={overview:renderOverview,orders:renderOrders,members:renderMembers,accounting:renderAccounting,prices:renderPrices,products:renderProducts,categories:renderCategories,cloudinary:loadCloudinaryForm,display:initDisplaySettings,shopsettings:renderShopSettings};
+  const fns={overview:renderOverview,orders:renderOrders,members:renderMembers,requests:renderRequests,accounting:renderAccounting,prices:renderPrices,products:renderProducts,categories:renderCategories,cloudinary:loadCloudinaryForm,display:initDisplaySettings,shopsettings:renderShopSettings};
   if(fns[id])fns[id]();
 }
 
@@ -683,7 +742,7 @@ function renderOrders(){
   }).reverse();
   const statusOpts=['pending','confirmed','packing','shipping','delivered','cancelled'];
   const statusLabel={pending:'待確認',confirmed:'已確認',packing:'備貨中',shipping:'運送中',delivered:'已到貨',cancelled:'已取消'};
-  const payLabel={paid:'<span class="tag tag-success">已付款</span>',unpaid:'<span class="tag tag-warn" style="background:var(--danger-light);color:var(--danger)">未付款</span>',pending_payment:'<span class="tag tag-warn">待付款</span>'};
+  const payLabel={paid:'<span class="tag tag-success">已付款</span>',unpaid:'<span class="tag" style="background:var(--danger-light);color:var(--danger)">未付款</span>',pending_payment:'<span class="tag tag-warn">待付款</span>',pending_verify:'<span class="tag" style="background:#fff8e0;color:#8a6010;border:1px solid #f0df90">🔍 核對中</span>'};
   const logMap={blackcat:'黑貓','711':'7-11',family:'全家',face:'面交',hilife:'萊爾富',ok:'OK'};
   const tbody=document.getElementById('ordersTbody');
   if(orders.length===0){tbody.innerHTML='<tr><td colspan=9 style="text-align:center;color:var(--text3);padding:30px">暫無訂單</td></tr>';return;}
@@ -691,12 +750,15 @@ function renderOrders(){
     const u=shopDB.users.find(x=>x.id===o.userId);
     const selOpts=statusOpts.map(s=>`<option value="${s}"${o.status===s?' selected':''}>${statusLabel[s]}</option>`).join('');
     return`<tr>
-      <td style="font-family:var(--mono);font-weight:600;color:var(--accent-dark);font-size:12px">${o.id}${o.isPreorder?'<br><span class="tag tag-info" style="font-size:9px">預購</span>':''}</td>
-      <td style="font-size:12px">${o.createdAt}</td>
-      <td style="font-size:12px">${u?u.name:'訪客'}</td>
+      <td style="font-family:var(--mono);font-weight:600;color:var(--accent-dark);font-size:12px">${o.id}${o.isPreorder?'<br><span class="tag tag-info" style="font-size:9px">預購</span>':''}${!o.userId?'<br><span class="tag" style="background:#f5f0ff;color:#6040a0;font-size:9px">訪客</span>':''}</td>
+      <td style="font-size:12px">${o.createdAt}<br><span style="color:var(--text3)">${o.userPhone||''}</span></td>
+      <td style="font-size:12px">${u?u.name:(o.userName||'訪客')}</td>
       <td style="font-size:11px;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.items.map(i=>i.name+'×'+i.qty).join('、')}</td>
       <td style="font-weight:700">${fmt(o.finalTotal)}${o.isPreorder?`<br><span style="font-size:10px;color:var(--text3)">訂金:${fmt(o.deposit)}</span>`:''}</td>
-      <td>${payLabel[o.payStatus]||o.payStatus}${o.payStatus!=='paid'?`<br><button class="btn btn-success btn-sm" style="margin-top:4px;font-size:10px" onclick="markPaid('${o.id}')">確認收款</button>`:''}</td>
+      <td>${payLabel[o.payStatus]||o.payStatus}
+        ${o.transferCode?`<div style="font-family:var(--mono);font-size:11px;margin-top:4px;background:#fff8e0;padding:2px 6px;border-radius:4px;display:inline-block">後五碼：<strong>${o.transferCode}</strong></div>`:''}
+        ${o.payStatus!=='paid'?`<br><button class="btn btn-success btn-sm" style="margin-top:4px;font-size:10px" onclick="markPaid('${o.id}')">✓ 確認收款</button>`:''}
+      </td>
       <td><select onchange="updateOrderStatus('${o.id}',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;background:var(--surface2)">${selOpts}</select></td>
       <td style="font-size:12px">${logMap[o.logistics]||o.logistics}<br><input type="text" placeholder="輸入單號" value="${o.logisticsNum||''}" onchange="updateTrack('${o.id}',this.value)" style="width:100px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;margin-top:4px"></td>
       <td><button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}')">取消</button></td>
@@ -707,6 +769,129 @@ function updateOrderStatus(oid,status){const o=shopDB.orders.find(x=>x.id===oid)
 function markPaid(oid){const o=shopDB.orders.find(x=>x.id===oid);if(o){o.payStatus='paid';saveShopDB();renderOrders();toast('✓ 已確認收款');}}
 function updateTrack(oid,num){const o=shopDB.orders.find(x=>x.id===oid);if(o){o.logisticsNum=num;saveShopDB();}}
 function cancelOrder(oid){if(!confirm('確定取消訂單？'))return;const o=shopDB.orders.find(x=>x.id===oid);if(o){o.status='cancelled';saveShopDB();renderOrders();toast('⏸ 訂單已取消');}}
+
+// ══════════════════════════════════════════
+// REQUESTS (待處理申請)
+// ══════════════════════════════════════════
+function updateRequestsBadge(){
+  const pending=(shopDB.users.filter(u=>u.status==='pending').length)+
+    ((shopDB.pwdResetRequests||[]).filter(r=>r.status==='pending').length)+
+    ((shopDB.wsUpgradeRequests||[]).filter(r=>r.status==='pending').length);
+  const badge=document.getElementById('requestsBadge');
+  if(badge){badge.textContent=pending;badge.style.display=pending>0?'inline':'none';}
+}
+
+function renderRequests(){
+  // 待審核會員
+  const pendingMembers=shopDB.users.filter(u=>u.status==='pending');
+  document.getElementById('pendingMembersTbody').innerHTML=pendingMembers.length===0
+    ?'<tr><td colspan=6 style="text-align:center;color:var(--text3);padding:20px">無待審核會員</td></tr>'
+    :pendingMembers.map(u=>`<tr>
+      <td style="font-weight:600">${u.name}</td>
+      <td style="font-size:12px">${u.email}</td>
+      <td style="font-size:12px">${u.phone||'—'}</td>
+      <td style="font-size:12px;color:var(--text3)">${u.invite||'—'}</td>
+      <td style="font-size:12px">${u.createdAt}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-success btn-sm" onclick="approveUser(${u.id});renderRequests();updateRequestsBadge()">✓ 開通</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectMember(${u.id})">✕ 拒絕</button>
+      </div></td>
+    </tr>`).join('');
+
+  // 密碼重設申請
+  const pwdReqs=(shopDB.pwdResetRequests||[]).filter(r=>r.status==='pending');
+  document.getElementById('pwdResetTbody').innerHTML=pwdReqs.length===0
+    ?'<tr><td colspan=6 style="text-align:center;color:var(--text3);padding:20px">無密碼重設申請</td></tr>'
+    :pwdReqs.map(r=>`<tr>
+      <td style="font-weight:600">${r.userName}</td>
+      <td style="font-size:12px">${r.email}</td>
+      <td style="font-size:12px">${r.phone||'—'}</td>
+      <td><span style="font-family:var(--mono);background:var(--surface2);padding:3px 8px;border-radius:5px;font-size:12px">${'*'.repeat(r.newPwd.length)}</span>
+          <button class="btn btn-ghost btn-sm" style="font-size:10px;margin-left:4px" onclick="this.previousElementSibling.textContent=this.previousElementSibling.textContent.includes('*')?'${r.newPwd}':'${'*'.repeat(r.newPwd.length)}'">顯示</button>
+      </td>
+      <td style="font-size:12px">${r.createdAt}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-success btn-sm" onclick="approvePwdReset(${r.id})">✓ 套用</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectPwdReset(${r.id})">✕ 拒絕</button>
+      </div></td>
+    </tr>`).join('');
+
+  // 批發升等申請
+  const wsReqs=(shopDB.wsUpgradeRequests||[]).filter(r=>r.status==='pending');
+  document.getElementById('wsUpgradeTbody').innerHTML=wsReqs.length===0
+    ?'<tr><td colspan=6 style="text-align:center;color:var(--text3);padding:20px">無批發升等申請</td></tr>'
+    :wsReqs.map(r=>`<tr>
+      <td style="font-weight:600">${r.userName}</td>
+      <td style="font-size:12px">${r.email}</td>
+      <td style="font-size:12px">${r.phone||'—'}</td>
+      <td style="font-size:12px;color:var(--text2)">${r.reason||'（未填）'}</td>
+      <td style="font-size:12px">${r.createdAt}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-success btn-sm" onclick="approveWsUpgrade(${r.id})">✓ 升等</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectWsUpgrade(${r.id})">✕ 拒絕</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function rejectMember(uid){
+  if(!confirm('確定拒絕此會員申請並刪除帳號？'))return;
+  shopDB.users=shopDB.users.filter(u=>u.id!==uid);
+  saveShopDB();renderRequests();updateRequestsBadge();toast('已拒絕會員申請');
+}
+function approvePwdReset(rid){
+  const req=(shopDB.pwdResetRequests||[]).find(r=>r.id===rid);
+  if(!req)return;
+  const user=shopDB.users.find(u=>u.id===req.userId);
+  if(!user){toast('找不到對應帳號');return;}
+  user.pwd=req.newPwd;
+  req.status='approved';
+  saveShopDB();renderRequests();updateRequestsBadge();
+  toast('✓ 密碼已重設：'+user.name);
+}
+function rejectPwdReset(rid){
+  const req=(shopDB.pwdResetRequests||[]).find(r=>r.id===rid);
+  if(req){req.status='rejected';saveShopDB();renderRequests();updateRequestsBadge();toast('已拒絕密碼重設申請');}
+}
+function approveWsUpgrade(rid){
+  const req=(shopDB.wsUpgradeRequests||[]).find(r=>r.id===rid);
+  if(!req)return;
+  const user=shopDB.users.find(u=>u.id===req.userId);
+  if(!user){toast('找不到對應帳號');return;}
+  user.role='wholesale';
+  req.status='approved';
+  saveShopDB();renderRequests();updateRequestsBadge();
+  toast('✓ 已升等批發會員：'+user.name);
+}
+function rejectWsUpgrade(rid){
+  const req=(shopDB.wsUpgradeRequests||[]).find(r=>r.id===rid);
+  if(req){req.status='rejected';saveShopDB();renderRequests();updateRequestsBadge();toast('已拒絕批發升等申請');}
+}
+
+// ══════════════════════════════════════════
+// ADMIN DIRECT PASSWORD RESET
+// ══════════════════════════════════════════
+function adminResetPassword(){
+  const uid=+document.getElementById('adminPwdUserSelect').value;
+  const pwd=document.getElementById('adminNewPwd').value;
+  const pwd2=document.getElementById('adminNewPwd2').value;
+  if(!uid){toast('請選擇會員');return;}
+  if(!pwd||pwd.length<6){toast('密碼至少需要6碼');return;}
+  if(pwd!==pwd2){toast('兩次輸入的密碼不同');return;}
+  const u=shopDB.users.find(x=>x.id===uid);
+  if(!u){toast('找不到該會員');return;}
+  u.pwd=pwd;
+  saveShopDB();
+  document.getElementById('adminNewPwd').value='';
+  document.getElementById('adminNewPwd2').value='';
+  toast('✓ 已修改密碼：'+u.name);
+}
+
+function saveWsUpgradeSetting(val){
+  if(!shopDB.settings)shopDB.settings={};
+  shopDB.settings.allowWsUpgrade=val;
+  saveShopDB();
+  toast(val?'✓ 已開放會員申請批發升等':'✓ 已關閉批發升等申請');
+}
 
 // ══════════════════════════════════════════
 // MEMBERS
@@ -900,6 +1085,17 @@ function renderShopSettings(){
       <label style="font-size:12px;white-space:nowrap;font-weight:400"><input type="checkbox"${g.active?' checked':''} onchange="shopDB.gifts[${i}].active=this.checked;saveShopDB()"> 啟用</label>
       <button class="btn btn-danger btn-sm" onclick="shopDB.gifts.splice(${i},1);saveShopDB();renderShopSettings()">✕</button>
     </div>`).join('');
+  // Wholesale toggle
+  const wsToggle=document.getElementById('wsUpgradeToggle');
+  const wsKnob=document.getElementById('wsToggleKnob');
+  const wsKnobInner=document.getElementById('wsKnob');
+  const wsEnabled=shopDB.settings?.allowWsUpgrade!==false;
+  if(wsToggle)wsToggle.checked=wsEnabled;
+  if(wsKnob)wsKnob.style.background=wsEnabled?'var(--accent)':'#ccc';
+  if(wsKnobInner)wsKnobInner.style.transform=wsEnabled?'translateX(18px)':'translateX(0)';
+  // Password user select
+  const sel=document.getElementById('adminPwdUserSelect');
+  if(sel){sel.innerHTML='<option value="">— 選擇會員 —</option>'+shopDB.users.filter(u=>u.status==='active').map(u=>`<option value="${u.id}">${u.name}（${u.email}）</option>`).join('');}
   // Logistics
   document.getElementById('logisticsBody').innerHTML=shopDB.logistics.map((l,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--surface2)">
@@ -915,7 +1111,6 @@ function renderShopSettings(){
       <label style="font-size:12px;white-space:nowrap;font-weight:400"><input type="checkbox"${p.active?' checked':''} onchange="shopDB.payments[${i}].active=this.checked;saveShopDB()"> 啟用</label>
     </div>`).join('');
 }
-function addGift(){
   shopDB.gifts.push({name:'新贈品',minSpend:5000,active:true});
   saveShopDB();renderShopSettings();
 }
@@ -1090,6 +1285,7 @@ updateFilterDropdowns();
 updateFetchBtn();
 checkAuth();
 renderOverview();
+updateRequestsBadge();
 document.addEventListener('input',function(e){if(e.target.id==='tagName'||e.target.id==='cloudName')updateTagPreview();});
 </script>
 </body>
