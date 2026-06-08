@@ -1948,32 +1948,38 @@ function hashPassword(pwd){
     .then(buf => Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''));
 }
 
-// 取得目前有效的密碼 hash（優先用 GitHub 上的，沒有用 localStorage，都沒有用預設）
+// 取得目前有效的密碼 hash（優先 GitHub，其次 localStorage，最後預設）
 async function getStoredHash() {
-  // 1. 優先讀 state.adminPwdHash（從 GitHub config.json 載入）
-  if (state.adminPwdHash) return state.adminPwdHash;
-  // 2. 其次讀 localStorage（舊版相容）
-  const local = localStorage.getItem('admin_pwd_hash');
-  if (local) return local;
-  // 3. 都沒有：用預設密碼 admin888
-  return await hashPassword('admin888');
+  try {
+    if (state.adminPwdHash) return state.adminPwdHash;
+    const local = localStorage.getItem('admin_pwd_hash');
+    if (local) return local;
+    return await hashPassword('admin888');
+  } catch(e) {
+    return await hashPassword('admin888');
+  }
 }
 
 async function doLogin(){
-  const pwd    = document.getElementById('loginPwd').value;
-  const errEl  = document.getElementById('loginErr');
+  const pwd   = document.getElementById('loginPwd').value;
+  const errEl = document.getElementById('loginErr');
   if (!pwd) { errEl.textContent = '請輸入密碼'; return; }
 
   const loginBtn = document.querySelector('.login-btn');
   if (loginBtn) { loginBtn.textContent = '驗證中…'; loginBtn.disabled = true; }
 
   try {
-    // 若還沒從 GitHub 載入密碼，先嘗試讀取
-    if (!state.adminPwdHash) await loadPwdFromGitHub();
+    // 從 GitHub 載入密碼（最多等 2 秒，超時就略過）
+    if (!state.adminPwdHash) {
+      await Promise.race([
+        loadPwdFromGitHub(),
+        new Promise(resolve => setTimeout(resolve, 2000))
+      ]);
+    }
 
     const hash    = await hashPassword(pwd);
     const stored  = await getStoredHash();
-    const correct = hash === stored;
+    const correct = (hash === stored);
 
     if (correct) {
       sessionStorage.setItem('admin_authed', Date.now().toString());
@@ -1984,27 +1990,40 @@ async function doLogin(){
       document.getElementById('loginPwd').value = '';
       document.getElementById('loginPwd').focus();
     }
+  } catch(e) {
+    // 任何錯誤都不卡住，用本地密碼驗證
+    const hash    = await hashPassword(pwd).catch(() => '');
+    const stored  = await getStoredHash().catch(() => '');
+    if (hash && hash === stored) {
+      sessionStorage.setItem('admin_authed', Date.now().toString());
+      document.getElementById('loginOverlay').classList.add('hidden');
+    } else {
+      errEl.textContent = '密碼錯誤，請重試';
+      document.getElementById('loginPwd').value = '';
+    }
   } finally {
     if (loginBtn) { loginBtn.textContent = '登入後台'; loginBtn.disabled = false; }
   }
 }
 
-// 從 GitHub config.json 讀取密碼 hash
+// 從 GitHub config.json 讀取密碼 hash（靜默失敗，不影響登入流程）
 async function loadPwdFromGitHub() {
   if (!state.ghUser || !state.ghRepo || !state.ghToken) return;
   try {
     const apiUrl = `https://api.github.com/repos/${state.ghUser}/${state.ghRepo}/contents/config.json`;
     const resp = await fetch(apiUrl, {
-      headers: { Authorization: `token ${state.ghToken}`, Accept: 'application/vnd.github.v3+json' }
+      headers: { Authorization: `token ${state.ghToken}`, Accept: 'application/vnd.github.v3+json' },
+      signal: AbortSignal.timeout(3000) // 3秒超時
     });
     if (!resp.ok) return;
     const data = await resp.json();
-    const content = JSON.parse(atob(data.content.replace(/
-/g, '')));
-    if (content.adminPwdHash) {
-      state.adminPwdHash = content.adminPwdHash;
-    }
-  } catch(e) {}
+    const decoded = atob(data.content.replace(/
+/g, ''));
+    const cfg = JSON.parse(decoded);
+    if (cfg.adminPwdHash) state.adminPwdHash = cfg.adminPwdHash;
+  } catch(e) {
+    // 靜默失敗：網路問題或 Token 未設定，繼續用本地密碼
+  }
 }
 
 async function checkAuth(){
