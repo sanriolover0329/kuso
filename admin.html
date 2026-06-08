@@ -7,17 +7,7 @@
 <title>後台管理 · 三麗鷗中毒日記</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
-:root {
-  --bg:#f5f2ee;--surface:#fff;--surface2:#f0ede8;--border:#e2ddd7;
-  --accent:#c07850;--accent-light:#f5ebe3;--accent-dark:#8a4f28;
-  --text:#2a2420;--text2:#7a6e68;--text3:#b0a49e;
-  --danger:#c04040;--danger-light:#fdf0f0;
-  --success:#3a8a5a;--success-light:#eef7f2;
-  --info:#2850b0;--info-light:#e8f0fe;
-  --pink:#e8608a;--pink-light:#fce4ef;
-  --mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif;
-  --radius:10px;--shadow:0 2px 12px rgba(0,0,0,.07);
-}
+:root{--bg:#f5f2ee;--surface:#fff;--surface2:#f0ede8;--border:#e2ddd7;--accent:#c07850;--accent-light:#f5ebe3;--accent-dark:#8a4f28;--text:#2a2420;--text2:#7a6e68;--text3:#b0a49e;--danger:#c04040;--danger-light:#fdf0f0;--success:#3a8a5a;--success-light:#eef7f2;--info:#2850b0;--info-light:#e8f0fe;--pink:#e8608a;--pink-light:#fce4ef;--mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif;--radius:10px;--shadow:0 2px 12px rgba(0,0,0,.07)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
 .shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
@@ -32,7 +22,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .nav-btn.active{background:var(--accent);color:#fff;font-weight:500}
 .nav-btn svg{width:15px;height:15px;flex-shrink:0}
 .sidebar-footer{padding:14px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:rgba(255,255,255,.2);font-family:var(--mono)}
-.main{display:flex;flex-direction:column}
+.main{display:flex;flex-direction:column;min-width:0}
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
 .page-title{font-size:15px;font-weight:500}
 .topbar-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -41,11 +31,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-ghost:hover{background:var(--surface2);color:var(--text)}
 .btn-success{background:var(--success-light);color:var(--success);border:1px solid #b8dfc9}.btn-success:hover{background:#d4eddf}
 .btn-danger{background:var(--danger-light);color:var(--danger);border:1px solid #f0cece}.btn-danger:hover{background:#fbdede}
-.btn-info{background:var(--info-light);color:var(--info);border:1px solid #c0d4f8}.btn-info:hover{background:#d0e0ff}
 .btn-sm{padding:5px 10px;font-size:12px}
-.btn svg{width:13px;height:13px}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.content{padding:24px;flex:1}
+.content{padding:24px;flex:1;min-width:0;overflow-x:hidden}
 .panel{display:none}.panel.active{display:block}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px}
 .card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
@@ -55,9 +42,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
 .stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
 .stat-value{font-size:24px;font-weight:700;color:var(--text);font-family:var(--mono)}
-.stat-sub{font-size:11px;color:var(--text3);margin-top:2px}
 .form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-.form-group.full{grid-column:1/-1}
 label{font-size:12px;font-weight:500;color:var(--text2)}
 input[type=text],input[type=number],input[type=password],input[type=email],input[type=tel],select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;transition:border-color .15s;width:100%}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#fff}
@@ -66,18 +51,31 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 .warn-box{background:#fffbf0;border:1px solid #f0dfa0;border-radius:8px;padding:12px 14px;font-size:12px;color:#7a6010;line-height:1.7}
 .success-box{background:var(--success-light);border:1px solid #b8dfc9;border-radius:8px;padding:12px 14px;font-size:12px;color:var(--success);line-height:1.7}
 .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.progress-wrap{margin-top:12px}
-.progress-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:6px}
-.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s;width:0%}
-.progress-label{font-size:11px;color:var(--text2);font-family:var(--mono)}
-.img-result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:12px;max-height:320px;overflow-y:auto}
-.img-result-item{background:var(--surface2);border:1px solid var(--border);border-radius:7px;overflow:hidden;font-size:11px}
-.img-result-item img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
-.img-result-info{padding:5px 7px;font-family:var(--mono);color:var(--text2)}
-.img-result-id{font-weight:500;color:var(--accent-dark)}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.search-box{flex:1;min-width:160px;position:relative}
+.search-box input{padding-left:32px}
+.search-box svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);width:14px;height:14px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:var(--surface2);color:var(--text2);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);font-size:12px}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--surface2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#faf8f5}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.prod-card{background:var(--surface);border:2px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .15s}
+.prod-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
+.prod-card.selected{border-color:var(--accent);background:var(--accent-light)}
+.prod-img{width:100%;aspect-ratio:1;background:var(--surface2);overflow:hidden;position:relative}
+.prod-img img{width:100%;height:100%;object-fit:cover;display:block}
+.prod-img .no-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--text3);flex-direction:column;gap:4px}
+.prod-foot{padding:7px 9px}
+.prod-id{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.prod-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prod-cat-badge{display:inline-block;margin-top:3px;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:500}
+.prod-price{font-family:var(--mono);font-size:11px;color:var(--accent-dark);font-weight:600;margin-top:2px}
+.batch-bar{display:none;position:sticky;bottom:0;background:var(--text);color:#f0ede8;padding:10px 16px;border-radius:10px;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.batch-bar.visible{display:flex}
 .cat-list{display:flex;flex-direction:column;gap:7px}
-.cat-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;transition:border-color .15s}
-.cat-item:hover{border-color:var(--accent)}
+.cat-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px}
 .cat-color{width:12px;height:12px;border-radius:3px;flex-shrink:0}
 .cat-name{flex:1;font-weight:500;font-size:13px}
 .cat-folder{font-family:var(--mono);font-size:11px;color:var(--text3)}
@@ -91,54 +89,29 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 .modal-close{background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;display:flex;align-items:center}
 .modal-body{padding:18px;display:flex;flex-direction:column;gap:12px}
 .modal-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface)}
-.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
-.search-box{flex:1;min-width:160px;position:relative}
-.search-box input{padding-left:32px}
-.search-box svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);width:14px;height:14px}
-.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.prod-card{background:var(--surface);border:2px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .15s;position:relative}
-.prod-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
-.prod-card.selected{border-color:var(--accent);background:var(--accent-light)}
-.prod-card.selected::after{content:'✓';position:absolute;top:5px;right:5px;width:18px;height:18px;background:var(--accent);color:#fff;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:18px;text-align:center}
-.prod-img{width:100%;aspect-ratio:1;background:var(--surface2);overflow:hidden;position:relative}
-.prod-img img{width:100%;height:100%;object-fit:cover;display:block}
-.prod-img .no-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--text3);flex-direction:column;gap:4px}
-.prod-foot{padding:7px 9px}
-.prod-id{font-family:var(--mono);font-size:10px;color:var(--text3)}
-.prod-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prod-cat-badge{display:inline-block;margin-top:3px;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:500}
-.prod-price{font-family:var(--mono);font-size:11px;color:var(--accent-dark);font-weight:600;margin-top:2px}
-.batch-bar{display:none;position:sticky;bottom:0;background:var(--text);color:#f0ede8;padding:10px 16px;border-radius:10px;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
-.batch-bar.visible{display:flex}
-.batch-info{flex:1;font-size:13px}
-.batch-info strong{font-family:var(--mono);color:var(--accent)}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#f0ede8;padding:12px 16px;border-radius:8px;font-size:13px;z-index:500;transform:translateY(10px);opacity:0;transition:all .25s;pointer-events:none;max-width:300px}
-.toast.show{transform:translateY(0);opacity:1}
-.color-row{display:flex;gap:7px;flex-wrap:wrap}
-.color-opt{width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
-.color-opt:hover{transform:scale(1.15)}
-.color-opt.sel{border-color:var(--text)}
 .tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
 .tag-success{background:var(--success-light);color:var(--success)}
 .tag-warn{background:#fffbf0;color:#7a6010;border:1px solid #f0dfa0}
 .tag-info{background:var(--info-light);color:var(--info)}
 .tag-danger{background:var(--danger-light);color:var(--danger)}
-.tag-pink{background:var(--pink-light);color:var(--pink)}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.color-row{display:flex;gap:7px;flex-wrap:wrap}
+.color-opt{width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-opt:hover{transform:scale(1.15)}
+.color-opt.sel{border-color:var(--text)}
 .size-opt-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:10px 8px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;text-align:center;transition:all .15s;font-family:var(--sans)}
-.size-opt-btn:hover{border-color:var(--accent);color:var(--accent)}
 .size-opt-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent-dark);font-weight:600}
-/* Table */
-.tbl{width:100%;border-collapse:collapse;font-size:13px}
-.tbl th{background:var(--surface2);color:var(--text2);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);font-size:12px}
-.tbl td{padding:10px 12px;border-bottom:1px solid var(--surface2);vertical-align:middle}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:#faf8f5}
-/* Price edit inline */
-.price-input-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.progress-wrap{margin-top:12px}
+.progress-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s;width:0%}
+.progress-label{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.img-result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:12px;max-height:320px;overflow-y:auto}
+.img-result-item{background:var(--surface2);border:1px solid var(--border);border-radius:7px;overflow:hidden;font-size:11px}
+.img-result-item img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.img-result-info{padding:5px 7px;font-family:var(--mono);color:var(--text2)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#f0ede8;padding:12px 16px;border-radius:8px;font-size:13px;z-index:500;transform:translateY(10px);opacity:0;transition:all .25s;pointer-events:none;max-width:300px}
+.toast.show{transform:translateY(0);opacity:1}
 .ws-tier-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
 .ws-tier-row input{flex:1}
-/* Login */
 #loginOverlay{position:fixed;inset:0;z-index:9999;background:#1a1410;display:flex;align-items:center;justify-content:center;font-family:var(--sans)}
 #loginOverlay.hidden{display:none}
 .login-box{background:#fff;border-radius:16px;padding:36px;width:360px;max-width:92vw;box-shadow:0 32px 80px rgba(0,0,0,.4)}
@@ -153,13 +126,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 .login-btn:hover{background:#8a4f28}
 .login-err{font-size:12px;color:#c04040;text-align:center;min-height:18px;margin-top:6px}
 .login-hint{font-size:11px;color:#b0a49e;text-align:center;margin-top:14px;line-height:1.6}
-/* Prog bar */
-.prog-outer{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:4px}
-.prog-inner{height:100%;background:var(--accent);border-radius:3px}
+.toggle-wrap{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+.toggle-switch{position:relative;width:42px;height:24px;flex-shrink:0;cursor:pointer}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:24px;transition:.3s;cursor:pointer}
+.toggle-slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-switch input:checked + .toggle-slider{background:var(--accent)}
+.toggle-switch input:checked + .toggle-slider::before{transform:translateX(18px)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="loginOverlay">
   <div class="login-box">
     <div class="login-logo">🧸</div>
@@ -171,11 +150,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
     </div>
     <button class="login-btn" onclick="doLogin()">登入後台</button>
     <div class="login-err" id="loginErr"></div>
-    <div class="login-hint">預設密碼：<strong>admin888</strong><br>可在「設定」中修改</div>
+    <div class="login-hint">預設密碼：<strong>admin888</strong></div>
   </div>
 </div>
 
 <div class="shell">
+<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="brand">🌸 三麗鷗中毒日記</div>
@@ -184,44 +164,56 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
   <nav class="nav">
     <div class="nav-section">商店管理</div>
     <button class="nav-btn active" onclick="showPanel('overview',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>總覽
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      總覽
     </button>
     <button class="nav-btn" onclick="showPanel('orders',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>訂單管理
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      訂單管理
     </button>
     <button class="nav-btn" onclick="showPanel('members',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>會員管理
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      會員管理
     </button>
     <button class="nav-btn" onclick="showPanel('requests',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>待處理申請 <span id="requestsBadge" style="background:#e05555;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;display:none">0</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      待處理申請 <span id="requestsBadge" style="background:#e05555;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;display:none">0</span>
     </button>
     <button class="nav-btn" onclick="showPanel('accounting',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>帳務報表
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      帳務報表
     </button>
     <div class="nav-section">商品設定</div>
     <button class="nav-btn" onclick="showPanel('prices',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>商品價格
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      商品價格
     </button>
     <button class="nav-btn" onclick="showPanel('products',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>商品管理
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>
+      商品管理
     </button>
     <button class="nav-btn" onclick="showPanel('categories',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>分類管理
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      分類管理
     </button>
     <div class="nav-section">系統</div>
     <button class="nav-btn" onclick="showPanel('cloudinary',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>Cloudinary
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+      Cloudinary
     </button>
     <button class="nav-btn" onclick="showPanel('display',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>展示設定
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      展示設定
     </button>
     <button class="nav-btn" onclick="showPanel('shopsettings',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>商店設定
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      商店設定
     </button>
   </nav>
   <div class="sidebar-footer">三麗鷗中毒日記 v3.0</div>
 </aside>
 
+<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <div class="page-title" id="pageTitle">總覽</div>
@@ -236,31 +228,31 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 
   <div class="content">
 
-    <!-- OVERVIEW -->
+    <!-- ① 總覽 -->
     <div class="panel active" id="panel-overview">
       <div class="stats-row" id="overviewStats"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="card">
           <div class="card-header"><div class="card-title">🚀 快速開始</div></div>
-          <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+          <div class="card-body">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <div style="padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
                 <div style="font-size:18px;margin-bottom:6px">☁️</div>
                 <div style="font-weight:600;font-size:12px;margin-bottom:3px">Step 1 · Cloudinary</div>
                 <div style="font-size:11px;color:var(--text2);margin-bottom:8px">設定 Cloud Name，抓取圖片</div>
-                <button class="btn btn-ghost btn-sm" style="width:100%" onclick="showPanel('cloudinary',document.querySelectorAll('.nav-btn')[7])">前往設定 →</button>
+                <button class="btn btn-ghost btn-sm" style="width:100%" onclick="showPanel('cloudinary',document.querySelectorAll('.nav-btn')[9])">前往設定 →</button>
               </div>
               <div style="padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
                 <div style="font-size:18px;margin-bottom:6px">💰</div>
                 <div style="font-weight:600;font-size:12px;margin-bottom:3px">Step 2 · 設定價格</div>
                 <div style="font-size:11px;color:var(--text2);margin-bottom:8px">為每件商品設定零售/批發/成本</div>
-                <button class="btn btn-ghost btn-sm" style="width:100%" onclick="showPanel('prices',document.querySelectorAll('.nav-btn')[5])">設定價格 →</button>
+                <button class="btn btn-ghost btn-sm" style="width:100%" onclick="showPanel('prices',document.querySelectorAll('.nav-btn')[6])">設定價格 →</button>
               </div>
               <div style="padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
                 <div style="font-size:18px;margin-bottom:6px">🗂️</div>
                 <div style="font-weight:600;font-size:12px;margin-bottom:3px">Step 3 · 建立分類</div>
                 <div style="font-size:11px;color:var(--text2);margin-bottom:8px">新增分類並指定商品</div>
-                <button class="btn btn-ghost btn-sm" style="width:100%" onclick="showPanel('categories',document.querySelectorAll('.nav-btn')[6])">管理分類 →</button>
+                <button class="btn btn-ghost btn-sm" style="width:100%" onclick="showPanel('categories',document.querySelectorAll('.nav-btn')[8])">管理分類 →</button>
               </div>
               <div style="padding:12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
                 <div style="font-size:18px;margin-bottom:6px">👥</div>
@@ -282,40 +274,35 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       </div>
     </div>
 
-    <!-- ORDERS -->
+    <!-- ② 訂單管理 -->
     <div class="panel" id="panel-orders">
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="orderSearch" placeholder="搜尋訂單編號/會員…" oninput="renderOrders()">
+          <input type="text" id="orderSearch" placeholder="搜尋訂單編號/會員/電話…" oninput="renderOrders()">
         </div>
         <select id="orderStatusFilter" onchange="renderOrders()" style="width:auto">
-          <option value="">全部狀態</option>
-          <option value="pending">待確認</option>
-          <option value="confirmed">已確認</option>
-          <option value="packing">備貨中</option>
-          <option value="shipping">運送中</option>
-          <option value="delivered">已到貨</option>
-          <option value="cancelled">已取消</option>
+          <option value="">全部狀態</option><option value="pending">待確認</option><option value="confirmed">已確認</option>
+          <option value="packing">備貨中</option><option value="shipping">運送中</option>
+          <option value="delivered">已到貨</option><option value="cancelled">已取消</option>
         </select>
         <select id="orderPayFilter" onchange="renderOrders()" style="width:auto">
-          <option value="">全部付款</option>
-          <option value="paid">已付款</option>
-          <option value="unpaid">未付款</option>
-          <option value="pending_payment">待付款</option>
+          <option value="">全部付款</option><option value="paid">已付款</option>
+          <option value="unpaid">未付款</option><option value="pending_payment">待付款</option>
+          <option value="pending_verify">核對中</option>
         </select>
       </div>
       <div class="card">
         <div class="card-body" style="padding:0;overflow-x:auto">
           <table class="tbl" id="ordersTable">
-            <thead><tr><th>訂單編號</th><th>日期</th><th>會員</th><th>商品</th><th>金額</th><th>付款</th><th>狀態</th><th>物流/單號</th><th>操作</th></tr></thead>
+            <thead><tr><th>訂單</th><th>日期/電話</th><th>會員</th><th>商品</th><th>金額</th><th>付款/後五碼</th><th>狀態</th><th>物流/單號</th><th>操作</th></tr></thead>
             <tbody id="ordersTbody"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- MEMBERS -->
+    <!-- ③ 會員管理 -->
     <div class="panel" id="panel-members">
       <div class="toolbar">
         <div class="search-box">
@@ -323,16 +310,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
           <input type="text" id="memberSearch" placeholder="搜尋姓名/Email…" oninput="renderMembers()">
         </div>
         <select id="memberRoleFilter" onchange="renderMembers()" style="width:auto">
-          <option value="">全部角色</option>
-          <option value="member">一般會員</option>
-          <option value="wholesale">批發會員</option>
-          <option value="admin">管理員</option>
+          <option value="">全部角色</option><option value="member">一般會員</option>
+          <option value="wholesale">批發會員</option><option value="admin">管理員</option>
         </select>
         <select id="memberStatusFilter" onchange="renderMembers()" style="width:auto">
-          <option value="">全部狀態</option>
-          <option value="active">已啟用</option>
-          <option value="pending">待審核</option>
-          <option value="disabled">停用</option>
+          <option value="">全部狀態</option><option value="active">已啟用</option>
+          <option value="pending">待審核</option><option value="disabled">停用</option>
         </select>
         <button class="btn btn-primary btn-sm" onclick="openMemberModal()">+ 新增人員</button>
       </div>
@@ -346,71 +329,70 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       </div>
     </div>
 
-    <!-- ACCOUNTING -->
+    <!-- ④ 待處理申請 -->
+    <div class="panel" id="panel-requests">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🕐 待審核會員申請</div></div>
+        <div class="card-body" style="padding:0;overflow-x:auto">
+          <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>邀請人</th><th>日期</th><th>操作</th></tr></thead>
+          <tbody id="pendingMembersTbody"></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔑 密碼重設申請</div></div>
+        <div class="card-body" style="padding:0;overflow-x:auto">
+          <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>申請新密碼</th><th>日期</th><th>操作</th></tr></thead>
+          <tbody id="pwdResetTbody"></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏭 批發升等申請</div></div>
+        <div class="card-body" style="padding:0;overflow-x:auto">
+          <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>申請原因</th><th>日期</th><th>操作</th></tr></thead>
+          <tbody id="wsUpgradeTbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ 帳務報表 -->
     <div class="panel" id="panel-accounting">
       <div class="stats-row" id="accountingStats"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="card">
           <div class="card-header"><div class="card-title">💳 待收款訂單</div></div>
-          <div class="card-body" style="padding:0;overflow-x:auto"><table class="tbl"><thead><tr><th>訂單</th><th>會員</th><th>應收</th><th>付款方式</th><th>操作</th></tr></thead><tbody id="unpaidTbody"></tbody></table></div>
+          <div class="card-body" style="padding:0;overflow-x:auto">
+            <table class="tbl"><thead><tr><th>訂單</th><th>會員</th><th>應收</th><th>付款方式</th><th>操作</th></tr></thead>
+            <tbody id="unpaidTbody"></tbody></table>
+          </div>
         </div>
         <div class="card">
           <div class="card-header"><div class="card-title">📈 各商品毛利</div></div>
-          <div class="card-body" style="padding:0;overflow-x:auto"><table class="tbl"><thead><tr><th>商品</th><th>售價</th><th>成本</th><th>毛利率</th></tr></thead><tbody id="profitTbody"></tbody></table></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- REQUESTS (密碼重設 + 批發升等 + 待審核會員) -->
-    <div class="panel" id="panel-requests">
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <!-- 待審核會員 -->
-        <div class="card">
-          <div class="card-header"><div class="card-title">🕐 待審核會員申請</div></div>
           <div class="card-body" style="padding:0;overflow-x:auto">
-            <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>邀請人</th><th>申請日期</th><th>操作</th></tr></thead>
-            <tbody id="pendingMembersTbody"></tbody></table>
-          </div>
-        </div>
-        <!-- 密碼重設申請 -->
-        <div class="card">
-          <div class="card-header"><div class="card-title">🔑 密碼重設申請</div></div>
-          <div class="card-body" style="padding:0;overflow-x:auto">
-            <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>新密碼（申請人填寫）</th><th>申請日期</th><th>操作</th></tr></thead>
-            <tbody id="pwdResetTbody"></tbody></table>
-          </div>
-        </div>
-        <!-- 批發升等申請 -->
-        <div class="card">
-          <div class="card-header"><div class="card-title">🏭 批發升等申請</div></div>
-          <div class="card-body" style="padding:0;overflow-x:auto">
-            <table class="tbl"><thead><tr><th>姓名</th><th>Email</th><th>電話</th><th>申請原因</th><th>申請日期</th><th>操作</th></tr></thead>
-            <tbody id="wsUpgradeTbody"></tbody></table>
+            <table class="tbl"><thead><tr><th>商品</th><th>售價</th><th>成本</th><th>毛利率</th></tr></thead>
+            <tbody id="profitTbody"></tbody></table>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- PRICES -->
+    <!-- ⑥ 商品價格 -->
     <div class="panel" id="panel-prices">
       <div class="info-box" style="margin-bottom:16px">
-        💡 在此設定每件商品的<strong>零售價、批發起價、成本</strong>（成本僅後台可見）及庫存數量。批發階梯可設定「購買 N 件以上」的價格。
+        💡 為每件商品設定<strong>零售價、批發起價、成本</strong>（成本僅後台可見）及庫存。批發階梯：購買 N 件以上套用對應價格。
       </div>
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="priceSearch" placeholder="搜尋商品…" oninput="renderPrices()">
+          <input type="text" id="priceSearch" placeholder="搜尋商品編號或名稱…" oninput="renderPrices()">
         </div>
         <select id="priceFilter" onchange="renderPrices()" style="width:auto">
-          <option value="">全部</option>
-          <option value="priced">已設價格</option>
-          <option value="unpriced">未設價格</option>
+          <option value="">全部</option><option value="priced">已設價格</option><option value="unpriced">未設價格</option>
         </select>
       </div>
       <div class="products-grid" id="pricesGrid"></div>
     </div>
 
-    <!-- PRODUCTS (original) -->
+    <!-- ⑦ 商品管理 -->
     <div class="panel" id="panel-products">
       <div class="toolbar">
         <div class="search-box">
@@ -426,7 +408,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       </div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="batch-bar" id="batchBar">
-        <div class="batch-info">已選取 <strong id="selCount">0</strong> 件商品</div>
+        <div style="flex:1;font-size:13px">已選取 <strong id="selCount" style="font-family:var(--mono);color:var(--accent)">0</strong> 件</div>
         <select id="batchCatSelect" style="width:auto;padding:6px 10px;font-size:13px"><option value="">選擇分類…</option></select>
         <button class="btn btn-primary btn-sm" onclick="batchAssign()">套用分類</button>
         <button class="btn btn-danger btn-sm" onclick="batchClear()">清除分類</button>
@@ -434,44 +416,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       </div>
     </div>
 
-    <!-- CLOUDINARY (original) -->
-    <div class="panel" id="panel-cloudinary">
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-header"><div class="card-title">☁️ Cloudinary 基本設定</div></div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-          <div class="setup-grid">
-            <div class="form-group"><label>Cloud Name *</label><input type="text" id="cloudName" placeholder="dkwviksvr"><span class="hint">Cloudinary Dashboard 左上角</span></div>
-            <div class="form-group"><label>縮圖尺寸 (px)</label><input type="text" id="thumbSize" placeholder="500" value="500"></div>
-          </div>
-          <button class="btn btn-primary" id="saveCredBtn" onclick="saveCredentials()">儲存設定</button>
-        </div>
-      </div>
-      <div class="card" style="margin-bottom:14px">
-        <div class="card-header">
-          <div class="card-title">🏷️ 用 Tag 抓取圖片（推薦）</div>
-          <button class="btn btn-success btn-sm" id="fetchBtn" onclick="fetchByTag()" disabled>用 Tag 抓取圖片</button>
-        </div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
-          <div class="info-box"><strong>設定步驟（只需一次）：</strong><br><br>① Settings → Security → 取消勾選 <strong>Resource list</strong><br>② Media Library → 全選圖片 → Manage Tags → 輸入 <code style="background:#fff;padding:1px 5px;border-radius:3px">shop</code> → Apply<br><br>完成後填入 Tag 名稱，點右上角「用 Tag 抓取圖片」</div>
-          <div class="setup-grid">
-            <div class="form-group"><label>Tag 名稱 *</label><input type="text" id="tagName" placeholder="shop" value="shop"><span class="hint">幫圖片加的標籤名稱</span></div>
-            <div class="form-group"><label>抓取網址預覽</label><div id="tagUrlPreview" style="font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;color:var(--accent-dark);word-break:break-all">請先填入 Cloud Name…</div></div>
-          </div>
-          <div class="progress-wrap" id="progressWrap" style="display:none"><div class="progress-label" id="progressLabel">準備中…</div><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
-          <div id="fetchResult"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">📋 直接貼上圖片網址</div></div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
-          <div class="form-group"><label>貼上圖片 URL（每行一個）</label><textarea id="urlPasteArea" rows="6" placeholder="https://res.cloudinary.com/..."></textarea></div>
-          <button class="btn btn-primary" onclick="importFromPaste()">匯入以上網址</button>
-          <div id="pasteResult"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CATEGORIES (original) -->
+    <!-- ⑧ 分類管理 -->
     <div class="panel" id="panel-categories">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <div style="font-size:13px;color:var(--text2)">管理商品分類，可對應 Cloudinary 資料夾</div>
@@ -480,16 +425,53 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       <div class="card"><div class="card-body"><div class="cat-list" id="catList"><div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">尚未建立任何分類</div></div></div></div>
     </div>
 
-    <!-- DISPLAY (original) -->
+    <!-- ⑨ Cloudinary -->
+    <div class="panel" id="panel-cloudinary">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><div class="card-title">☁️ Cloudinary 基本設定</div></div>
+        <div class="card-body">
+          <div class="setup-grid">
+            <div class="form-group"><label>Cloud Name *</label><input type="text" id="cloudName" placeholder="dkwviksvr"><span class="hint">Cloudinary Dashboard 左上角</span></div>
+            <div class="form-group"><label>縮圖尺寸 (px)</label><input type="text" id="thumbSize" placeholder="500" value="500"></div>
+          </div>
+          <button class="btn btn-primary" onclick="saveCredentials()">儲存設定</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header">
+          <div class="card-title">🏷️ 用 Tag 抓取圖片（推薦）</div>
+          <button class="btn btn-success btn-sm" id="fetchBtn" onclick="fetchByTag()" disabled>用 Tag 抓取圖片</button>
+        </div>
+        <div class="card-body">
+          <div class="info-box"><strong>設定步驟：</strong><br>① Cloudinary Settings → Security → 取消勾選 Resource list<br>② Media Library → 全選圖片 → Manage Tags → 輸入 <code>shop</code> → Apply</div>
+          <div class="setup-grid" style="margin-top:12px">
+            <div class="form-group"><label>Tag 名稱</label><input type="text" id="tagName" placeholder="shop" value="shop"></div>
+            <div class="form-group"><label>抓取網址預覽</label><div id="tagUrlPreview" style="font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;color:var(--accent-dark);word-break:break-all">請先填入 Cloud Name…</div></div>
+          </div>
+          <div class="progress-wrap" id="progressWrap" style="display:none"><div class="progress-label" id="progressLabel">準備中…</div><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
+          <div id="fetchResult"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 直接貼上圖片網址</div></div>
+        <div class="card-body">
+          <div class="form-group"><label>貼上圖片 URL（每行一個）</label><textarea id="urlPasteArea" rows="6" placeholder="https://res.cloudinary.com/..."></textarea></div>
+          <button class="btn btn-primary" onclick="importFromPaste()">匯入以上網址</button>
+          <div id="pasteResult"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑩ 展示設定 -->
     <div class="panel" id="panel-display">
       <div class="card">
         <div class="card-header"><div class="card-title">🖼️ 前台展示設定</div></div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:18px">
+        <div class="card-body">
           <div class="form-group"><label>每次載入張數</label>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px" id="pageSizeBtns">
-              <button class="size-opt-btn" data-val="24" onclick="selectPageSize(this)">24 張<div style="font-size:10px;color:var(--text3);margin-top:2px">慢速網路</div></button>
-              <button class="size-opt-btn" data-val="50" onclick="selectPageSize(this)">50 張<div style="font-size:10px;color:var(--text3);margin-top:2px">一般建議</div></button>
-              <button class="size-opt-btn" data-val="100" onclick="selectPageSize(this)">100 張<div style="font-size:10px;color:var(--text3);margin-top:2px">快速網路</div></button>
+              <button class="size-opt-btn" data-val="24" onclick="selectPageSize(this)">24 張<div style="font-size:10px;color:var(--text3)">慢速網路</div></button>
+              <button class="size-opt-btn" data-val="50" onclick="selectPageSize(this)">50 張<div style="font-size:10px;color:var(--text3)">一般建議</div></button>
+              <button class="size-opt-btn" data-val="100" onclick="selectPageSize(this)">100 張<div style="font-size:10px;color:var(--text3)">快速網路</div></button>
             </div>
           </div>
           <div class="form-group"><label>商品格局大小</label>
@@ -505,7 +487,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       </div>
     </div>
 
-    <!-- SHOP SETTINGS -->
+    <!-- ⑪ 商店設定 -->
     <div class="panel" id="panel-shopsettings">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div>
@@ -517,32 +499,28 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
             <div class="card-header"><div class="card-title">🎁 滿額贈品</div><button class="btn btn-ghost btn-sm" onclick="addGift()">+ 新增</button></div>
             <div class="card-body" id="giftsBody"></div>
           </div>
-          <!-- 批發升等開關 -->
           <div class="card">
-            <div class="card-header"><div class="card-title">🏭 批發升等申請設定</div></div>
+            <div class="card-header"><div class="card-title">🏭 批發升等申請開關</div></div>
             <div class="card-body">
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+              <div class="toggle-wrap">
                 <div>
                   <div style="font-size:13px;font-weight:500">開放會員自行申請批發升等</div>
-                  <div style="font-size:11px;color:var(--text3);margin-top:3px">開啟後，一般會員可在會員中心送出批發升等申請，由後台審核</div>
+                  <div style="font-size:11px;color:var(--text3);margin-top:3px">開啟後，一般會員可在會員中心送出申請，由後台審核</div>
                 </div>
-                <label style="position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0">
-                  <input type="checkbox" id="wsUpgradeToggle" style="opacity:0;width:0;height:0" onchange="saveWsUpgradeSetting(this.checked)">
-                  <span id="wsToggleKnob" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s">
-                    <span style="position:absolute;content:'';height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;display:block" id="wsKnob"></span>
-                  </span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="wsUpgradeToggle" onchange="saveWsUpgradeSetting(this.checked)">
+                  <span class="toggle-slider"></span>
                 </label>
               </div>
-              <div class="hint" style="margin-top:4px">申請後至「待處理申請」頁面審核，可直接升等或拒絕</div>
+              <div class="hint">至「待處理申請」頁面審核升等或拒絕</div>
             </div>
           </div>
-          <!-- 管理員修改任意密碼 -->
           <div class="card">
             <div class="card-header"><div class="card-title">🔑 直接修改會員密碼</div></div>
             <div class="card-body">
               <div class="form-group"><label>選擇會員</label><select id="adminPwdUserSelect"></select></div>
-              <div class="form-group"><label>新密碼</label><input type="password" id="adminNewPwd" placeholder="輸入新密碼（至少6碼）"></div>
-              <div class="form-group"><label>確認新密碼</label><input type="password" id="adminNewPwd2" placeholder="再次輸入新密碼"></div>
+              <div class="form-group"><label>新密碼</label><input type="password" id="adminNewPwd" placeholder="至少6碼"></div>
+              <div class="form-group"><label>確認新密碼</label><input type="password" id="adminNewPwd2" placeholder="再次輸入"></div>
               <button class="btn btn-primary" onclick="adminResetPassword()">🔑 修改密碼</button>
             </div>
           </div>
@@ -564,22 +542,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 </main>
 </div><!-- /shell -->
 
-<!-- Category Modal -->
+<!-- 分類 Modal -->
 <div class="modal-bg" id="catModal">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title" id="modalTitle">新增分類</div><button class="modal-close" onclick="closeCatModal()">×</button></div>
+    <div class="modal-header"><div class="modal-title" id="modalTitle">新增分類</div><button class="modal-close" onclick="closeModal('catModal')">×</button></div>
     <div class="modal-body">
       <input type="hidden" id="editCatId">
       <div class="form-group"><label>分類名稱 *</label><input type="text" id="catNameInput" placeholder="例如：熊熊系列"></div>
       <div class="form-group"><label>Cloudinary 子資料夾（選填）</label><input type="text" id="catFolderInput" placeholder="例如：bears"></div>
-      <div class="form-group"><label>分類說明（選填）</label><input type="text" id="catDescInput" placeholder="例如：可愛熊熊系列"></div>
+      <div class="form-group"><label>分類說明（選填）</label><input type="text" id="catDescInput"></div>
       <div class="form-group"><label>分類顏色</label><div class="color-row" id="colorRow"></div></div>
     </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeCatModal()">取消</button><button class="btn btn-primary" onclick="saveCat()">儲存</button></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('catModal')">取消</button><button class="btn btn-primary" onclick="saveCat()">儲存</button></div>
   </div>
 </div>
 
-<!-- Price Edit Modal -->
+<!-- 價格 Modal -->
 <div class="modal-bg" id="priceModal">
   <div class="modal" style="width:560px">
     <div class="modal-header"><div class="modal-title" id="priceModalTitle">設定商品價格</div><button class="modal-close" onclick="closeModal('priceModal')">×</button></div>
@@ -588,19 +566,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
   </div>
 </div>
 
-<!-- Member Edit Modal -->
+<!-- 會員 Modal -->
 <div class="modal-bg" id="memberModal">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title" id="memberModalTitle">新增人員</div><button class="modal-close" onclick="closeModal('memberModal')">×</button></div>
-    <div class="modal-body" id="memberModalBody">
+    <div class="modal-header"><div class="modal-title">新增人員</div><button class="modal-close" onclick="closeModal('memberModal')">×</button></div>
+    <div class="modal-body">
       <div class="form-group"><label>姓名 *</label><input type="text" id="mName"></div>
       <div class="form-group"><label>Email *</label><input type="email" id="mEmail"></div>
       <div class="form-group"><label>電話</label><input type="tel" id="mPhone"></div>
-      <div class="form-group"><label>角色</label><select id="mRole">
-        <option value="member">一般會員</option>
-        <option value="wholesale">🏭 批發會員</option>
-        <option value="admin">管理員</option>
-      </select></div>
+      <div class="form-group"><label>角色</label>
+        <select id="mRole">
+          <option value="member">一般會員</option>
+          <option value="wholesale">🏭 批發會員</option>
+          <option value="admin">管理員</option>
+        </select>
+      </div>
       <div class="form-group"><label>初始密碼</label><input type="password" id="mPwd" value="sanrio2024"></div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('memberModal')">取消</button><button class="btn btn-primary" onclick="saveMember()">建立帳號</button></div>
