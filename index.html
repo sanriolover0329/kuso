@@ -461,15 +461,44 @@ let activeCategory = 'all';
 function loadShopDB() {
   try {
     const s = localStorage.getItem('sanrio_shop_db');
-    if (s) return JSON.parse(s);
+    if (s) {
+      const db = JSON.parse(s);
+      // 資料遷移：補上 logistics type 欄位（舊版資料沒有）
+      const typeMap = {
+        blackcat:'delivery', hsinchu:'delivery',
+        '711':'cvs', family:'cvs', hilife:'cvs', ok:'cvs',
+        face:'face'
+      };
+      if (db.logistics) {
+        db.logistics.forEach(l => {
+          if (!l.type) l.type = typeMap[l.id] || 'delivery';
+        });
+        // 補上新竹物流（若舊資料沒有）
+        if (!db.logistics.find(l => l.id === 'hsinchu')) {
+          const bcIdx = db.logistics.findIndex(l => l.id === 'blackcat');
+          db.logistics.splice(bcIdx + 1, 0, { id:'hsinchu', name:'新竹物流', type:'delivery', active:true, fee:100 });
+        }
+      }
+      // 資料遷移：補上新版付款方式
+      if (db.payments) {
+        const payIds = db.payments.map(p => p.id);
+        if (!payIds.includes('face_pay'))
+          db.payments.push({ id:'face_pay', name:'面交取貨付款', active:true });
+        // 移除已廢棄的 face 付款方式（改用 face_pay）
+        db.payments = db.payments.filter(p => p.id !== 'face');
+      }
+      // 補上 cvs_stores（若舊資料沒有）
+      if (!db.cvs_stores) db.cvs_stores = { '711':[], family:[], hilife:[], ok:[] };
+      return db;
+    }
   } catch(e) {}
   return {
     users: [
       { id:1, name:'管理員', email:'admin@test.com', pwd:'admin888', phone:'0900000001', role:'admin', status:'active', tier:'gold', totalSpent:99999, createdAt:'2024-01-01', invite:'' },
       { id:2, name:'金級示範', email:'member@test.com', pwd:'123456', phone:'0912345678', role:'member', status:'active', tier:'gold', totalSpent:15000, createdAt:'2024-02-01', invite:'' },
+      { id:3, name:'批發示範', email:'wholesale@test.com', pwd:'123456', phone:'0922333444', role:'wholesale', status:'active', tier:'bronze', totalSpent:0, createdAt:'2024-02-01', invite:'' },
     ],
     orders: [],
-    // productPrices: { [productId]: { retail, wholesale, cost, stock, preorder, wsTiers } }
     productPrices: {},
     tierSettings: [
       { tier:'bronze', label:'銅級', minSpend:0, discount:0 },
@@ -496,13 +525,7 @@ function loadShopDB() {
       { id:'transfer_face',name:'先轉帳後面交', active:true },
       { id:'face_pay',     name:'面交取貨付款', active:true },
     ],
-    // 超商門市資料（未來匯入）
-    cvs_stores: {
-      '711':    [],
-      'family': [],
-      'hilife': [],
-      'ok':     [],
-    }
+    cvs_stores: { '711':[], family:[], hilife:[], ok:[] }
   };
 }
 function saveShopDB() {

@@ -613,7 +613,27 @@ function saveState(){
 // SHOP DB (members, orders, prices)
 // ══════════════════════════════════════════
 function loadShopDB(){
-  try{const s=localStorage.getItem('sanrio_shop_db');if(s)return JSON.parse(s);}catch(e){}
+  const typeMap = {blackcat:'delivery',hsinchu:'delivery','711':'cvs',family:'cvs',hilife:'cvs',ok:'cvs',face:'face'};
+  try{
+    const s=localStorage.getItem('sanrio_shop_db');
+    if(s){
+      const db=JSON.parse(s);
+      // 遷移：補 logistics type
+      if(db.logistics){
+        db.logistics.forEach(l=>{if(!l.type)l.type=typeMap[l.id]||'delivery';});
+        if(!db.logistics.find(l=>l.id==='hsinchu')){
+          const bi=db.logistics.findIndex(l=>l.id==='blackcat');
+          db.logistics.splice(bi+1,0,{id:'hsinchu',name:'新竹物流',type:'delivery',active:true,fee:100});
+        }
+      }
+      if(db.payments){
+        if(!db.payments.find(p=>p.id==='face_pay'))db.payments.push({id:'face_pay',name:'面交取貨付款',active:true});
+        db.payments=db.payments.filter(p=>p.id!=='face');
+      }
+      if(!db.cvs_stores)db.cvs_stores={'711':[],family:[],hilife:[],ok:[]};
+      return db;
+    }
+  }catch(e){}
   return {
     users:[
       {id:1,name:'管理員',email:'admin@test.com',pwd:'admin888',phone:'0900000001',role:'admin',status:'active',tier:'gold',totalSpent:99999,createdAt:'2024-01-01',invite:''},
@@ -1153,13 +1173,15 @@ function renderShopSettings(){
   const wsEnabled=shopDB.settings?.allowWsUpgrade!==false;
   if(wsToggle){wsToggle.checked=wsEnabled;}
   // Logistics
+  const typeLabel = {delivery:'🚚 宅配', cvs:'🏪 超商', face:'🤝 面交'};
   document.getElementById('logisticsBody').innerHTML=shopDB.logistics.map((l,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--surface2)">
+      <span style="font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;flex-shrink:0">${typeLabel[l.type]||l.type||'—'}</span>
       <span style="flex:1;font-size:13px">${l.name}</span>
       <input type="number" value="${l.fee}" style="width:70px" placeholder="運費" onchange="shopDB.logistics[${i}].fee=+this.value;saveShopDB();toast('✓ 已儲存')">
       <span style="font-size:11px;color:var(--text3)">NT$</span>
       <label style="font-size:12px;white-space:nowrap;font-weight:400"><input type="checkbox"${l.active?' checked':''} onchange="shopDB.logistics[${i}].active=this.checked;saveShopDB()"> 啟用</label>
-    </div>`).join('')+'<div class="hint" style="margin-top:8px">超商門市資訊後續匯入，萊爾富/OK 暫停使用</div>';
+    </div>`).join('')+'<div class="hint" style="margin-top:8px">萊爾富/OK 暫停使用；超商門市資料後續匯入</div>';
   // Payments
   document.getElementById('paymentsBody').innerHTML=shopDB.payments.map((p,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--surface2)">
