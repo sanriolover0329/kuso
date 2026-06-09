@@ -482,19 +482,27 @@ function loadShopDB() {
       { name:'VIP禮盒',   minSpend:15000, active:true },
     ],
     logistics: [
-      { id:'blackcat', name:'黑貓宅急便', active:true, fee:100 },
-      { id:'711',      name:'7-11 超商取貨', active:true, fee:60 },
-      { id:'family',   name:'全家超商取貨', active:true, fee:60 },
-      { id:'face',     name:'面交', active:true, fee:0 },
-      { id:'hilife',   name:'萊爾富（暫定）', active:false, fee:60 },
-      { id:'ok',       name:'OK超商（暫定）', active:false, fee:60 },
+      { id:'blackcat', name:'黑貓宅急便',    type:'delivery', active:true,  fee:100 },
+      { id:'hsinchu',  name:'新竹物流',       type:'delivery', active:true,  fee:100 },
+      { id:'711',      name:'7-11 超商取貨',  type:'cvs',      active:true,  fee:60  },
+      { id:'family',   name:'全家超商取貨',   type:'cvs',      active:true,  fee:60  },
+      { id:'hilife',   name:'萊爾富超商取貨', type:'cvs',      active:false, fee:60  },
+      { id:'ok',       name:'OK超商取貨',     type:'cvs',      active:false, fee:60  },
+      { id:'face',     name:'面交',           type:'face',     active:true,  fee:0   },
     ],
     payments: [
-      { id:'face',         name:'面交取貨', active:true },
-      { id:'transfer_face',name:'先轉帳後面交', active:true },
-      { id:'cod',          name:'貨到付款', active:true },
+      { id:'cod',          name:'貨到付款',     active:true },
       { id:'prepay',       name:'先付款後出貨', active:true },
-    ]
+      { id:'transfer_face',name:'先轉帳後面交', active:true },
+      { id:'face_pay',     name:'面交取貨付款', active:true },
+    ],
+    // 超商門市資料（未來匯入）
+    cvs_stores: {
+      '711':    [],
+      'family': [],
+      'hilife': [],
+      'ok':     [],
+    }
   };
 }
 function saveShopDB() {
@@ -920,7 +928,11 @@ function openCartModal() {
 function renderCartModal() {
   const body = document.getElementById('cartModalBody');
   if (cart.length === 0) {
-    body.innerHTML = `<div style="text-align:center;padding:40px 0"><div style="font-size:48px;margin-bottom:12px">🛒</div><p style="color:var(--text2);font-size:14px">購物車是空的</p><button style="margin-top:16px;padding:9px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--sans)" onclick="closeModal('cartModal')">去逛逛 →</button></div>`;
+    body.innerHTML = `<div style="text-align:center;padding:40px 0">
+      <div style="font-size:48px;margin-bottom:12px">🛒</div>
+      <p style="color:var(--text2);font-size:14px">購物車是空的</p>
+      <button style="margin-top:16px;padding:9px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;cursor:pointer;font-family:var(--sans)"
+        onclick="closeModal('cartModal')">去逛逛 →</button></div>`;
     return;
   }
   const disc = currentUser ? getTierDiscount(currentUser) : 0;
@@ -930,20 +942,14 @@ function renderCartModal() {
     const eff = getEffectivePrice(item.id, item.qty);
     const rowTotal = eff * item.qty;
     subtotal += rowTotal;
-    // 價格說明標籤
-    let priceNote = '';
-    if (isWholesale()) {
-      priceNote = `批發價（依數量）`;
-    } else if (isMemberRole() && disc > 0) {
-      priceNote = `零售 ${fmt(item.retail)} / 會員折扣 ${disc}%`;
-    } else {
-      priceNote = `零售價`;
-    }
+    const priceNote = isWholesale() ? '批發價（依數量）'
+      : isMemberRole() && disc > 0 ? `零售 ${fmt(item.retail)} / 會員折扣 ${disc}%`
+      : '零售價';
     itemsHtml += `<div class="cart-item">
       <img class="cart-img" src="${item.url}" alt="${item.name}" onerror="this.style.display='none'">
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-id">No. ${item.id} ${item.preorder?'<span class="badge badge-info">預購</span>':''}</div>
+        <div class="cart-item-id">No. ${item.id}${item.preorder ? ' <span class="badge badge-info">預購</span>' : ''}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">${priceNote}</div>
       </div>
       <div class="cart-qty-ctrl">
@@ -955,39 +961,69 @@ function renderCartModal() {
       <button class="remove-btn" onclick="removeFromCart('${item.id}')">×</button>
     </div>`;
   });
+
   const discAmt = isMemberRole() ? Math.round(subtotal * disc / 100) : 0;
   const finalTotal = subtotal - discAmt;
   const hasPreorder = cart.some(c => c.preorder);
   const deposit = hasPreorder ? Math.round(finalTotal * 0.5) : 0;
+
+  // 配送方式（依 type 分組）
   const activeLogs = shopDB.logistics.filter(l => l.active);
-  const activePays = shopDB.payments.filter(p => p.active);
+  const deliveryLogs = activeLogs.filter(l => l.type === 'delivery');
+  const cvsLogs     = activeLogs.filter(l => l.type === 'cvs');
+  const faceLogs    = activeLogs.filter(l => l.type === 'face');
+  const firstLog  = activeLogs[0] || {};
+  const firstType = firstLog.type || 'delivery';
+  const firstId   = firstLog.id   || '';
+
+  const logRadio = (l, checked) => {
+    const feeHtml = l.fee > 0
+      ? `<span style="color:var(--text3);font-size:11px;margin-left:6px">+${fmt(l.fee)}</span>`
+      : `<span style="color:var(--success);font-size:11px;margin-left:6px"> 免費</span>`;
+    return `<label class="radio-item" onclick="onLogisticsChange('${l.type}','${l.id}')">
+      <input type="radio" name="logistics" value="${l.id}" ${checked ? 'checked' : ''}>
+      <span class="radio-label">${l.name}${feeHtml}</span></label>`;
+  };
+
+  let logHtml = '';
+  if (deliveryLogs.length > 0) {
+    logHtml += `<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;padding:6px 0 3px">🚚 宅配</div>
+    <div class="radio-group" style="margin-bottom:8px">${deliveryLogs.map((l,i) => logRadio(l, i===0 && firstType==='delivery')).join('')}</div>`;
+  }
+  if (cvsLogs.length > 0) {
+    logHtml += `<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;padding:6px 0 3px">🏪 超商取貨</div>
+    <div class="radio-group" style="margin-bottom:8px">${cvsLogs.map((l,i) => logRadio(l, deliveryLogs.length===0 && i===0)).join('')}</div>`;
+  }
+  if (faceLogs.length > 0) {
+    logHtml += `<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;padding:6px 0 3px">🤝 面交</div>
+    <div class="radio-group">${faceLogs.map((l,i) => logRadio(l, deliveryLogs.length===0 && cvsLogs.length===0 && i===0)).join('')}</div>`;
+  }
+
   body.innerHTML = `
     <div>${itemsHtml}</div>
     <div class="cart-summary">
       <div class="summary-row"><span class="label">商品小計</span><span>${fmt(subtotal)}</span></div>
       ${isWholesale() ? `<div class="summary-row"><span class="label" style="color:#2850b0">🏭 批發價格已套用</span><span style="color:#2850b0">依數量階梯計算</span></div>` : ''}
       ${isMemberRole() && disc > 0 ? `<div class="summary-row"><span class="label">會員折扣 (${disc}%)</span><span style="color:var(--success)">−${fmt(discAmt)}</span></div>` : ''}
-      ${hasPreorder?`<div class="summary-row"><span class="label">⚠ 預購訂金 (50%)</span><span style="color:var(--warning)">${fmt(deposit)}</span></div>`:''}
+      ${hasPreorder ? `<div class="summary-row"><span class="label">⚠ 預購訂金 (50%)</span><span style="color:var(--warning)">${fmt(deposit)}</span></div>` : ''}
       <div class="summary-row total"><span>訂單總計</span><span>${fmt(finalTotal)}</span></div>
     </div>
-    ${hasPreorder?`<div class="preorder-notice">⚠ 購物車內含預購商品，需先支付 ${fmt(deposit)} 訂金，餘款於出貨前付清</div>`:''}
+    ${hasPreorder ? `<div class="preorder-notice">⚠ 含預購商品，需先支付 ${fmt(deposit)} 訂金，餘款於出貨前付清</div>` : ''}
     <div class="checkout-section">
       <div class="section-title">配送方式</div>
-      <div class="radio-group">${activeLogs.map((l,i)=>`<label class="radio-item"><input type="radio" name="logistics" value="${l.id}" ${i===0?'checked':''}><span class="radio-label">${l.name}${l.fee>0?`<span style="color:var(--text3);font-size:11px;margin-left:6px">+${fmt(l.fee)}</span>`:'<span style="color:var(--success);font-size:11px;margin-left:6px"> 免費</span>'}</span></label>`).join('')}</div>
-      <div class="section-title" style="margin-top:16px">付款方式</div>
-      <div class="radio-group">${activePays.map((p,i)=>`<label class="radio-item"><input type="radio" name="payment" value="${p.id}" ${i===0?'checked':''} onchange="toggleTransferField()"><span class="radio-label">${p.name}</span></label>`).join('')}</div>
-      <div id="transferCodeWrap" style="display:none;margin-top:10px">
-        <div class="f-group"><label>匯款後五碼 *</label><input type="text" id="transferCode" maxlength="5" placeholder="請輸入匯款帳號後五碼" style="letter-spacing:4px;font-family:var(--mono);font-size:16px"></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:4px">請先完成匯款，填入後五碼供核對</div>
-      </div>
-      <div class="section-title" style="margin-top:16px">收件資訊</div>
-      <div class="f-group"><label>收件人姓名 *</label><input type="text" id="shipName" value="${currentUser?currentUser.name:''}" placeholder="收件人姓名"></div>
-      <div class="f-group"><label>聯絡電話 *</label><input type="tel" id="shipPhone" value="${currentUser?currentUser.phone:''}" placeholder="0912-345-678"></div>
-      <div class="f-group"><label>收件地址 *</label><input type="text" id="shipAddr" placeholder="完整收件地址"></div>
+      ${logHtml}
+      <div id="paymentSection" style="margin-top:16px"></div>
+      <div id="shippingInfoSection" style="margin-top:16px"></div>
       <button class="btn-full" style="margin-top:16px" onclick="submitOrder()">🌸 確認下單</button>
-      ${!currentUser?'<p style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px">訪客可直接下單，<button onclick="closeModal(\'cartModal\');openAuthModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;text-decoration:underline">登入</button>可享會員折扣</p>':''}
+      ${!currentUser ? `<p style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px">訪客可直接下單，
+        <button onclick="closeModal('cartModal');openAuthModal()"
+          style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;text-decoration:underline">登入</button>可享會員折扣</p>` : ''}
     </div>`;
+
+  onLogisticsChange(firstType, firstId);
 }
+
+
 
 function cartQty(id, delta) {
   const item = cart.find(c => c.id === id);
@@ -1001,28 +1037,131 @@ function removeFromCart(id) {
   renderCartModal();
 }
 
+// 付款方式依配送類型對應
+const PAYMENT_MAP = {
+  delivery: ['cod', 'prepay'],           // 宅配：貨到付款、先付款後出貨
+  cvs:      ['cod', 'prepay'],           // 超商：貨到付款、先付款後出貨
+  face:     ['face_pay', 'transfer_face'] // 面交：面交付款、先轉帳後面交
+};
+
+function onLogisticsChange(type, logId) {
+  // 更新 radio checked 狀態
+  document.querySelectorAll('input[name=logistics]').forEach(r => {
+    r.checked = r.value === logId;
+  });
+
+  // 渲染對應付款方式
+  const allowedPayIds = PAYMENT_MAP[type] || ['cod','prepay'];
+  const pays = shopDB.payments.filter(p => p.active && allowedPayIds.includes(p.id));
+  const payEl = document.getElementById('paymentSection');
+  if (!payEl) return;
+  payEl.innerHTML = '<div class="section-title">付款方式</div>'
+    + '<div class="radio-group">'
+    + pays.map((p, i) =>
+        `<label class="radio-item" onclick="onPaymentChange('${p.id}')"><input type="radio" name="payment" value="${p.id}" ${i===0?'checked':''}><span class="radio-label">${p.name}</span></label>`
+      ).join('')
+    + '</div>'
+    + '<div id="transferCodeWrap" style="display:none;margin-top:10px">'
+    + '<div class="f-group"><label>匯款後五碼 *</label>'
+    + '<input type="text" id="transferCode" maxlength="5" placeholder="匯款帳號後五碼" style="letter-spacing:4px;font-family:var(--mono);font-size:16px;width:160px"></div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:4px">請先完成匯款再填入後五碼供核對</div>'
+    + '</div>';
+
+  // 觸發第一個付款方式的後五碼判斷
+  if (pays.length > 0) onPaymentChange(pays[0].id);
+
+  // 渲染收件資訊
+  renderShippingInfo(type, logId);
+}
+
+function onPaymentChange(payId) {
+  document.querySelectorAll('input[name=payment]').forEach(r => { r.checked = r.value === payId; });
+  const needCode = payId === 'prepay' || payId === 'transfer_face';
+  const wrap = document.getElementById('transferCodeWrap');
+  if (wrap) wrap.style.display = needCode ? 'block' : 'none';
+}
+
+function renderShippingInfo(type, logId) {
+  const el = document.getElementById('shippingInfoSection');
+  if (!el) return;
+  const nameVal = currentUser ? currentUser.name : '';
+  const phoneVal = currentUser ? currentUser.phone : '';
+
+  if (type === 'delivery') {
+    // 宅配：填地址
+    el.innerHTML = '<div class="section-title">收件資訊</div>'
+      + '<div class="f-group"><label>收件人姓名 *</label><input type="text" id="shipName" value="'+nameVal+'" placeholder="收件人姓名"></div>'
+      + '<div class="f-group"><label>聯絡電話 *</label><input type="tel" id="shipPhone" value="'+phoneVal+'" placeholder="0912-345-678"></div>'
+      + '<div class="f-group"><label>收件地址 *</label><input type="text" id="shipAddr" placeholder="縣市 + 鄉鎮區 + 詳細地址"></div>';
+  } else if (type === 'cvs') {
+    // 超商：選門市
+    const stores = (shopDB.cvs_stores && shopDB.cvs_stores[logId]) || [];
+    const logName = shopDB.logistics.find(l=>l.id===logId)?.name || '超商';
+    let storeHtml = '';
+    if (stores.length === 0) {
+      storeHtml = '<div style="background:#fff8e0;border:1px solid #f0df90;border-radius:8px;padding:10px 14px;font-size:12px;color:#7a6010;margin-bottom:10px">'
+        + '⚠ '+logName+'門市資料尚未匯入，請直接填入門市名稱或代號，店主確認後聯繫您。</div>'
+        + '<div class="f-group"><label>門市名稱或代號</label><input type="text" id="cvsStoreName" placeholder="例如：XX門市 或 門市代號"></div>';
+    } else {
+      storeHtml = '<div class="f-group"><label>選擇門市 *</label>'
+        + '<select id="cvsStoreName" style="width:100%"><option value="">— 請選擇門市 —</option>'
+        + stores.map(s=>`<option value="${s.id}|${s.name}">${s.name}（${s.id}）</option>`).join('')
+        + '</select></div>'
+        + '<div id="storeDetail" style="font-size:12px;color:var(--text3);margin-top:4px"></div>';
+    }
+    el.innerHTML = '<div class="section-title">超商門市</div>'
+      + storeHtml
+      + '<div class="f-group"><label>收件人姓名 *</label><input type="text" id="shipName" value="'+nameVal+'" placeholder="收件人姓名（超商取件用）"></div>'
+      + '<div class="f-group"><label>聯絡電話 *</label><input type="tel" id="shipPhone" value="'+phoneVal+'" placeholder="0912-345-678"></div>';
+  } else if (type === 'face') {
+    // 面交：填備註地點
+    el.innerHTML = '<div class="section-title">面交資訊</div>'
+      + '<div class="f-group"><label>姓名 *</label><input type="text" id="shipName" value="'+nameVal+'" placeholder="您的姓名"></div>'
+      + '<div class="f-group"><label>聯絡電話 *</label><input type="tel" id="shipPhone" value="'+phoneVal+'" placeholder="0912-345-678"></div>'
+      + '<div class="f-group"><label>面交地點或備註（選填）</label><input type="text" id="shipAddr" placeholder="例如：台北車站附近、週末方便、…"></div>';
+  }
+}
+
+// 保留舊版相容（不再被呼叫，但避免其他地方引用報錯）
 function toggleTransferField() {
   const pay = document.querySelector('input[name=payment]:checked')?.value || '';
-  const needsCode = pay === 'prepay' || pay === 'transfer_face';
-  const wrap = document.getElementById('transferCodeWrap');
-  if (wrap) wrap.style.display = needsCode ? 'block' : 'none';
+  onPaymentChange(pay);
 }
 
 function submitOrder() {
-  const shipName = document.getElementById('shipName')?.value.trim();
+  const shipName  = document.getElementById('shipName')?.value.trim();
   const shipPhone = document.getElementById('shipPhone')?.value.trim();
-  const addr = document.getElementById('shipAddr')?.value.trim();
-  if (!shipName) { showToast('❌ 請填寫收件人姓名'); return; }
-  if (!shipPhone) { showToast('❌ 請填寫聯絡電話'); return; }
-  if (!addr) { showToast('❌ 請填寫收件地址'); return; }
   const logEl = document.querySelector('input[name=logistics]:checked');
   const payEl = document.querySelector('input[name=payment]:checked');
-  if (!logEl || !payEl) { showToast('❌ 請選擇配送與付款方式'); return; }
-  // 先付款類型需要後五碼
+  if (!shipName)  { showToast('❌ 請填寫姓名');   return; }
+  if (!shipPhone) { showToast('❌ 請填寫電話');   return; }
+  if (!logEl)     { showToast('❌ 請選擇配送方式'); return; }
+  if (!payEl)     { showToast('❌ 請選擇付款方式'); return; }
+
+  const logId   = logEl.value;
+  const logObj  = shopDB.logistics.find(l => l.id === logId) || {};
+  const logType = logObj.type || 'delivery';
+
+  // 收件地址 / 門市資訊
+  let shipAddr = '';
+  if (logType === 'delivery') {
+    shipAddr = document.getElementById('shipAddr')?.value.trim() || '';
+    if (!shipAddr) { showToast('❌ 請填寫收件地址'); return; }
+  } else if (logType === 'cvs') {
+    const storeEl = document.getElementById('cvsStoreName');
+    shipAddr = storeEl?.value.trim() || '';
+    if (!shipAddr) { showToast('❌ 請填寫或選擇超商門市'); return; }
+    shipAddr = '【' + logObj.name + '】' + shipAddr;
+  } else {
+    shipAddr = document.getElementById('shipAddr')?.value.trim() || '（面交）';
+  }
+
+  // 先付款後五碼
   const needsCode = payEl.value === 'prepay' || payEl.value === 'transfer_face';
   const transferCode = document.getElementById('transferCode')?.value.trim() || '';
   if (needsCode && !transferCode) { showToast('❌ 請填寫匯款後五碼'); return; }
-  if (needsCode && transferCode.length !== 5) { showToast('❌ 匯款後五碼需為5位數字'); return; }
+  if (needsCode && transferCode.length !== 5) { showToast('❌ 匯款後五碼需為5碼'); return; }
+
   const disc = isMemberRole() ? getTierDiscount(currentUser) : 0;
   let subtotal = 0;
   const items = cart.map(c => {
@@ -1031,32 +1170,39 @@ function submitOrder() {
     return { id: c.id, name: c.name, qty: c.qty, price: eff, preorder: c.preorder };
   });
   const discAmt = isMemberRole() ? Math.round(subtotal * disc / 100) : 0;
-  const final = subtotal - discAmt;
+  const final   = subtotal - discAmt;
   const hasPreorder = cart.some(c => c.preorder);
   const order = {
     id: genOrderId(),
-    userId: currentUser ? currentUser.id : 0,
-    userName: shipName,
+    userId:    currentUser ? currentUser.id : 0,
+    userName:  shipName,
     userPhone: shipPhone,
     items, subtotal, discount: discAmt, finalTotal: final,
-    status: 'pending', logistics: logEl.value, logisticsNum: '',
-    payment: payEl.value,
-    payStatus: payEl.value === 'cod' ? 'unpaid' : (needsCode ? 'pending_verify' : 'pending_payment'),
+    status:    'pending',
+    logistics: logId,
+    logisticsName: logObj.name || logId,
+    logisticsType: logType,
+    logisticsNum:  '',
+    payment:   payEl.value,
+    payStatus: payEl.value === 'cod' || payEl.value === 'face_pay'
+               ? 'unpaid'
+               : needsCode ? 'pending_verify' : 'pending_payment',
     transferCode: needsCode ? transferCode : '',
     note: '', createdAt: new Date().toISOString().split('T')[0],
-    isPreorder: hasPreorder, deposit: hasPreorder ? Math.round(final*0.5) : 0,
-    address: addr
+    isPreorder: hasPreorder,
+    deposit:    hasPreorder ? Math.round(final * 0.5) : 0,
+    address:    shipAddr
   };
   shopDB.orders.push(order);
   if (currentUser) {
     const u = shopDB.users.find(x => x.id === currentUser.id);
-    if (u && order.payStatus === 'pending_verify') u.totalSpent += final;
+    if (u && (order.payStatus === 'pending_verify' || order.payStatus === 'paid')) u.totalSpent += final;
   }
   saveShopDB();
   cart = [];
   closeModal('cartModal');
   const msg = needsCode
-    ? `✅ 訂單送出！${order.id}｜後五碼 ${transferCode} 已記錄，待管理員核對`
+    ? `✅ 訂單送出！${order.id}｜後五碼 ${transferCode} 已記錄，待核對`
     : `✅ 訂單送出！${order.id}`;
   showToast(msg, 5000);
   renderApp();
