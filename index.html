@@ -423,7 +423,11 @@ body { overflow-y: auto; }
     </div>
     <div class="modal-body">
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <div class="f-group" style="flex:1;margin:0"><label>輸入電話號碼</label><input type="tel" id="queryPhone" placeholder="0912-345-678" style="margin-top:6px"></div>
+        <div class="f-group" style="flex:1;margin:0">
+          <label>電話號碼 或 訂單編號</label>
+          <input type="text" id="queryPhone" placeholder="0912345678 或 ORD-2024-001" style="margin-top:6px"
+            onkeydown="if(event.key==='Enter')doOrderQuery()">
+        </div>
         <button class="btn-full" style="width:auto;padding:0 20px;margin-top:24px;border-radius:8px" onclick="doOrderQuery()">🔍 查詢</button>
       </div>
       <div id="orderQueryResult"></div>
@@ -1464,28 +1468,101 @@ function renderMemberModal() {
 // ORDER QUERY (訂單查詢 - 訪客+會員用電話)
 // ═══════════════════════════════════════
 function doOrderQuery() {
-  const phone = document.getElementById('queryPhone').value.trim().replace(/[-\s]/g,'');
-  if (!phone || phone.length < 8) { document.getElementById('orderQueryResult').innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 請輸入完整電話號碼</p>'; return; }
-  const matched = shopDB.orders.filter(o => (o.userPhone||'').replace(/[-\s]/g,'') === phone);
+  const raw = document.getElementById('queryPhone').value.trim();
+  if (!raw) {
+    document.getElementById('orderQueryResult').innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 請輸入電話號碼或訂單編號</p>';
+    return;
+  }
   const res = document.getElementById('orderQueryResult');
-  if (matched.length === 0) { res.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">查無此電話號碼的訂單記錄</div>'; return; }
-  const statusMap = { pending:'<span class="badge badge-warn">待確認</span>', confirmed:'<span class="badge badge-info">已確認</span>', packing:'<span class="badge badge-info">備貨中</span>', shipping:'<span class="badge badge-info">運送中</span>', delivered:'<span class="badge badge-ok">已到貨</span>', cancelled:'<span class="badge" style="background:#fef0f0;color:#c04040">已取消</span>' };
-  const payMap = { paid:'<span class="badge badge-ok">已付款</span>', unpaid:'<span class="badge badge-warn" style="background:#fef0f0;color:#c04040">未付款</span>', pending_payment:'<span class="badge badge-warn">待付款</span>', pending_verify:'<span class="badge badge-warn">核對中</span>' };
-  const logMap = { blackcat:'黑貓宅急便', '711':'7-11超商', family:'全家超商', face:'面交', hilife:'萊爾富', ok:'OK超商' };
-  res.innerHTML = `<div style="font-size:12px;color:var(--text3);margin-bottom:10px">共找到 ${matched.length} 筆訂單</div>` +
-    matched.reverse().map(o => `
-    <div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+
+  // 重新從 localStorage 讀取最新資料（確保拿到後台最新訂單）
+  const freshDB = loadShopDB();
+  const allOrders = freshDB.orders || [];
+
+  // 除去符號空格
+  const clean = raw.replace(/[-\s]/g, '');
+
+  let matched = [];
+
+  // 1. 先嘗試用訂單編號查（ORD 開頭）
+  if (raw.toUpperCase().startsWith('ORD')) {
+    matched = allOrders.filter(o => o.id && o.id.toUpperCase().includes(raw.toUpperCase()));
+  }
+
+  // 2. 電話號碼查
+  if (matched.length === 0) {
+    matched = allOrders.filter(o => {
+      const phone = (o.userPhone || '').replace(/[-\s]/g, '');
+      return phone && phone === clean;
+    });
+  }
+
+  // 3. 如果還是沒找到，嘗試比對登入會員的電話（針對舊訂單沒有 userPhone 的情況）
+  if (matched.length === 0) {
+    matched = allOrders.filter(o => {
+      if (o.userPhone) return false; // 有 userPhone 但前面沒比到就跳過
+      const user = freshDB.users.find(u => u.id === o.userId);
+      return user && (user.phone || '').replace(/[-\s]/g, '') === clean;
+    });
+  }
+
+  if (matched.length === 0) {
+    // 顯示診斷訊息
+    const totalOrders = allOrders.length;
+    res.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">
+      查無符合的訂單記錄<br>
+      <span style="font-size:11px">（系統共有 ${totalOrders} 筆訂單）</span>
+    </div>
+    <div style="background:var(--pink-light);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--text2);margin-top:8px">
+      💡 <strong>查詢提示：</strong><br>
+      · 輸入下單時填寫的電話號碼（含區碼，如：0912345678）<br>
+      · 或輸入訂單編號（如：ORD-2024-001）<br>
+      · 若為訪客下單，請確認使用相同電話號碼
+    </div>`;
+    return;
+  }
+
+  const statusMap = {
+    pending:   '<span class="badge badge-warn">待確認</span>',
+    confirmed: '<span class="badge badge-info">已確認</span>',
+    packing:   '<span class="badge badge-info">備貨中</span>',
+    shipping:  '<span class="badge badge-info">運送中</span>',
+    delivered: '<span class="badge badge-ok">已到貨</span>',
+    cancelled: '<span class="badge" style="background:#fef0f0;color:#c04040">已取消</span>'
+  };
+  const payMap = {
+    paid:            '<span class="badge badge-ok">已付款</span>',
+    unpaid:          '<span class="badge badge-warn" style="background:#fef0f0;color:#c04040">未付款</span>',
+    pending_payment: '<span class="badge badge-warn">待付款</span>',
+    pending_verify:  '<span class="badge badge-warn">匯款核對中</span>'
+  };
+  const logMap = {
+    blackcat:'黑貓宅急便', hsinchu:'新竹物流',
+    '711':'7-11超商', family:'全家超商',
+    face:'面交', hilife:'萊爾富', ok:'OK超商'
+  };
+
+  const sorted = [...matched].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  res.innerHTML = `<div style="font-size:12px;color:var(--text3);margin-bottom:10px">共找到 ${sorted.length} 筆訂單</div>`
+    + sorted.map(o => `
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:#fff">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-family:var(--mono);font-weight:700;font-size:13px;color:var(--accent-dark)">${o.id}</span>
         <span style="font-size:11px;color:var(--text3)">${o.createdAt}</span>
       </div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${o.items.map(i=>i.name+'×'+i.qty).join('、')}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
-        <div style="display:flex;gap:6px;align-items:center">${statusMap[o.status]||o.status} ${payMap[o.payStatus]||''}</div>
-        <div style="font-weight:700;font-size:14px;color:var(--accent-dark)">${fmt(o.finalTotal)}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">${o.items.map(i => i.name + '×' + i.qty).join('、')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${statusMap[o.status] || o.status}
+          ${payMap[o.payStatus] || ''}
+        </div>
+        <div style="font-weight:700;font-size:15px;color:var(--accent-dark)">${fmt(o.finalTotal)}</div>
       </div>
-      ${o.logisticsNum?`<div style="margin-top:6px;font-size:11px;color:var(--text3)">📦 ${logMap[o.logistics]||o.logistics} 單號：<span style="font-family:var(--mono)">${o.logisticsNum}</span></div>`:''}
-      ${o.transferCode?`<div style="margin-top:4px;font-size:11px;color:var(--text3)">💳 匯款後五碼：<span style="font-family:var(--mono)">${o.transferCode}</span></div>`:''}
+      ${o.isPreorder ? `<div style="font-size:11px;color:var(--warning);margin-bottom:4px">📦 預購訂金：${fmt(o.deposit)}（餘款：${fmt(o.finalTotal - o.deposit)}）</div>` : ''}
+      ${o.address ? `<div style="font-size:11px;color:var(--text3)">📍 ${o.address}</div>` : ''}
+      ${o.logisticsNum ? `<div style="font-size:11px;color:var(--text3);margin-top:3px">🚚 ${logMap[o.logistics] || o.logistics} 單號：<span style="font-family:var(--mono)">${o.logisticsNum}</span></div>` : `<div style="font-size:11px;color:var(--text3);margin-top:3px">🚚 ${logMap[o.logistics] || o.logistics}</div>`}
+      ${o.transferCode ? `<div style="font-size:11px;color:var(--text3);margin-top:3px">💳 匯款後五碼：<span style="font-family:var(--mono)">${o.transferCode}</span></div>` : ''}
     </div>`).join('');
 }
 
