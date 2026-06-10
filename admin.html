@@ -145,12 +145,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
     <div class="login-title">三麗鷗中毒日記</div>
     <div class="login-sub">後台管理系統</div>
     <div class="login-field">
+      <label>帳號（Email）</label>
+      <input type="email" id="loginEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter')document.getElementById('loginPwd').focus();">
+    </div>
+    <div class="login-field">
       <label>密碼</label>
       <input type="password" id="loginPwd" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin();" autofocus>
     </div>
     <button class="login-btn" onclick="doLogin()">登入後台</button>
     <div class="login-err" id="loginErr"></div>
-    <div class="login-hint">預設密碼：<strong>admin888</strong></div>
+    <div class="login-hint">管理員：admin@test.com / admin888<br>各角色人員請使用指定帳號登入</div>
   </div>
 </div>
 
@@ -163,49 +167,49 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
   </div>
   <nav class="nav">
     <div class="nav-section">商店管理</div>
-    <button class="nav-btn active" onclick="showPanel('overview',this)">
+    <button class="nav-btn active" data-panel="overview" onclick="showPanel('overview',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       總覽
     </button>
-    <button class="nav-btn" onclick="showPanel('orders',this)">
+    <button class="nav-btn" data-panel="orders" onclick="showPanel('orders',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       訂單管理
     </button>
-    <button class="nav-btn" onclick="showPanel('members',this)">
+    <button class="nav-btn" data-panel="members" onclick="showPanel('members',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       會員管理
     </button>
-    <button class="nav-btn" onclick="showPanel('requests',this)">
+    <button class="nav-btn" data-panel="requests" onclick="showPanel('requests',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       待處理申請 <span id="requestsBadge" style="background:#e05555;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;display:none">0</span>
     </button>
-    <button class="nav-btn" onclick="showPanel('accounting',this)">
+    <button class="nav-btn" data-panel="accounting" onclick="showPanel('accounting',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       帳務報表
     </button>
     <div class="nav-section">商品設定</div>
-    <button class="nav-btn" onclick="showPanel('prices',this)">
+    <button class="nav-btn" data-panel="prices" onclick="showPanel('prices',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
       商品價格
     </button>
-    <button class="nav-btn" onclick="showPanel('products',this)">
+    <button class="nav-btn" data-panel="products" onclick="showPanel('products',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>
       商品管理
     </button>
-    <button class="nav-btn" onclick="showPanel('categories',this)">
+    <button class="nav-btn" data-panel="categories" onclick="showPanel('categories',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
       分類管理
     </button>
     <div class="nav-section">系統</div>
-    <button class="nav-btn" onclick="showPanel('cloudinary',this)">
+    <button class="nav-btn" data-panel="cloudinary" onclick="showPanel('cloudinary',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
       Cloudinary
     </button>
-    <button class="nav-btn" onclick="showPanel('display',this)">
+    <button class="nav-btn" data-panel="display" onclick="showPanel('display',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
       展示設定
     </button>
-    <button class="nav-btn" onclick="showPanel('shopsettings',this)">
+    <button class="nav-btn" data-panel="shopsettings" onclick="showPanel('shopsettings',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       商店設定
     </button>
@@ -218,6 +222,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
   <div class="topbar">
     <div class="page-title" id="pageTitle">總覽</div>
     <div class="topbar-actions">
+      <span id="topbarUserBadge" style="font-size:12px;color:var(--text2);padding:4px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)"></span>
       <button class="btn btn-ghost btn-sm" onclick="changePassword()">🔑 改密碼</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()">登出</button>
       <button class="btn btn-success btn-sm" onclick="exportConfig()">⬇ config.json</button>
@@ -310,8 +315,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
           <input type="text" id="memberSearch" placeholder="搜尋姓名/Email…" oninput="renderMembers()">
         </div>
         <select id="memberRoleFilter" onchange="renderMembers()" style="width:auto">
-          <option value="">全部角色</option><option value="member">一般會員</option>
-          <option value="wholesale">批發會員</option><option value="admin">管理員</option>
+          <option value="">全部角色</option>
+          <option value="member">一般會員</option>
+          <option value="wholesale">批發會員</option>
+          <option value="warehouse">倉管</option>
+          <option value="marketing">行銷</option>
+          <option value="accounting">會計</option>
+          <option value="purchase">採購</option>
+          <option value="admin">管理員</option>
         </select>
         <select id="memberStatusFilter" onchange="renderMembers()" style="width:auto">
           <option value="">全部狀態</option><option value="active">已啟用</option>
@@ -571,9 +582,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       <div class="form-group"><label>電話</label><input type="tel" id="mPhone" placeholder="0912-345-678"></div>
       <div class="form-group"><label>角色</label>
         <select id="mRole">
-          <option value="member">一般會員</option>
-          <option value="wholesale">🏭 批發會員</option>
-          <option value="admin">管理員</option>
+          <optgroup label="── 一般會員 ──">
+            <option value="member">一般會員</option>
+            <option value="wholesale">🏭 批發會員</option>
+          </optgroup>
+          <optgroup label="── 內部人員 ──">
+            <option value="warehouse">倉管</option>
+            <option value="marketing">行銷</option>
+            <option value="accounting">會計</option>
+            <option value="purchase">採購</option>
+          </optgroup>
+          <optgroup label="── 管理 ──">
+            <option value="admin">管理員</option>
+          </optgroup>
         </select>
       </div>
       <div class="form-group" id="mPwdWrap"><label id="mPwdLabel">密碼</label><input type="password" id="mPwd" placeholder="留空則不修改（編輯時）"></div>
@@ -920,10 +941,15 @@ function renderMembers(){
     disabled:'<span class="tag" style="background:var(--danger-light);color:var(--danger)">停用</span>'
   };
   const roleTag={
-    admin:'<span class="tag tag-info">管理員</span>',
-    member:'<span class="tag" style="background:var(--surface2);color:var(--text2)">一般會員</span>',
-    wholesale:'<span class="tag" style="background:#e8f0fe;color:#2850b0;border:1px solid #c0d4f8">🏭 批發</span>',
+    admin:      '<span class="tag tag-info">管理員</span>',
+    member:     '<span class="tag" style="background:var(--surface2);color:var(--text2)">一般會員</span>',
+    wholesale:  '<span class="tag" style="background:#e8f0fe;color:#2850b0;border:1px solid #c0d4f8">🏭 批發</span>',
+    warehouse:  '<span class="tag" style="background:#eef7f2;color:#2d8a5e">📦 倉管</span>',
+    marketing:  '<span class="tag" style="background:#fce4ef;color:#c0326a">📣 行銷</span>',
+    accounting: '<span class="tag" style="background:#fffbf0;color:#8a6010">💰 會計</span>',
+    purchase:   '<span class="tag" style="background:#f0f0ff;color:#4848b0">🛒 採購</span>',
   };
+  const staffRoles = ['warehouse','marketing','accounting','purchase','admin'];
   document.getElementById('membersTbody').innerHTML = users.length === 0
     ? '<tr><td colspan=9 style="text-align:center;color:var(--text3);padding:30px">沒有符合條件的會員</td></tr>'
     : users.map(u=>`<tr style="cursor:pointer" title="點擊編輯">
@@ -1336,84 +1362,140 @@ function exportConfig(){
 
 // Auth
 // 簡易雜湊（不依賴 crypto.subtle，相容 file:// 開啟）
-function simpleHash(str) {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) + h) ^ str.charCodeAt(i);
-    h = h >>> 0;
-  }
-  return h.toString(16);
-}
+// ══════════════════════════════════════════
+// 角色 → 可存取的頁面
+// ══════════════════════════════════════════
+const ROLE_PAGES = {
+  admin:      ['overview','orders','members','requests','accounting','prices','products','categories','cloudinary','display','shopsettings'],
+  warehouse:  ['prices','products','categories'],
+  marketing:  ['products','categories','display'],
+  accounting: ['orders','accounting'],
+  purchase:   ['prices','products','categories','cloudinary'],
+};
 
-function doLogin(){
-  const pwd = document.getElementById('loginPwd').value;
+let currentAdminUser = null;
+
+function doLogin() {
+  const email = (document.getElementById('loginEmail')||{value:''}).value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
   const errEl = document.getElementById('loginErr');
   if (!pwd) { errEl.textContent = '請輸入密碼'; return; }
-  const hash = simpleHash(pwd);
-  const stored = localStorage.getItem('admin_pwd_hash');
-  const defaultHash = simpleHash('admin888');
-  const correct = stored ? hash === stored : hash === defaultHash;
-  if (correct) {
-    sessionStorage.setItem('admin_authed', Date.now().toString());
+
+  const staffRoles = ['admin','warehouse','marketing','accounting','purchase'];
+  // 嘗試用 email 登入
+  let user = null;
+  if (email) {
+    user = shopDB.users.find(u =>
+      u.email === email && u.pwd === pwd && staffRoles.includes(u.role) && u.status === 'active'
+    );
+  }
+  // 相容舊版：如果沒有 email 欄位或只填了密碼，以管理員密碼方式登入
+  if (!user) {
+    const adminUser = shopDB.users.find(u => u.role === 'admin' && u.status === 'active');
+    if (adminUser && adminUser.pwd === pwd) user = adminUser;
+  }
+
+  if (user) {
+    currentAdminUser = user;
+    sessionStorage.setItem('admin_authed_user', JSON.stringify({ id: user.id, role: user.role, name: user.name }));
     document.getElementById('loginOverlay').classList.add('hidden');
     errEl.textContent = '';
-  } else {
-    errEl.textContent = '密碼錯誤，請重試';
-    document.getElementById('loginPwd').value = '';
-    document.getElementById('loginPwd').focus();
+    buildAdminNav();
+    const pages = ROLE_PAGES[user.role] || ROLE_PAGES.admin;
+    const firstBtn = document.querySelector(`.nav-btn[data-panel="${pages[0]}"]`);
+    showPanel(pages[0], firstBtn);
+    updateTopbarUser();
+    return;
   }
+
+  errEl.textContent = '帳號或密碼錯誤，或無後台存取權限';
+  document.getElementById('loginPwd').value = '';
+  document.getElementById('loginPwd').focus();
 }
 
 function checkAuth() {
-  const authed = sessionStorage.getItem('admin_authed');
-  if (authed && Date.now() - parseInt(authed) < 8 * 60 * 60 * 1000) {
-    document.getElementById('loginOverlay').classList.add('hidden');
+  const saved = sessionStorage.getItem('admin_authed_user');
+  if (saved) {
+    try {
+      const info = JSON.parse(saved);
+      const user = shopDB.users.find(u => u.id === info.id && u.status === 'active');
+      if (user && ROLE_PAGES[user.role]) {
+        currentAdminUser = user;
+        document.getElementById('loginOverlay').classList.add('hidden');
+        buildAdminNav();
+        updateTopbarUser();
+        return;
+      }
+    } catch(e) {}
+  }
+}
+
+function buildAdminNav() {
+  if (!currentAdminUser) return;
+  const pages = ROLE_PAGES[currentAdminUser.role] || ROLE_PAGES.admin;
+  document.querySelectorAll('.nav-btn[data-panel]').forEach(btn => {
+    btn.style.display = pages.includes(btn.dataset.panel) ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-section').forEach(sec => {
+    let next = sec.nextElementSibling;
+    let hasVisible = false;
+    while (next && !next.classList.contains('nav-section')) {
+      if (next.tagName === 'BUTTON' && next.style.display !== 'none') hasVisible = true;
+      next = next.nextElementSibling;
+    }
+    sec.style.display = hasVisible ? '' : 'none';
+  });
+}
+
+function updateTopbarUser() {
+  if (!currentAdminUser) return;
+  const roleNames = { admin:'管理員', warehouse:'倉管', marketing:'行銷', accounting:'會計', purchase:'採購' };
+  const titleEl = document.getElementById('topbarUserBadge');
+  if (titleEl) {
+    titleEl.textContent = `${currentAdminUser.name}（${roleNames[currentAdminUser.role]||currentAdminUser.role}）`;
   }
 }
 
 function changePassword() {
-  const current = prompt('請輸入目前的密碼：');
+  if (!currentAdminUser || currentAdminUser.role !== 'admin') { toast('僅管理員可修改密碼'); return; }
+  const current = prompt('請輸入目前密碼：');
   if (!current) return;
-  const currentHash = simpleHash(current);
-  const stored = localStorage.getItem('admin_pwd_hash');
-  const defaultHash = simpleHash('admin888');
-  const correct = stored ? currentHash === stored : currentHash === defaultHash;
-  if (!correct) { toast('目前密碼錯誤'); return; }
+  const u = shopDB.users.find(x => x.id === currentAdminUser.id);
+  if (!u || u.pwd !== current) { toast('目前密碼錯誤'); return; }
   const newPwd = prompt('請輸入新密碼（至少6位）：');
   if (!newPwd || newPwd.length < 6) { toast('新密碼至少需要6位數'); return; }
-  const confirm2 = prompt('請再次輸入新密碼確認：');
-  if (newPwd !== confirm2) { toast('兩次輸入的密碼不同'); return; }
-  localStorage.setItem('admin_pwd_hash', simpleHash(newPwd));
+  if (newPwd !== prompt('再次輸入確認：')) { toast('兩次輸入不同'); return; }
+  u.pwd = newPwd;
+  saveShopDB();
   toast('✓ 密碼已更新');
 }
 
 function logout() {
   if (!confirm('確定要登出嗎？')) return;
+  sessionStorage.removeItem('admin_authed_user');
   sessionStorage.removeItem('admin_authed');
+  currentAdminUser = null;
   location.reload();
 }
-
 // Close modals on bg click
 document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open');}));
 
 // Init
 try {
   loadState();
-  shopDB=loadShopDB();
+  shopDB = loadShopDB();
   buildColorRow();
   updateStats();
   updateFilterDropdowns();
   updateFetchBtn();
-  // 清除舊版 SHA-256 hash（若長度為64代表舊格式，重設）
-  const oldHash = localStorage.getItem('admin_pwd_hash');
-  if (oldHash && oldHash.length === 64) localStorage.removeItem('admin_pwd_hash');
   checkAuth();
   renderOverview();
   updateRequestsBadge();
-  document.addEventListener('input',function(e){if(e.target.id==='tagName'||e.target.id==='cloudName')updateTagPreview();});
+  document.addEventListener('input', function(e) {
+    if (e.target.id === 'tagName' || e.target.id === 'cloudName') updateTagPreview();
+  });
 } catch(initErr) {
   console.error('Init error:', initErr);
-  // 嘗試清除損壞的 localStorage 資料並重試
   try { localStorage.removeItem('sanrio_shop_db'); localStorage.removeItem('doll_shop_admin_v2'); location.reload(); } catch(e) {}
 }
 </script>

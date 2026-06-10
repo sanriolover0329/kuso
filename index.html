@@ -257,6 +257,37 @@ body { overflow-y: auto; }
 .badge-info { background: #e8f0fe; color: #2850b0; }
 .badge-pink { background: var(--surface2); color: var(--accent-dark); }
 
+/* ── 配送大類選擇 ── */
+.log-cat-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.log-cat-btn {
+  flex: 1; min-width: 80px; padding: 10px 8px;
+  border: 2px solid var(--border); border-radius: 10px;
+  background: var(--surface2); cursor: pointer; text-align: center;
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  color: var(--text2); transition: all .2s; position: relative;
+}
+.log-cat-btn:hover { border-color: var(--accent2); color: var(--text); }
+.log-cat-btn.active {
+  border-color: var(--accent); background: var(--surface2);
+  color: var(--accent-dark); font-weight: 600;
+  box-shadow: 0 0 0 3px var(--pink-light);
+}
+.log-cat-btn .cat-icon { font-size: 20px; display: block; margin-bottom: 3px; }
+.log-cat-btn .cat-fee { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.log-sub-panel { display: none; animation: slideDown .18s ease; }
+.log-sub-panel.open { display: block; }
+@keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.log-sub-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+  margin-bottom: 8px; cursor: pointer; transition: all .2s; background: var(--surface);
+}
+.log-sub-item:hover { border-color: var(--accent2); background: var(--surface2); }
+.log-sub-item.selected { border-color: var(--accent); background: #fff5fb; }
+.log-sub-item input[type=radio] { accent-color: var(--accent); flex-shrink: 0; }
+.log-sub-name { flex: 1; font-size: 13px; font-weight: 500; }
+.log-sub-fee { font-size: 11px; }
+
 /* ── TOAST ── */
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent-dark); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; z-index: 999; display: none; box-shadow: 0 4px 20px rgba(180,80,130,.3); max-width: 300px; }
 
@@ -990,7 +1021,7 @@ function renderCartModal() {
   const hasPreorder = cart.some(c => c.preorder);
   const deposit = hasPreorder ? Math.round(finalTotal * 0.5) : 0;
 
-  // 配送方式（依 type 分組）
+  // 配送方式（兩層：大類 → 廠商）
   const activeLogs = shopDB.logistics.filter(l => l.active);
   const deliveryLogs = activeLogs.filter(l => l.type === 'delivery');
   const cvsLogs     = activeLogs.filter(l => l.type === 'cvs');
@@ -999,28 +1030,41 @@ function renderCartModal() {
   const firstType = firstLog.type || 'delivery';
   const firstId   = firstLog.id   || '';
 
-  const logRadio = (l, checked) => {
-    const feeHtml = l.fee > 0
-      ? `<span style="color:var(--text3);font-size:11px;margin-left:6px">+${fmt(l.fee)}</span>`
-      : `<span style="color:var(--success);font-size:11px;margin-left:6px"> 免費</span>`;
-    return `<label class="radio-item" onclick="onLogisticsChange('${l.type}','${l.id}')">
-      <input type="radio" name="logistics" value="${l.id}" ${checked ? 'checked' : ''}>
-      <span class="radio-label">${l.name}${feeHtml}</span></label>`;
-  };
+  // 建立大類按鈕（只顯示有啟用廠商的類別）
+  const categories = [];
+  if (deliveryLogs.length > 0) categories.push({ type:'delivery', icon:'🚚', label:'宅配',   minFee: Math.min(...deliveryLogs.map(l=>l.fee)) });
+  if (cvsLogs.length > 0)      categories.push({ type:'cvs',      icon:'🏪', label:'超商取貨', minFee: Math.min(...cvsLogs.map(l=>l.fee)) });
+  if (faceLogs.length > 0)     categories.push({ type:'face',     icon:'🤝', label:'面交',    minFee: 0 });
 
-  let logHtml = '';
-  if (deliveryLogs.length > 0) {
-    logHtml += `<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;padding:6px 0 3px">🚚 宅配</div>
-    <div class="radio-group" style="margin-bottom:8px">${deliveryLogs.map((l,i) => logRadio(l, i===0 && firstType==='delivery')).join('')}</div>`;
-  }
-  if (cvsLogs.length > 0) {
-    logHtml += `<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;padding:6px 0 3px">🏪 超商取貨</div>
-    <div class="radio-group" style="margin-bottom:8px">${cvsLogs.map((l,i) => logRadio(l, deliveryLogs.length===0 && i===0)).join('')}</div>`;
-  }
-  if (faceLogs.length > 0) {
-    logHtml += `<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;padding:6px 0 3px">🤝 面交</div>
-    <div class="radio-group">${faceLogs.map((l,i) => logRadio(l, deliveryLogs.length===0 && cvsLogs.length===0 && i===0)).join('')}</div>`;
-  }
+  const catBtns = categories.map(cat => {
+    const feeText = cat.minFee > 0 ? `+${fmt(cat.minFee)}起` : '免費';
+    return `<button class="log-cat-btn${cat.type===firstType?' active':''}"
+      onclick="selectLogCat('${cat.type}')">
+      <span class="cat-icon">${cat.icon}</span>${cat.label}
+      <div class="cat-fee">${feeText}</div>
+    </button>`;
+  }).join('');
+
+  // 建立每個大類的廠商子選單
+  const subPanels = {
+    delivery: deliveryLogs, cvs: cvsLogs, face: faceLogs
+  };
+  const subHtml = Object.entries(subPanels).map(([type, logs]) => {
+    if (!logs.length) return '';
+    const items = logs.map((l, i) => {
+      const isFirst = type === firstType && i === 0;
+      const feeHtml = l.fee > 0
+        ? `<span class="log-sub-fee" style="color:var(--text3)">+${fmt(l.fee)}</span>`
+        : `<span class="log-sub-fee" style="color:var(--success)">免運</span>`;
+      return `<div class="log-sub-item${isFirst?' selected':''}" onclick="selectLogItem('${type}','${l.id}',this)">
+        <input type="radio" name="logistics" value="${l.id}" ${isFirst?'checked':''}>
+        <span class="log-sub-name">${l.name}</span>${feeHtml}
+      </div>`;
+    }).join('');
+    return `<div class="log-sub-panel${type===firstType?' open':''}" id="log-sub-${type}">${items}</div>`;
+  }).join('');
+
+  const logHtml = `<div class="log-cat-row">${catBtns}</div>${subHtml}`;
 
   body.innerHTML = `
     <div>${itemsHtml}</div>
@@ -1028,16 +1072,22 @@ function renderCartModal() {
       <div class="summary-row"><span class="label">商品小計</span><span>${fmt(subtotal)}</span></div>
       ${isWholesale() ? `<div class="summary-row"><span class="label" style="color:#2850b0">🏭 批發價格已套用</span><span style="color:#2850b0">依數量階梯計算</span></div>` : ''}
       ${isMemberRole() && disc > 0 ? `<div class="summary-row"><span class="label">會員折扣 (${disc}%)</span><span style="color:var(--success)">−${fmt(discAmt)}</span></div>` : ''}
-      ${hasPreorder ? `<div class="summary-row"><span class="label">⚠ 預購訂金 (50%)</span><span style="color:var(--warning)">${fmt(deposit)}</span></div>` : ''}
-      <div class="summary-row total"><span>訂單總計</span><span>${fmt(finalTotal)}</span></div>
+      ${hasPreorder ? `<div class="summary-row"><span class="label">📦 預購訂金 (50%)</span><span style="color:var(--warning);font-weight:700">${fmt(deposit)}</span></div>` : ''}
+      <div class="summary-row total"><span>${hasPreorder ? '今日應付訂金' : '訂單總計'}</span><span>${fmt(hasPreorder ? deposit : finalTotal)}</span></div>
     </div>
-    ${hasPreorder ? `<div class="preorder-notice">⚠ 含預購商品，需先支付 ${fmt(deposit)} 訂金，餘款於出貨前付清</div>` : ''}
+    ${hasPreorder ? `<div style="background:#fff8e0;border:1.5px solid #f0df90;border-radius:10px;padding:14px 16px;margin-top:12px;line-height:1.8;font-size:13px;color:#6a5010">
+      <div style="font-weight:700;margin-bottom:6px;font-size:14px">📦 預購說明</div>
+      <div>・本次下單含<strong>預購商品</strong>，需先支付 <strong style="color:#e08020">${fmt(deposit)}</strong> 訂金</div>
+      <div>・訂金確認後，出貨人員將主動與您聯繫餘款付款方式</div>
+      <div>・剩餘款項 ${fmt(finalTotal - deposit)} 於商品到貨前付清</div>
+      <div style="margin-top:6px;font-size:11px;color:#9a8040">付款方式限「先付款後出貨」類型，確保訂金到位後盡快安排備貨</div>
+    </div>` : ''}
     <div class="checkout-section">
       <div class="section-title">配送方式</div>
       ${logHtml}
       <div id="paymentSection" style="margin-top:16px"></div>
       <div id="shippingInfoSection" style="margin-top:16px"></div>
-      <button class="btn-full" style="margin-top:16px" onclick="submitOrder()">🌸 確認下單</button>
+      <button class="btn-full" style="margin-top:16px" onclick="submitOrder()">🌸 ${hasPreorder ? '確認下單並支付訂金' : '確認下單'}</button>
       ${!currentUser ? `<p style="text-align:center;font-size:12px;color:var(--text3);margin-top:8px">訪客可直接下單，
         <button onclick="closeModal('cartModal');openAuthModal()"
           style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;text-decoration:underline">登入</button>可享會員折扣</p>` : ''}
@@ -1060,6 +1110,43 @@ function removeFromCart(id) {
   renderCartModal();
 }
 
+// 點選大類按鈕（展開子選單）
+function selectLogCat(type) {
+  // 切換大類按鈕 active 狀態
+  document.querySelectorAll('.log-cat-btn').forEach(b => b.classList.remove('active'));
+  const catBtn = document.querySelector(`.log-cat-btn[onclick*="'${type}'"]`);
+  if (catBtn) catBtn.classList.add('active');
+
+  // 展開對應子選單，收起其他
+  document.querySelectorAll('.log-sub-panel').forEach(p => p.classList.remove('open'));
+  const panel = document.getElementById('log-sub-' + type);
+  if (panel) panel.classList.add('open');
+
+  // 自動選第一個廠商
+  const firstRadio = panel && panel.querySelector('input[type=radio]');
+  if (firstRadio) {
+    firstRadio.checked = true;
+    // 更新 selected 樣式
+    panel.querySelectorAll('.log-sub-item').forEach(el => el.classList.remove('selected'));
+    firstRadio.closest('.log-sub-item').classList.add('selected');
+    onLogisticsChange(type, firstRadio.value);
+  }
+}
+
+// 點選廠商子項目
+function selectLogItem(type, logId, el) {
+  // 更新同組 selected 樣式
+  const panel = document.getElementById('log-sub-' + type);
+  if (panel) panel.querySelectorAll('.log-sub-item').forEach(i => i.classList.remove('selected'));
+  if (el) el.classList.add('selected');
+
+  // 選中 radio
+  const radio = el && el.querySelector('input[type=radio]');
+  if (radio) radio.checked = true;
+
+  onLogisticsChange(type, logId);
+}
+
 // 付款方式依配送類型對應
 const PAYMENT_MAP = {
   delivery: ['cod', 'prepay'],           // 宅配：貨到付款、先付款後出貨
@@ -1073,12 +1160,26 @@ function onLogisticsChange(type, logId) {
     r.checked = r.value === logId;
   });
 
-  // 渲染對應付款方式
-  const allowedPayIds = PAYMENT_MAP[type] || ['cod','prepay'];
+  const hasPreorder = cart.some(c => c.preorder);
+
+  // 預購商品：只允許先付款類型，不可貨到付款
+  let allowedPayIds = PAYMENT_MAP[type] || ['cod','prepay'];
+  if (hasPreorder) {
+    allowedPayIds = allowedPayIds.filter(id => id !== 'cod' && id !== 'face_pay');
+    if (allowedPayIds.length === 0) allowedPayIds = ['prepay'];
+  }
+
   const pays = shopDB.payments.filter(p => p.active && allowedPayIds.includes(p.id));
   const payEl = document.getElementById('paymentSection');
   if (!payEl) return;
+
+  const preorderPayNote = hasPreorder
+    ? `<div style="background:#fff0d8;border:1px solid #f0d090;border-radius:7px;padding:8px 12px;font-size:11px;color:#7a5010;margin-bottom:8px">
+        ⚠ 預購商品不支援貨到付款，請先行付款確保訂單成立
+       </div>` : '';
+
   payEl.innerHTML = '<div class="section-title">付款方式</div>'
+    + preorderPayNote
     + '<div class="radio-group">'
     + pays.map((p, i) =>
         `<label class="radio-item" onclick="onPaymentChange('${p.id}')"><input type="radio" name="payment" value="${p.id}" ${i===0?'checked':''}><span class="radio-label">${p.name}</span></label>`
