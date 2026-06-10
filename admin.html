@@ -222,7 +222,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
   <div class="topbar">
     <div class="page-title" id="pageTitle">總覽</div>
     <div class="topbar-actions">
-      <span id="topbarUserBadge" style="font-size:12px;color:var(--text2);padding:4px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)"></span>
+      <span id="topbarUserBadge" style="font-size:12px;color:var(--text2);padding:4px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);cursor:pointer" onclick="editSelfAccount()" title="點擊編輯我的帳號"></span>
       <button class="btn btn-ghost btn-sm" onclick="changePassword()">🔑 改密碼</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()">登出</button>
       <button class="btn btn-success btn-sm" onclick="exportConfig()">⬇ config.json</button>
@@ -578,7 +578,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
     <div class="modal-body" id="memberModalBody">
       <input type="hidden" id="mEditId" value="">
       <div class="form-group"><label>姓名 *</label><input type="text" id="mName" placeholder="姓名"></div>
-      <div class="form-group"><label>Email *</label><input type="email" id="mEmail" placeholder="email@example.com"></div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input type="email" id="mEmail" placeholder="email@example.com">
+        <div id="mEmailNote" style="font-size:11px;color:var(--accent-dark);margin-top:3px"></div>
+      </div>
       <div class="form-group"><label>電話</label><input type="tel" id="mPhone" placeholder="0912-345-678"></div>
       <div class="form-group"><label>角色</label>
         <select id="mRole">
@@ -991,27 +995,39 @@ function openMemberModal(){
   document.getElementById('mName').value='';
   document.getElementById('mEmail').value='';
   document.getElementById('mEmail').disabled=false;
+  document.getElementById('mEmailNote').textContent='';
   document.getElementById('mPhone').value='';
   document.getElementById('mRole').value='member';
   document.getElementById('mPwd').value='sanrio2024';
-  document.getElementById('mPwd').placeholder='初始密碼';
+  document.getElementById('mPwd').placeholder='初始密碼（必填）';
   document.getElementById('mPwdLabel').textContent='初始密碼 *';
   document.getElementById('mPwd2Wrap').style.display='none';
   openModal('memberModal');
 }
 
-// 編輯既有會員
+// 編輯既有會員（管理員可改 Email）
 function editMember(uid){
   const u=shopDB.users.find(x=>x.id===uid);
   if(!u)return;
-  document.getElementById('memberModalTitle').textContent='✏️ 編輯：'+u.name;
+  const isSelf = currentAdminUser && currentAdminUser.id === uid;
+  document.getElementById('memberModalTitle').textContent= isSelf ? '👤 編輯我的帳號' : '✏️ 編輯：'+u.name;
   document.getElementById('memberSaveBtn').textContent='儲存變更';
   document.getElementById('mEditId').value=uid;
   document.getElementById('mName').value=u.name;
   document.getElementById('mEmail').value=u.email;
-  document.getElementById('mEmail').disabled=true;
+  document.getElementById('mEmail').disabled=false; // 開放修改 Email
+  document.getElementById('mEmailNote').textContent='修改 Email 後需用新 Email 登入';
   document.getElementById('mPhone').value=u.phone||'';
   document.getElementById('mRole').value=u.role;
+  // 自己不能降低自己的角色（防止鎖死）
+  const roleSelect=document.getElementById('mRole');
+  if(isSelf){
+    roleSelect.disabled=true;
+    roleSelect.title='不能修改自己的角色';
+  } else {
+    roleSelect.disabled=false;
+    roleSelect.title='';
+  }
   document.getElementById('mPwd').value='';
   document.getElementById('mPwd').placeholder='留空則不修改密碼';
   document.getElementById('mPwdLabel').textContent='新密碼（選填）';
@@ -1025,30 +1041,52 @@ function saveMember(){
   const name=document.getElementById('mName').value.trim();
   const email=document.getElementById('mEmail').value.trim();
   const phone=document.getElementById('mPhone').value.trim();
-  const role=document.getElementById('mRole').value;
+  const roleEl=document.getElementById('mRole');
+  const role=roleEl.disabled ? (shopDB.users.find(x=>x.id===editId)?.role||'member') : roleEl.value;
   const pwd=document.getElementById('mPwd').value;
-  const pwd2=document.getElementById('mPwd2').value;
+  const pwd2=document.getElementById('mPwd2') ? document.getElementById('mPwd2').value : '';
+
   if(!name){toast('❌ 請填寫姓名');return;}
+  if(!email){toast('❌ 請填寫 Email');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('❌ Email 格式不正確');return;}
+
   if(editId){
     // 編輯模式
     const u=shopDB.users.find(x=>x.id===editId);
-    if(!u){toast('找不到該會員');return;}
+    if(!u){toast('找不到該帳號');return;}
+    // 檢查 Email 是否與其他人重複
+    const emailDup=shopDB.users.find(x=>x.id!==editId && x.email.toLowerCase()===email.toLowerCase());
+    if(emailDup){toast('❌ 此 Email 已被 '+emailDup.name+' 使用');return;}
     if(pwd){
       if(pwd.length<6){toast('❌ 密碼至少需要6碼');return;}
       if(pwd!==pwd2){toast('❌ 兩次密碼不一致');return;}
       u.pwd=pwd;
     }
-    u.name=name;u.phone=phone;u.role=role;
-    saveShopDB();closeModal('memberModal');renderMembers();
-    toast('✓ 會員資料已更新：'+name);
+    const oldEmail = u.email;
+    u.name=name; u.email=email; u.phone=phone; u.role=role;
+    saveShopDB();
+    closeModal('memberModal');
+    renderMembers();
+    // 如果改的是自己的帳號，更新 session 和頂部顯示
+    if(currentAdminUser && currentAdminUser.id===editId){
+      currentAdminUser=Object.assign({},currentAdminUser,{name,email});
+      sessionStorage.setItem('admin_authed_user',JSON.stringify({id:u.id,role:u.role,name:u.name}));
+      updateTopbarUser();
+    }
+    toast('✓ 資料已更新：'+name+(oldEmail!==email?' ⚠ Email 已變更，下次請用新 Email 登入':''));
   } else {
     // 新增模式
-    if(!email){toast('❌ 請填寫 Email');return;}
     if(!pwd){toast('❌ 請填寫初始密碼');return;}
-    if(shopDB.users.find(u=>u.email===email)){toast('❌ 此 Email 已被使用');return;}
-    shopDB.users.push({id:shopDB.users.length+1,name,email,pwd,phone,role,status:'active',tier:'bronze',totalSpent:0,createdAt:new Date().toISOString().split('T')[0],invite:''});
+    if(shopDB.users.find(u=>u.email.toLowerCase()===email.toLowerCase())){toast('❌ 此 Email 已被使用');return;}
+    shopDB.users.push({
+      id: Date.now(), // 用時間戳作 id 避免衝突
+      name, email, pwd, phone, role,
+      status: role==='member'?'pending':'active',
+      tier:'bronze', totalSpent:0,
+      createdAt:new Date().toISOString().split('T')[0], invite:''
+    });
     saveShopDB();closeModal('memberModal');renderMembers();
-    toast('✓ 帳號已建立：'+name);
+    toast('✓ 帳號已建立：'+name+(role==='member'?' （狀態：待審核）':''));
   }
 }
 // ══════════════════════════════════════════
@@ -1450,10 +1488,17 @@ function buildAdminNav() {
 function updateTopbarUser() {
   if (!currentAdminUser) return;
   const roleNames = { admin:'管理員', warehouse:'倉管', marketing:'行銷', accounting:'會計', purchase:'採購' };
-  const titleEl = document.getElementById('topbarUserBadge');
-  if (titleEl) {
-    titleEl.textContent = `${currentAdminUser.name}（${roleNames[currentAdminUser.role]||currentAdminUser.role}）`;
+  const el = document.getElementById('topbarUserBadge');
+  if (el) {
+    el.textContent = `👤 ${currentAdminUser.name}（${roleNames[currentAdminUser.role]||currentAdminUser.role}）✎`;
+    el.title = '點擊編輯我的帳號';
   }
+}
+
+// 快速編輯自己帳號
+function editSelfAccount() {
+  if (!currentAdminUser) return;
+  editMember(currentAdminUser.id);
 }
 
 function changePassword() {
