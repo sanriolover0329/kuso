@@ -536,6 +536,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
             <div class="card-header"><div class="card-title">💳 付款方式</div></div>
             <div class="card-body" id="paymentsBody"></div>
           </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🏦 ATM 轉帳帳號</div></div>
+            <div class="card-body" id="bankInfoBody"></div>
+          </div>
+        </div>
+      </div>
+      <!-- 第二排：聯絡方式 + 面交說明 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:0">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📱 下單後通知設定</div></div>
+          <div class="card-body" id="contactInfoBody"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🤝 面交提示文字</div></div>
+          <div class="card-body" id="faceNoteBody"></div>
         </div>
       </div>
     </div>
@@ -656,6 +671,10 @@ function loadShopDB(){
         db.payments=db.payments.filter(p=>p.id!=='face');
       }
       if(!db.cvs_stores)db.cvs_stores={'711':[],family:[],hilife:[],ok:[]};
+      if(!db.contactInfo)db.contactInfo={lineId:'',lineAtUrl:'',fbUrl:'',notifyAfterOrder:true,notifyMethod:'line'};
+      if(!db.bankInfo)db.bankInfo={bankName:'',bankCode:'',accountName:'',accountNumber:'',note:''};
+      if(!db.faceNote)db.faceNote='下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。';
+      if(!db.settings)db.settings={allowWsUpgrade:true};
       return db;
     }
   }catch(e){}
@@ -697,7 +716,23 @@ function loadShopDB(){
       'family':[],
       'hilife':[],
       'ok':[],
-    }
+    },
+    contactInfo:{
+      lineId:'',
+      lineAtUrl:'',
+      fbUrl:'',
+      notifyAfterOrder:true,
+      notifyMethod:'line', // 'line' | 'lineat' | 'fb'
+    },
+    bankInfo:{
+      bankName:'',
+      bankCode:'',
+      accountName:'',
+      accountNumber:'',
+      note:'',
+    },
+    faceNote:'下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。',
+    settings:{ allowWsUpgrade:true }
   };
 }
 function saveShopDB(){localStorage.setItem('sanrio_shop_db',JSON.stringify(shopDB));}
@@ -1246,12 +1281,70 @@ function renderShopSettings(){
       <span style="font-size:11px;color:var(--text3)">NT$</span>
       <label style="font-size:12px;white-space:nowrap;font-weight:400"><input type="checkbox"${l.active?' checked':''} onchange="shopDB.logistics[${i}].active=this.checked;saveShopDB()"> 啟用</label>
     </div>`).join('')+'<div class="hint" style="margin-top:8px">萊爾富/OK 暫停使用；超商門市資料後續匯入</div>';
-  // Payments
+  // ── 付款方式 ──
   document.getElementById('paymentsBody').innerHTML=shopDB.payments.map((p,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--surface2)">
       <span style="flex:1;font-size:13px">${p.name}</span>
       <label style="font-size:12px;white-space:nowrap;font-weight:400"><input type="checkbox"${p.active?' checked':''} onchange="shopDB.payments[${i}].active=this.checked;saveShopDB()"> 啟用</label>
     </div>`).join('');
+  // ── ATM 轉帳帳號 ──
+  const bi = shopDB.bankInfo || {};
+  document.getElementById('bankInfoBody').innerHTML = `
+    <div class="form-group" style="margin-bottom:8px"><label>銀行名稱</label>
+      <input type="text" value="${bi.bankName||''}" placeholder="例：台灣銀行" onchange="shopDB.bankInfo.bankName=this.value;saveShopDB();toast('✓ 已儲存')"></div>
+    <div class="form-group" style="margin-bottom:8px"><label>銀行代碼</label>
+      <input type="text" value="${bi.bankCode||''}" placeholder="例：004" onchange="shopDB.bankInfo.bankCode=this.value;saveShopDB();toast('✓ 已儲存')"></div>
+    <div class="form-group" style="margin-bottom:8px"><label>戶名</label>
+      <input type="text" value="${bi.accountName||''}" placeholder="帳戶名稱" onchange="shopDB.bankInfo.accountName=this.value;saveShopDB();toast('✓ 已儲存')"></div>
+    <div class="form-group" style="margin-bottom:8px"><label>帳號</label>
+      <input type="text" value="${bi.accountNumber||''}" placeholder="完整帳號" onchange="shopDB.bankInfo.accountNumber=this.value;saveShopDB();toast('✓ 已儲存')"></div>
+    <div class="form-group" style="margin-bottom:0"><label>備註（選填）</label>
+      <input type="text" value="${bi.note||''}" placeholder="例：請於3日內完成匯款" onchange="shopDB.bankInfo.note=this.value;saveShopDB();toast('✓ 已儲存')"></div>`;
+
+  // ── 下單後通知設定 ──
+  const ci = shopDB.contactInfo || {};
+  const nm = ci.notifyMethod || 'line';
+  document.getElementById('contactInfoBody').innerHTML = `
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:6px">下單後顯示的聯絡方式</label>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400">
+          <input type="radio" name="notifyMethod" value="line" ${nm==='line'?'checked':''} onchange="shopDB.contactInfo.notifyMethod='line';saveShopDB()">
+          LINE 個人（line://ti/p/~ID）
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400">
+          <input type="radio" name="notifyMethod" value="lineat" ${nm==='lineat'?'checked':''} onchange="shopDB.contactInfo.notifyMethod='lineat';saveShopDB()">
+          LINE@（官方帳號連結）
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400">
+          <input type="radio" name="notifyMethod" value="fb" ${nm==='fb'?'checked':''} onchange="shopDB.contactInfo.notifyMethod='fb';saveShopDB()">
+          Facebook 粉專
+        </label>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:8px"><label>LINE ID（不含@）</label>
+      <input type="text" value="${ci.lineId||''}" placeholder="例：sanriodiary" onchange="shopDB.contactInfo.lineId=this.value;saveShopDB();toast('✓ 已儲存')"></div>
+    <div class="form-group" style="margin-bottom:8px"><label>LINE@ 連結</label>
+      <input type="text" value="${ci.lineAtUrl||''}" placeholder="https://line.me/R/ti/p/@..." onchange="shopDB.contactInfo.lineAtUrl=this.value;saveShopDB();toast('✓ 已儲存')"></div>
+    <div class="form-group" style="margin-bottom:8px"><label>Facebook 粉專連結</label>
+      <input type="text" value="${ci.fbUrl||''}" placeholder="https://www.facebook.com/..." onchange="shopDB.contactInfo.fbUrl=this.value;saveShopDB();toast('✓ 已儲存')"></div>
+    <div class="toggle-wrap" style="padding:8px 0 0">
+      <div style="font-size:13px;font-weight:500">下單後顯示聯絡視窗</div>
+      <label class="toggle-switch">
+        <input type="checkbox" ${ci.notifyAfterOrder!==false?'checked':''} onchange="shopDB.contactInfo.notifyAfterOrder=this.checked;saveShopDB()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>`;
+
+  // ── 面交提示文字 ──
+  document.getElementById('faceNoteBody').innerHTML = `
+    <div class="form-group" style="margin-bottom:8px">
+      <label>面交說明文字</label>
+      <textarea style="width:100%;min-height:100px;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:var(--sans);resize:vertical"
+        placeholder="下單後將由內部人員與您聯絡..."
+        onchange="shopDB.faceNote=this.value;saveShopDB();toast('✓ 已儲存')">${shopDB.faceNote||''}</textarea>
+    </div>
+    <div class="hint">此文字會在購物車選擇「面交」時顯示給客戶</div>`;
 }
 
 function addGift(){

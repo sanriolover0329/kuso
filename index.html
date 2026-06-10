@@ -469,6 +469,17 @@ body { overflow-y: auto; }
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 下單後通知彈窗 -->
+<div class="modal-bg" id="notifyModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-head">
+      <h2 id="notifyModalTitle">✅ 訂單已送出！</h2>
+      <button class="modal-close-btn" onclick="closeModal('notifyModal')">×</button>
+    </div>
+    <div class="modal-body" id="notifyModalBody"></div>
+  </div>
+</div>
 <a class="admin-link" href="admin.html">⚙ 後台</a>
 
 <script>
@@ -524,6 +535,10 @@ function loadShopDB() {
       }
       // 補上 cvs_stores（若舊資料沒有）
       if (!db.cvs_stores) db.cvs_stores = { '711':[], family:[], hilife:[], ok:[] };
+      if (!db.contactInfo) db.contactInfo = { lineId:'', lineAtUrl:'', fbUrl:'', notifyAfterOrder:true, notifyMethod:'line' };
+      if (!db.bankInfo) db.bankInfo = { bankName:'', bankCode:'', accountName:'', accountNumber:'', note:'' };
+      if (!db.faceNote) db.faceNote = '下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。';
+      if (!db.settings) db.settings = { allowWsUpgrade: true };
       return db;
     }
   } catch(e) {}
@@ -1212,41 +1227,41 @@ function onPaymentChange(payId) {
 function renderShippingInfo(type, logId) {
   const el = document.getElementById('shippingInfoSection');
   if (!el) return;
-  const nameVal = currentUser ? currentUser.name : '';
+  const nameVal  = currentUser ? currentUser.name  : '';
   const phoneVal = currentUser ? currentUser.phone : '';
 
   if (type === 'delivery') {
-    // 宅配：填地址
     el.innerHTML = '<div class="section-title">收件資訊</div>'
       + '<div class="f-group"><label>收件人姓名 *</label><input type="text" id="shipName" value="'+nameVal+'" placeholder="收件人姓名"></div>'
       + '<div class="f-group"><label>聯絡電話 *</label><input type="tel" id="shipPhone" value="'+phoneVal+'" placeholder="0912-345-678"></div>'
       + '<div class="f-group"><label>收件地址 *</label><input type="text" id="shipAddr" placeholder="縣市 + 鄉鎮區 + 詳細地址"></div>';
+
   } else if (type === 'cvs') {
-    // 超商：選門市
-    const stores = (shopDB.cvs_stores && shopDB.cvs_stores[logId]) || [];
+    const stores  = (shopDB.cvs_stores && shopDB.cvs_stores[logId]) || [];
     const logName = shopDB.logistics.find(l=>l.id===logId)?.name || '超商';
-    let storeHtml = '';
-    if (stores.length === 0) {
-      storeHtml = '<div style="background:#fff8e0;border:1px solid #f0df90;border-radius:8px;padding:10px 14px;font-size:12px;color:#7a6010;margin-bottom:10px">'
+    const storeHtml = stores.length === 0
+      ? '<div style="background:#fff8e0;border:1px solid #f0df90;border-radius:8px;padding:10px 14px;font-size:12px;color:#7a6010;margin-bottom:10px">'
         + '⚠ '+logName+'門市資料尚未匯入，請直接填入門市名稱或代號，店主確認後聯繫您。</div>'
-        + '<div class="f-group"><label>門市名稱或代號</label><input type="text" id="cvsStoreName" placeholder="例如：XX門市 或 門市代號"></div>';
-    } else {
-      storeHtml = '<div class="f-group"><label>選擇門市 *</label>'
+        + '<div class="f-group"><label>門市名稱或代號</label><input type="text" id="cvsStoreName" placeholder="例如：中壢中正門市 或 門市代號"></div>'
+      : '<div class="f-group"><label>選擇門市 *</label>'
         + '<select id="cvsStoreName" style="width:100%"><option value="">— 請選擇門市 —</option>'
         + stores.map(s=>`<option value="${s.id}|${s.name}">${s.name}（${s.id}）</option>`).join('')
-        + '</select></div>'
-        + '<div id="storeDetail" style="font-size:12px;color:var(--text3);margin-top:4px"></div>';
-    }
+        + '</select></div>';
     el.innerHTML = '<div class="section-title">超商門市</div>'
       + storeHtml
       + '<div class="f-group"><label>收件人姓名 *</label><input type="text" id="shipName" value="'+nameVal+'" placeholder="收件人姓名（超商取件用）"></div>'
       + '<div class="f-group"><label>聯絡電話 *</label><input type="tel" id="shipPhone" value="'+phoneVal+'" placeholder="0912-345-678"></div>';
+
   } else if (type === 'face') {
-    // 面交：填備註地點
+    const faceNote = shopDB.faceNote || '下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。';
     el.innerHTML = '<div class="section-title">面交資訊</div>'
+      + '<div style="background:linear-gradient(135deg,var(--pink-light),#ffe8f5);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.8">'
+      + '<div style="font-weight:600;color:var(--accent-dark);margin-bottom:4px">🤝 面交說明</div>'
+      + faceNote
+      + '</div>'
       + '<div class="f-group"><label>姓名 *</label><input type="text" id="shipName" value="'+nameVal+'" placeholder="您的姓名"></div>'
       + '<div class="f-group"><label>聯絡電話 *</label><input type="tel" id="shipPhone" value="'+phoneVal+'" placeholder="0912-345-678"></div>'
-      + '<div class="f-group"><label>面交地點或備註（選填）</label><input type="text" id="shipAddr" placeholder="例如：台北車站附近、週末方便、…"></div>';
+      + '<div class="f-group"><label>備註（選填）</label><input type="text" id="shipAddr" placeholder="方便的時間或其他說明…"></div>';
   }
 }
 
