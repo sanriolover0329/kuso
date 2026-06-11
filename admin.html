@@ -309,6 +309,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 
     <!-- ③ 會員管理 -->
     <div class="panel" id="panel-members">
+      <!-- 批發升等開關 -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-body" style="padding:14px 18px">
+          <div class="toggle-wrap" style="padding:0">
+            <div>
+              <div style="font-size:13px;font-weight:600">🏭 開放會員自行申請批發升等</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:3px">開啟後，一般會員可在前台會員中心點擊申請，後台至「待處理申請」審核</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="wsUpgradeToggle" onchange="saveWsUpgradeSetting(this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -509,22 +524,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
           <div class="card">
             <div class="card-header"><div class="card-title">🎁 滿額贈品</div><button class="btn btn-ghost btn-sm" onclick="addGift()">+ 新增</button></div>
             <div class="card-body" id="giftsBody"></div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">🏭 批發升等申請開關</div></div>
-            <div class="card-body">
-              <div class="toggle-wrap">
-                <div>
-                  <div style="font-size:13px;font-weight:500">開放會員自行申請批發升等</div>
-                  <div style="font-size:11px;color:var(--text3);margin-top:3px">開啟後，一般會員可在會員中心送出申請，由後台審核</div>
-                </div>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="wsUpgradeToggle" onchange="saveWsUpgradeSetting(this.checked)">
-                  <span class="toggle-slider"></span>
-                </label>
-              </div>
-              <div class="hint">至「待處理申請」頁面審核升等或拒絕</div>
-            </div>
           </div>
         </div>
         <div>
@@ -986,6 +985,15 @@ function saveWsUpgradeSetting(val){
 // MEMBERS
 // ══════════════════════════════════════════
 function renderMembers(){
+  // 初始化批發升等開關
+  const wsToggle = document.getElementById('wsUpgradeToggle');
+  if (wsToggle) {
+    const wsEnabled = shopDB.settings?.allowWsUpgrade !== false;
+    wsToggle.checked = wsEnabled;
+    // 更新 toggle 視覺狀態
+    const slider = wsToggle.nextElementSibling;
+    if (slider) slider.style.background = wsEnabled ? 'var(--accent)' : '#ccc';
+  }
   const q=(document.getElementById('memberSearch')?.value||'').toLowerCase();
   const rFilter=document.getElementById('memberRoleFilter')?.value||'';
   const sFilter=document.getElementById('memberStatusFilter')?.value||'';
@@ -1287,10 +1295,7 @@ function renderShopSettings(){
       <label style="font-size:12px;white-space:nowrap;font-weight:400"><input type="checkbox"${g.active?' checked':''} onchange="shopDB.gifts[${i}].active=this.checked;saveShopDB()"> 啟用</label>
       <button class="btn btn-danger btn-sm" onclick="shopDB.gifts.splice(${i},1);saveShopDB();renderShopSettings()">✕</button>
     </div>`).join('');
-  // Wholesale toggle
-  const wsToggle=document.getElementById('wsUpgradeToggle');
-  const wsEnabled=shopDB.settings?.allowWsUpgrade!==false;
-  if(wsToggle){wsToggle.checked=wsEnabled;}
+  // 批發升等開關由「會員管理」頁面控制，此處不處理
   // Logistics
   const typeLabel = {delivery:'🚚 宅配', cvs:'🏪 超商', face:'🤝 面交'};
   document.getElementById('logisticsBody').innerHTML=shopDB.logistics.map((l,i)=>`
