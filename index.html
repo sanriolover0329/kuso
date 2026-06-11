@@ -92,6 +92,25 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .card-price-member { font-size: 10px; color: var(--success); }
 .card-price-ws { font-size: 10px; color: #2850b0; font-family: var(--mono); }
 .ws-badge { display: inline-flex; align-items: center; gap: 3px; background: #e8f0fe; color: #2850b0; border: 1px solid #c0d4f8; border-radius: 4px; font-size: 9px; font-weight: 600; padding: 1px 5px; }
+
+/* 聯絡按鈕 */
+.contact-btn {
+  display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+  border-radius: 12px; border: 2px solid var(--border); background: var(--surface);
+  text-decoration: none; cursor: pointer; transition: all .2s; width: 100%;
+  font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 10px;
+}
+.contact-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+.contact-btn.line-btn { border-color: #06C755; color: #06C755; }
+.contact-btn.line-btn:hover { background: #f0fff4; }
+.contact-btn.fb-btn { border-color: #1877F2; color: #1877F2; }
+.contact-btn.fb-btn:hover { background: #f0f4ff; }
+.contact-btn.phone-btn { border-color: var(--accent); color: var(--accent-dark); }
+.contact-btn.phone-btn:hover { background: var(--surface2); }
+.contact-btn .btn-icon { font-size: 24px; flex-shrink: 0; }
+.contact-btn .btn-label { font-size: 11px; font-weight: 400; color: var(--text3); margin-top: 1px; }
+.order-success-id { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--accent-dark); background: var(--surface2); padding: 8px 14px; border-radius: 8px; margin: 10px 0 16px; display: inline-block; }
 .ws-tiers-mini { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
 .ws-tier-chip { background: #e8f0fe; color: #2850b0; border-radius: 4px; font-size: 9px; padding: 1px 5px; font-family: var(--mono); }
 .card-cat-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
@@ -414,7 +433,16 @@ body { overflow-y: auto; }
   </div>
 </div>
 
-<!-- Order Query Modal (訂單查詢 - 訪客+會員) -->
+<!-- Order Success + Contact Modal -->
+<div class="modal-bg" id="orderSuccessModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-head" style="border-bottom:none;padding-bottom:0">
+      <h2 style="font-size:22px">🎉 下單成功！</h2>
+      <button class="modal-close-btn" onclick="closeModal('orderSuccessModal')">×</button>
+    </div>
+    <div class="modal-body" id="orderSuccessBody" style="padding-top:12px"></div>
+  </div>
+</div>
 <div class="modal-bg" id="orderQueryModal">
   <div class="modal-box" style="max-width:560px">
     <div class="modal-head">
@@ -535,7 +563,20 @@ function loadShopDB() {
       }
       // 補上 cvs_stores（若舊資料沒有）
       if (!db.cvs_stores) db.cvs_stores = { '711':[], family:[], hilife:[], ok:[] };
-      if (!db.contactInfo) db.contactInfo = { lineId:'', lineAtUrl:'', fbUrl:'', notifyAfterOrder:true, notifyMethod:'line' };
+      // 遷移：contactInfo 新版結構
+      if (!db.contactInfo) {
+        db.contactInfo = { showAfterOrder: true, line:{enabled:false,id:'',url:''}, lineat:{enabled:false,url:''}, fb:{enabled:false,url:''}, phone:{enabled:false,number:''}, note:'' };
+      } else if (!db.contactInfo.line) {
+        const old = db.contactInfo;
+        db.contactInfo = {
+          showAfterOrder: old.notifyAfterOrder !== false,
+          line:   { enabled: !!old.lineId,    id: old.lineId||'',    url: old.lineAtUrl||'' },
+          lineat: { enabled: !!old.lineAtUrl,  url: old.lineAtUrl||'' },
+          fb:     { enabled: !!old.fbUrl,      url: old.fbUrl||'' },
+          phone:  { enabled: false, number: '' },
+          note:   ''
+        };
+      }
       if (!db.bankInfo) db.bankInfo = { bankName:'', bankCode:'', accountName:'', accountNumber:'', note:'' };
       if (!db.faceNote) db.faceNote = '下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。';
       if (!db.settings) db.settings = { allowWsUpgrade: true };
@@ -1344,11 +1385,10 @@ function submitOrder() {
   saveShopDB();
   cart = [];
   closeModal('cartModal');
-  const msg = needsCode
-    ? `✅ 訂單送出！${order.id}｜後五碼 ${transferCode} 已記錄，待核對`
-    : `✅ 訂單送出！${order.id}`;
-  showToast(msg, 5000);
+  // 重新整理 app（更新購物車角標）
   renderApp();
+  // 顯示下單成功彈窗（含聯絡資訊）
+  showOrderSuccess(order);
 }
 
 // ═══════════════════════════════════════
@@ -1480,7 +1520,71 @@ function renderMemberModal() {
 }
 
 // ═══════════════════════════════════════
-// ORDER QUERY (訂單查詢 - 訪客+會員用電話)
+// 下單成功彈窗（含聯絡資訊）
+// ═══════════════════════════════════════
+function showOrderSuccess(order) {
+  const ci = shopDB.contactInfo || {};
+  const hasContact = ci.showAfterOrder !== false && (
+    (ci.line   && ci.line.enabled)   ||
+    (ci.lineat && ci.lineat.enabled) ||
+    (ci.fb     && ci.fb.enabled)     ||
+    (ci.phone  && ci.phone.enabled)
+  );
+
+  const amountLine = order.isPreorder
+    ? `<div style="font-size:13px;color:var(--text2);margin-bottom:4px">今日應付訂金：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.deposit)}</strong></div>
+       <div style="font-size:11px;color:var(--text3)">餘款 ${fmt(order.finalTotal - order.deposit)} 待出貨前聯繫付清</div>`
+    : `<div style="font-size:13px;color:var(--text2)">訂單金額：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.finalTotal)}</strong></div>`;
+
+  let contactHtml = '';
+  if (hasContact) {
+    contactHtml = `<div style="margin-top:16px;padding-top:16px;border-top:1.5px dashed var(--border)">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px">📬 請透過以下方式聯繫確認</div>`;
+
+    if (ci.line && ci.line.enabled && ci.line.id) {
+      const lineUrl = `https://line.me/ti/p/~${ci.line.id}`;
+      contactHtml += `<a href="${lineUrl}" target="_blank" class="contact-btn line-btn">
+        <span class="btn-icon">💚</span>
+        <div><div>LINE 私訊</div><div class="btn-label">@${ci.line.id}</div></div>
+      </a>`;
+    }
+    if (ci.lineat && ci.lineat.enabled && ci.lineat.url) {
+      contactHtml += `<a href="${ci.lineat.url}" target="_blank" class="contact-btn line-btn">
+        <span class="btn-icon">💚</span>
+        <div><div>LINE@ 官方帳號</div><div class="btn-label">點此加入聯繫</div></div>
+      </a>`;
+    }
+    if (ci.fb && ci.fb.enabled && ci.fb.url) {
+      contactHtml += `<a href="${ci.fb.url}" target="_blank" class="contact-btn fb-btn">
+        <span class="btn-icon">📘</span>
+        <div><div>Facebook 粉專私訊</div><div class="btn-label">點此前往粉專</div></div>
+      </a>`;
+    }
+    if (ci.phone && ci.phone.enabled && ci.phone.number) {
+      contactHtml += `<a href="tel:${ci.phone.number}" class="contact-btn phone-btn">
+        <span class="btn-icon">📞</span>
+        <div><div>撥打電話</div><div class="btn-label">${ci.phone.number}</div></div>
+      </a>`;
+    }
+    if (ci.note) {
+      contactHtml += `<div style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center">${ci.note}</div>`;
+    }
+    contactHtml += '</div>';
+  }
+
+  const body = document.getElementById('orderSuccessBody');
+  body.innerHTML = `
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:40px;margin-bottom:8px">🌸</div>
+      <div style="font-size:13px;color:var(--text2)">訂單已送出，感謝您的購買！</div>
+      <div class="order-success-id">${order.id}</div>
+      ${amountLine}
+    </div>
+    ${contactHtml}
+    <button class="btn-full" style="margin-top:16px;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border)" onclick="closeModal('orderSuccessModal')">關閉</button>`;
+
+  openModal('orderSuccessModal');
+}
 // ═══════════════════════════════════════
 function doOrderQuery() {
   const raw = document.getElementById('queryPhone').value.trim();

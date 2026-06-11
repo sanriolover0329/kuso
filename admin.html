@@ -671,7 +671,26 @@ function loadShopDB(){
         db.payments=db.payments.filter(p=>p.id!=='face');
       }
       if(!db.cvs_stores)db.cvs_stores={'711':[],family:[],hilife:[],ok:[]};
-      if(!db.contactInfo)db.contactInfo={lineId:'',lineAtUrl:'',fbUrl:'',notifyAfterOrder:true,notifyMethod:'line'};
+      if(!db.contactInfo)db.contactInfo={
+        showAfterOrder: true,
+        line:     { enabled: false, id: '',    url: '' },
+        lineat:   { enabled: false, url: '' },
+        fb:       { enabled: false, url: '' },
+        phone:    { enabled: false, number: '' },
+        note:     ''
+      };
+      // 遷移舊版結構
+      if(db.contactInfo && !db.contactInfo.line) {
+        const old = db.contactInfo;
+        db.contactInfo = {
+          showAfterOrder: old.notifyAfterOrder !== false,
+          line:   { enabled: !!old.lineId,    id: old.lineId||'',    url: old.lineAtUrl||'' },
+          lineat: { enabled: !!old.lineAtUrl,  url: old.lineAtUrl||'' },
+          fb:     { enabled: !!old.fbUrl,      url: old.fbUrl||'' },
+          phone:  { enabled: false, number: '' },
+          note:   ''
+        };
+      }
       if(!db.bankInfo)db.bankInfo={bankName:'',bankCode:'',accountName:'',accountNumber:'',note:''};
       if(!db.faceNote)db.faceNote='下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。';
       if(!db.settings)db.settings={allowWsUpgrade:true};
@@ -718,11 +737,12 @@ function loadShopDB(){
       'ok':[],
     },
     contactInfo:{
-      lineId:'',
-      lineAtUrl:'',
-      fbUrl:'',
-      notifyAfterOrder:true,
-      notifyMethod:'line', // 'line' | 'lineat' | 'fb'
+      showAfterOrder: true,
+      line:   { enabled: false, id: '',    url: '' },
+      lineat: { enabled: false, url: '' },
+      fb:     { enabled: false, url: '' },
+      phone:  { enabled: false, number: '' },
+      note: ''
     },
     bankInfo:{
       bankName:'',
@@ -1303,37 +1323,93 @@ function renderShopSettings(){
 
   // ── 下單後通知設定 ──
   const ci = shopDB.contactInfo || {};
-  const nm = ci.notifyMethod || 'line';
+  const line   = ci.line   || {};
+  const lineat = ci.lineat || {};
+  const fb     = ci.fb     || {};
+  const phone  = ci.phone  || {};
+
   document.getElementById('contactInfoBody').innerHTML = `
-    <div style="margin-bottom:12px">
-      <label style="font-size:12px;font-weight:500;color:var(--text2);display:block;margin-bottom:6px">下單後顯示的聯絡方式</label>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400">
-          <input type="radio" name="notifyMethod" value="line" ${nm==='line'?'checked':''} onchange="shopDB.contactInfo.notifyMethod='line';saveShopDB()">
-          LINE 個人（line://ti/p/~ID）
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400">
-          <input type="radio" name="notifyMethod" value="lineat" ${nm==='lineat'?'checked':''} onchange="shopDB.contactInfo.notifyMethod='lineat';saveShopDB()">
-          LINE@（官方帳號連結）
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400">
-          <input type="radio" name="notifyMethod" value="fb" ${nm==='fb'?'checked':''} onchange="shopDB.contactInfo.notifyMethod='fb';saveShopDB()">
-          Facebook 粉專
-        </label>
+    <div class="toggle-wrap" style="padding:0 0 12px;border-bottom:1px solid var(--surface2);margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:600">下單後顯示聯絡視窗</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">開啟後，顧客下單完成即彈出聯絡資訊</div>
       </div>
-    </div>
-    <div class="form-group" style="margin-bottom:8px"><label>LINE ID（不含@）</label>
-      <input type="text" value="${ci.lineId||''}" placeholder="例：sanriodiary" onchange="shopDB.contactInfo.lineId=this.value;saveShopDB();toast('✓ 已儲存')"></div>
-    <div class="form-group" style="margin-bottom:8px"><label>LINE@ 連結</label>
-      <input type="text" value="${ci.lineAtUrl||''}" placeholder="https://line.me/R/ti/p/@..." onchange="shopDB.contactInfo.lineAtUrl=this.value;saveShopDB();toast('✓ 已儲存')"></div>
-    <div class="form-group" style="margin-bottom:8px"><label>Facebook 粉專連結</label>
-      <input type="text" value="${ci.fbUrl||''}" placeholder="https://www.facebook.com/..." onchange="shopDB.contactInfo.fbUrl=this.value;saveShopDB();toast('✓ 已儲存')"></div>
-    <div class="toggle-wrap" style="padding:8px 0 0">
-      <div style="font-size:13px;font-weight:500">下單後顯示聯絡視窗</div>
       <label class="toggle-switch">
-        <input type="checkbox" ${ci.notifyAfterOrder!==false?'checked':''} onchange="shopDB.contactInfo.notifyAfterOrder=this.checked;saveShopDB()">
+        <input type="checkbox" id="ci_showAfterOrder" ${ci.showAfterOrder!==false?'checked':''}
+          onchange="shopDB.contactInfo.showAfterOrder=this.checked;saveShopDB();toast('✓ 已儲存')">
         <span class="toggle-slider"></span>
       </label>
+    </div>
+
+    <!-- LINE 個人 -->
+    <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;color:#06C755">💚 LINE 個人帳號</div>
+        <label class="toggle-switch" style="transform:scale(0.85)">
+          <input type="checkbox" ${line.enabled?'checked':''}
+            onchange="if(!shopDB.contactInfo.line)shopDB.contactInfo.line={};shopDB.contactInfo.line.enabled=this.checked;saveShopDB();toast('✓ 已儲存')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="form-group" style="margin:0"><label>LINE ID（不含 @）</label>
+        <input type="text" value="${line.id||''}" placeholder="例：sanriodiary"
+          onchange="if(!shopDB.contactInfo.line)shopDB.contactInfo.line={};shopDB.contactInfo.line.id=this.value;shopDB.contactInfo.line.url='https://line.me/ti/p/~'+this.value;saveShopDB();toast('✓ 已儲存')">
+      </div>
+    </div>
+
+    <!-- LINE@ -->
+    <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;color:#06C755">💚 LINE@ 官方帳號</div>
+        <label class="toggle-switch" style="transform:scale(0.85)">
+          <input type="checkbox" ${lineat.enabled?'checked':''}
+            onchange="if(!shopDB.contactInfo.lineat)shopDB.contactInfo.lineat={};shopDB.contactInfo.lineat.enabled=this.checked;saveShopDB();toast('✓ 已儲存')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="form-group" style="margin:0"><label>LINE@ 連結</label>
+        <input type="text" value="${lineat.url||''}" placeholder="https://line.me/R/ti/p/@..."
+          onchange="if(!shopDB.contactInfo.lineat)shopDB.contactInfo.lineat={};shopDB.contactInfo.lineat.url=this.value;saveShopDB();toast('✓ 已儲存')">
+      </div>
+    </div>
+
+    <!-- Facebook 粉專 -->
+    <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;color:#1877F2">📘 Facebook 粉專</div>
+        <label class="toggle-switch" style="transform:scale(0.85)">
+          <input type="checkbox" ${fb.enabled?'checked':''}
+            onchange="if(!shopDB.contactInfo.fb)shopDB.contactInfo.fb={};shopDB.contactInfo.fb.enabled=this.checked;saveShopDB();toast('✓ 已儲存')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="form-group" style="margin:0"><label>粉專連結</label>
+        <input type="text" value="${fb.url||''}" placeholder="https://www.facebook.com/..."
+          onchange="if(!shopDB.contactInfo.fb)shopDB.contactInfo.fb={};shopDB.contactInfo.fb.url=this.value;saveShopDB();toast('✓ 已儲存')">
+      </div>
+    </div>
+
+    <!-- 電話 -->
+    <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;color:var(--accent-dark)">📞 聯絡電話</div>
+        <label class="toggle-switch" style="transform:scale(0.85)">
+          <input type="checkbox" ${phone.enabled?'checked':''}
+            onchange="if(!shopDB.contactInfo.phone)shopDB.contactInfo.phone={};shopDB.contactInfo.phone.enabled=this.checked;saveShopDB();toast('✓ 已儲存')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="form-group" style="margin:0"><label>電話號碼</label>
+        <input type="tel" value="${phone.number||''}" placeholder="0912-345-678"
+          onchange="if(!shopDB.contactInfo.phone)shopDB.contactInfo.phone={};shopDB.contactInfo.phone.number=this.value;saveShopDB();toast('✓ 已儲存')">
+      </div>
+    </div>
+
+    <!-- 補充說明 -->
+    <div class="form-group" style="margin:0"><label>補充說明（顯示在聯絡視窗底部）</label>
+      <textarea style="width:100%;min-height:60px;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:var(--sans);resize:vertical"
+        placeholder="例：週一至週五 10:00-21:00"
+        onchange="shopDB.contactInfo.note=this.value;saveShopDB();toast('✓ 已儲存')">${ci.note||''}</textarea>
     </div>`;
 
   // ── 面交提示文字 ──
