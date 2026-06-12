@@ -518,6 +518,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div>
           <div class="card">
+            <div class="card-header">
+              <div class="card-title">🏭 全域批發階梯（預設）</div>
+              <button class="btn btn-ghost btn-sm" onclick="applyGlobalTiersToAll()">套用至全部商品</button>
+            </div>
+            <div class="card-body" id="globalTiersBody"></div>
+          </div>
+          <div class="card">
             <div class="card-header"><div class="card-title">🏅 會員等級折扣</div></div>
             <div class="card-body" id="tierSettingsBody"></div>
           </div>
@@ -693,6 +700,7 @@ function loadShopDB(){
       if(!db.bankInfo)db.bankInfo={bankName:'',bankCode:'',accountName:'',accountNumber:'',note:''};
       if(!db.faceNote)db.faceNote='下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。';
       if(!db.settings)db.settings={allowWsUpgrade:true};
+      if(!db.settings.globalWsTiers)db.settings.globalWsTiers=[{qty:3,discount:10},{qty:6,discount:15},{qty:12,discount:20}];
       return db;
     }
   }catch(e){}
@@ -751,7 +759,11 @@ function loadShopDB(){
       note:'',
     },
     faceNote:'下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。',
-    settings:{ allowWsUpgrade:true }
+    settings:{ allowWsUpgrade:true, globalWsTiers:[
+      { qty:3,  discount:10 },
+      { qty:6,  discount:15 },
+      { qty:12, discount:20 },
+    ]}
   };
 }
 function saveShopDB(){localStorage.setItem('sanrio_shop_db',JSON.stringify(shopDB));}
@@ -979,6 +991,25 @@ function saveWsUpgradeSetting(val){
   shopDB.settings.allowWsUpgrade=val;
   saveShopDB();
   toast(val?'✓ 已開放會員申請批發升等':'✓ 已關閉批發升等申請');
+}
+
+function removeGlobalTier(idx){
+  if(!shopDB.settings?.globalWsTiers)return;
+  shopDB.settings.globalWsTiers.splice(idx,1);
+  saveShopDB();
+  renderShopSettings();
+  toast('✓ 已刪除');
+}
+
+function applyGlobalTiersToAll(){
+  if(!confirm('確定將全域批發階梯套用至【所有商品】？\n（有自訂階梯的商品將改為使用全域）'))return;
+  const count = Object.keys(shopDB.productPrices).length;
+  Object.keys(shopDB.productPrices).forEach(pid=>{
+    shopDB.productPrices[pid].useGlobalWsTiers = true;
+    shopDB.productPrices[pid].wsTiers = [];
+  });
+  saveShopDB();
+  toast(`✓ 已套用全域階梯至 ${count} 件商品`);
 }
 
 // ══════════════════════════════════════════
@@ -1223,54 +1254,129 @@ function renderPrices(){
 }
 
 function openPriceModal(pid){
-  editingPriceId=pid;
-  const p=state.products.find(x=>x.id===pid);
-  const pp=shopDB.productPrices[pid]||{retail:0,wholesale:0,cost:0,stock:0,preorder:false,wsTiers:[{qty:5,price:0},{qty:10,price:0}]};
-  document.getElementById('priceModalTitle').textContent='💰 設定價格：'+(p?.name||pid);
-  const tiersHtml=pp.wsTiers.map((t,i)=>`<div class="ws-tier-row"><span style="font-size:12px;color:var(--text2);white-space:nowrap">≥</span><input type="number" id="wsQty${i}" value="${t.qty}" placeholder="件數" style="width:70px"><span style="font-size:12px;color:var(--text2)">件</span><input type="number" id="wsPrice${i}" value="${t.price}" placeholder="價格"><span style="font-size:12px;color:var(--text2)">元</span><button class="btn btn-danger btn-sm" onclick="removeTier(${i})">✕</button></div>`).join('');
-  document.getElementById('priceModalBody').innerHTML=`
-    <div class="info-box" style="font-size:11px">範例：零售 450 / 批發起價 300 / 成本 170<br>批發階梯：買5件起→300元，買10件起→270元</div>
+  editingPriceId = pid;
+  const p   = state.products.find(x => x.id === pid);
+  const pp  = shopDB.productPrices[pid] || { retail:0, wholesale:0, cost:0, stock:0, preorder:false, wsTiers:[], useGlobalWsTiers:true };
+  const useGlobal = pp.useGlobalWsTiers !== false && (!pp.wsTiers || pp.wsTiers.length === 0);
+  document.getElementById('priceModalTitle').textContent = '💰 設定價格：' + (p?.name || pid);
+
+  // 全域階梯預覽
+  const gTiers = shopDB.settings?.globalWsTiers || [];
+  const globalPreview = gTiers.length > 0
+    ? gTiers.map(t => `≥${t.qty}件 ${t.discount ? t.discount+'%折扣' : 'NT$'+t.price}`).join(' ／ ')
+    : '（尚未設定全域階梯）';
+
+  // 商品自訂階梯列
+  const customTiers = pp.wsTiers && pp.wsTiers.length > 0 ? pp.wsTiers : [{qty:'',price:''}];
+  const tiersHtml = customTiers.map((t,i) =>
+    `<div class="ws-tier-row">
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap">≥</span>
+      <input type="number" id="wsQty${i}" value="${t.qty||''}" placeholder="件數" style="width:70px">
+      <span style="font-size:12px;color:var(--text2)">件</span>
+      <input type="number" id="wsPrice${i}" value="${t.price||''}" placeholder="固定價(NT$)">
+      <span style="font-size:12px;color:var(--text2)">元</span>
+      <button class="btn btn-danger btn-sm" onclick="removeTier(${i})">✕</button>
+    </div>`
+  ).join('');
+
+  document.getElementById('priceModalBody').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
       <div class="form-group"><label>零售價 *</label><input type="number" id="pRetail" value="${pp.retail}" placeholder="450"></div>
-      <div class="form-group"><label>批發起價</label><input type="number" id="pWholesale" value="${pp.wholesale}" placeholder="300"></div>
       <div class="form-group"><label>成本（後台）</label><input type="number" id="pCost" value="${pp.cost}" placeholder="170"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="form-group"><label>庫存數量</label><input type="number" id="pStock" value="${pp.stock}" placeholder="0"></div>
-      <div class="form-group"><label>庫存0時可預購</label><select id="pPreorder"><option value="false"${!pp.preorder?' selected':''}>否</option><option value="true"${pp.preorder?' selected':''}>是（可預購）</option></select></div>
     </div>
-    <div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><label>批發階梯價</label><button class="btn btn-ghost btn-sm" onclick="addTier()">+ 新增</button></div>
-    <div id="tierRows">${tiersHtml}</div>
-    <div class="hint">設定不同購買數量對應的批發價，系統自動取最優惠價格</div></div>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="form-group" style="margin:0"><label>庫存0時可預購</label>
+        <select id="pPreorder"><option value="false"${!pp.preorder?' selected':''}>否</option><option value="true"${pp.preorder?' selected':''}>是（可預購）</option></select>
+      </div>
+    </div>
+
+    <!-- 批發階梯區塊 -->
+    <div style="background:var(--surface2);border-radius:10px;padding:14px;border:1.5px solid var(--border)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">批發階梯設定</div>
+
+      <!-- 使用全域 -->
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:2px solid ${useGlobal?'var(--accent)':'var(--border)'};border-radius:8px;cursor:pointer;margin-bottom:8px;background:${useGlobal?'var(--accent-light)':'var(--surface)'}">
+        <input type="radio" name="tierMode" value="global" ${useGlobal?'checked':''} onchange="toggleTierMode('global')" style="margin-top:2px;accent-color:var(--accent)">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">套用全域批發階梯</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">現行全域設定：${globalPreview}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">未來修改全域階梯，此商品自動更新</div>
+        </div>
+      </label>
+
+      <!-- 自訂 -->
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:2px solid ${!useGlobal?'var(--accent)':'var(--border)'};border-radius:8px;cursor:pointer;background:${!useGlobal?'var(--accent-light)':'var(--surface)'}">
+        <input type="radio" name="tierMode" value="custom" ${!useGlobal?'checked':''} onchange="toggleTierMode('custom')" style="margin-top:2px;accent-color:var(--accent)">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">自訂此商品批發階梯</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">覆蓋全域設定，只對此商品生效</div>
+        </div>
+      </label>
+
+      <!-- 自訂階梯輸入區 -->
+      <div id="customTierSection" style="margin-top:12px;display:${!useGlobal?'block':'none'}">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px">輸入固定售價（NT$），留空則不套用</div>
+        <div id="tierRows">${tiersHtml}</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="addTier()">+ 新增區間</button>
+      </div>
+    </div>`;
+
   openModal('priceModal');
 }
 
+function toggleTierMode(mode) {
+  const section = document.getElementById('customTierSection');
+  const labels = document.querySelectorAll('#priceModalBody label');
+  document.querySelectorAll('input[name=tierMode]').forEach(r => {
+    const isSelected = r.value === mode;
+    const label = r.closest('label');
+    if (label) {
+      label.style.borderColor = isSelected ? 'var(--accent)' : 'var(--border)';
+      label.style.background  = isSelected ? 'var(--accent-light)' : 'var(--surface)';
+    }
+  });
+  if (section) section.style.display = mode === 'custom' ? 'block' : 'none';
+}
+
 function addTier(){
-  const pp=shopDB.productPrices[editingPriceId]||{};
-  if(!pp.wsTiers)pp.wsTiers=[];
-  pp.wsTiers.push({qty:0,price:0});
-  shopDB.productPrices[editingPriceId]=pp;
+  const pp = shopDB.productPrices[editingPriceId] || {};
+  if (!pp.wsTiers) pp.wsTiers = [];
+  pp.wsTiers.push({ qty:0, price:0 });
+  shopDB.productPrices[editingPriceId] = pp;
   openPriceModal(editingPriceId);
 }
 function removeTier(idx){
-  const pp=shopDB.productPrices[editingPriceId];
-  if(pp&&pp.wsTiers){pp.wsTiers.splice(idx,1);openPriceModal(editingPriceId);}
+  const pp = shopDB.productPrices[editingPriceId];
+  if (pp && pp.wsTiers) { pp.wsTiers.splice(idx, 1); openPriceModal(editingPriceId); }
 }
 
 function savePrice(){
-  const retail=+document.getElementById('pRetail').value;
-  if(!retail){toast('請輸入零售價');return;}
-  const pp=shopDB.productPrices[editingPriceId]||{};
-  const curTiers=pp.wsTiers||[];
-  const newTiers=curTiers.map((_,i)=>({qty:+document.getElementById('wsQty'+i)?.value||0,price:+document.getElementById('wsPrice'+i)?.value||0})).filter(t=>t.qty>0&&t.price>0);
-  shopDB.productPrices[editingPriceId]={
-    retail,wholesale:+document.getElementById('pWholesale').value||0,
-    cost:+document.getElementById('pCost').value||0,
-    stock:+document.getElementById('pStock').value||0,
-    preorder:document.getElementById('pPreorder').value==='true',
-    wsTiers:newTiers
+  const retail = +document.getElementById('pRetail').value;
+  if (!retail) { toast('請輸入零售價'); return; }
+  const modeEl = document.querySelector('input[name=tierMode]:checked');
+  const useGlobal = !modeEl || modeEl.value === 'global';
+  const pp = shopDB.productPrices[editingPriceId] || {};
+  let newTiers = [];
+  if (!useGlobal) {
+    const curTiers = pp.wsTiers || [{}];
+    newTiers = curTiers.map((_,i) => ({
+      qty:   +(document.getElementById('wsQty'+i)?.value || 0),
+      price: +(document.getElementById('wsPrice'+i)?.value || 0)
+    })).filter(t => t.qty > 0 && t.price > 0);
+  }
+  shopDB.productPrices[editingPriceId] = {
+    retail,
+    cost:    +document.getElementById('pCost').value  || 0,
+    stock:   +document.getElementById('pStock').value || 0,
+    preorder: document.getElementById('pPreorder').value === 'true',
+    useGlobalWsTiers: useGlobal,
+    wsTiers: newTiers
   };
-  saveShopDB();closeModal('priceModal');renderPrices();toast('✓ 價格已儲存：'+editingPriceId);
+  saveShopDB();
+  closeModal('priceModal');
+  renderPrices();
+  toast('✓ 價格已儲存：' + editingPriceId);
 }
 
 // ══════════════════════════════════════════
@@ -1295,8 +1401,30 @@ function renderShopSettings(){
       <label style="font-size:12px;white-space:nowrap;font-weight:400"><input type="checkbox"${g.active?' checked':''} onchange="shopDB.gifts[${i}].active=this.checked;saveShopDB()"> 啟用</label>
       <button class="btn btn-danger btn-sm" onclick="shopDB.gifts.splice(${i},1);saveShopDB();renderShopSettings()">✕</button>
     </div>`).join('');
-  // 批發升等開關由「會員管理」頁面控制，此處不處理
-  // Logistics
+  // 全域批發階梯
+  const gTiers = shopDB.settings?.globalWsTiers || [];
+  const gHtml = gTiers.map((t,i) =>
+    `<div class="ws-tier-row" style="margin-bottom:8px">
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap">≥</span>
+      <input type="number" value="${t.qty}" placeholder="件數" style="width:70px"
+        onchange="shopDB.settings.globalWsTiers[${i}].qty=+this.value;saveShopDB();toast('✓ 已儲存')">
+      <span style="font-size:12px;color:var(--text2)">件</span>
+      <input type="number" value="${t.discount||''}" placeholder="折扣%" style="width:70px"
+        onchange="shopDB.settings.globalWsTiers[${i}].discount=+this.value;saveShopDB();toast('✓ 已儲存')">
+      <span style="font-size:12px;color:var(--text2)">% 折</span>
+      <button class="btn btn-danger btn-sm" onclick="removeGlobalTier(${i})">✕</button>
+    </div>`
+  ).join('');
+  document.getElementById('globalTiersBody').innerHTML =
+    `<div class="info-box" style="margin-bottom:12px;font-size:11px">
+      新商品預設套用此階梯（折扣率）。個別商品可在「商品價格」選擇自訂固定價格覆蓋。
+    </div>
+    <div id="globalTierRows">${gHtml}</div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px"
+      onclick="shopDB.settings.globalWsTiers.push({qty:0,discount:0});saveShopDB();renderShopSettings()">+ 新增區間</button>
+    <div class="hint" style="margin-top:8px">例：≥3件 10%折、≥6件 15%折、≥12件 20%折</div>`;
+
+  // Tier settings
   const typeLabel = {delivery:'🚚 宅配', cvs:'🏪 超商', face:'🤝 面交'};
   document.getElementById('logisticsBody').innerHTML=shopDB.logistics.map((l,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--surface2)">

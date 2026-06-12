@@ -561,6 +561,13 @@ function loadShopDB() {
         // 移除已廢棄的 face 付款方式（改用 face_pay）
         db.payments = db.payments.filter(p => p.id !== 'face');
       }
+      // 遷移：settings.globalWsTiers
+      if (!db.settings) db.settings = { allowWsUpgrade: true };
+      if (!db.settings.globalWsTiers) db.settings.globalWsTiers = [
+        { qty:3,  discount:10 },
+        { qty:6,  discount:15 },
+        { qty:12, discount:20 },
+      ];
       // 補上 cvs_stores（若舊資料沒有）
       if (!db.cvs_stores) db.cvs_stores = { '711':[], family:[], hilife:[], ok:[] };
       // 遷移：contactInfo 新版結構
@@ -616,7 +623,15 @@ function loadShopDB() {
       { id:'transfer_face',name:'先轉帳後面交', active:true },
       { id:'face_pay',     name:'面交取貨付款', active:true },
     ],
-    cvs_stores: { '711':[], family:[], hilife:[], ok:[] }
+    cvs_stores: { '711':[], family:[], hilife:[], ok:[] },
+    settings: {
+      allowWsUpgrade: true,
+      globalWsTiers: [
+        { qty:3,  discount:10 },
+        { qty:6,  discount:15 },
+        { qty:12, discount:20 },
+      ]
+    }
   };
 }
 function saveShopDB() {
@@ -641,9 +656,33 @@ function getTierDiscount(user) { return getTierInfo(user)?.discount || 0; }
 
 function getWsPrice(pid, qty) {
   const pp = shopDB.productPrices[pid];
-  if (!pp || !pp.wsTiers || pp.wsTiers.length === 0) return pp?.retail || 0;
-  let price = pp.retail;
-  [...pp.wsTiers].sort((a,b)=>a.qty-b.qty).forEach(t => { if (qty >= t.qty) price = t.price; });
+  if (!pp) return 0;
+  const retail = pp.retail || 0;
+
+  // 決定使用哪套階梯：商品自訂 > 全域預設
+  let tiers = [];
+  if (pp.useGlobalWsTiers) {
+    // 明確設定使用全域
+    tiers = shopDB.settings?.globalWsTiers || [];
+  } else if (pp.wsTiers && pp.wsTiers.length > 0) {
+    // 商品有自訂階梯
+    tiers = pp.wsTiers;
+  } else {
+    // 無自訂 → 退回全域
+    tiers = shopDB.settings?.globalWsTiers || [];
+  }
+
+  if (tiers.length === 0) return retail;
+
+  // 全域階梯是「折扣率%」或「固定價」兩種格式
+  // 判斷：有 price 欄位 → 固定價；有 discount 欄位 → 折扣率
+  let price = retail;
+  [...tiers].filter(t => t.qty > 0).sort((a, b) => a.qty - b.qty).forEach(t => {
+    if (qty >= t.qty) {
+      if (t.price > 0) price = t.price;                           // 商品自訂固定價
+      else if (t.discount > 0) price = Math.round(retail * (1 - t.discount / 100)); // 全域折扣率
+    }
+  });
   return price;
 }
 
@@ -886,13 +925,23 @@ function renderGalleryPage() {
       const isOut = pp.stock === 0 && !pp.preorder;
       // 批發會員：顯示零售價 + 批發階梯
       if (isWholesale()) {
-        const sortedTiers = (pp.wsTiers||[]).filter(t=>t.qty>0&&t.price>0).sort((a,b)=>a.qty-b.qty);
-        const tiersHtml = sortedTiers.map(t=>`<span class="ws-tier-chip">≥${t.qty}件 ${fmt(t.price)}</span>`).join('');
+        // 決定顯示哪套階梯
+        const useGlobal = pp.useGlobalWsTiers !== false && (!pp.wsTiers || pp.wsTiers.length === 0);
+        const tiers = useGlobal
+          ? (shopDB.settings?.globalWsTiers || [])
+          : (pp.wsTiers || []);
+        const sortedTiers = tiers.filter(t => t.qty > 0).sort((a,b) => a.qty - b.qty);
+        const tiersHtml = sortedTiers.map(t => {
+          const label = t.price > 0
+            ? fmt(t.price)
+            : (t.discount > 0 ? `${t.discount}%折` : '—');
+          return `<span class="ws-tier-chip">≥${t.qty}件 ${label}</span>`;
+        }).join('');
         priceHtml = `<div class="card-price-row">
           <span class="card-price">${fmt(pp.retail)}</span>
           <span class="ws-badge">🏭 批發</span>
         </div>
-        ${tiersHtml?`<div class="ws-tiers-mini">${tiersHtml}</div>`:''}`;
+        ${tiersHtml ? `<div class="ws-tiers-mini">${tiersHtml}</div>` : ''}`;
       // 一般會員：顯示零售價 + 會員折扣價
       } else if (isMemberRole() && disc > 0) {
         const memberPrice = Math.round(pp.retail * (1-disc/100));
@@ -974,10 +1023,22 @@ function updateLightbox() {
     const isOut = pp.stock === 0 && !pp.preorder;
     let priceContent = '';
     if (isWholesale()) {
-      // 批發會員：顯示零售價 + 所有批發階梯
-      const sortedTiers = (pp.wsTiers||[]).filter(t=>t.qty>0&&t.price>0).sort((a,b)=>a.qty-b.qty);
+      // 決定顯示哪套階梯
+      const useGlobal = pp.useGlobalWsTiers !== false && (!pp.wsTiers || pp.wsTiers.length === 0);
+      const tiers = useGlobal
+        ? (shopDB.settings?.globalWsTiers || [])
+        : (pp.wsTiers || []);
+      const sortedTiers = tiers.filter(t => t.qty > 0).sort((a,b) => a.qty - b.qty);
       const tiersHtml = sortedTiers.length > 0
-        ? `<div class="lb-ws-tiers">${sortedTiers.map(t=>`<div class="lb-ws-chip"><div class="lb-ws-chip-qty">≥ ${t.qty} 件</div><div class="lb-ws-chip-price">${fmt(t.price)}</div></div>`).join('')}</div>`
+        ? `<div class="lb-ws-tiers">${sortedTiers.map(t => {
+            const priceLabel = t.price > 0 ? fmt(t.price) : (t.discount > 0 ? fmt(Math.round(pp.retail*(1-t.discount/100))) : '—');
+            const subLabel   = t.discount > 0 ? `${t.discount}% 折扣` : '';
+            return `<div class="lb-ws-chip">
+              <div class="lb-ws-chip-qty">≥ ${t.qty} 件</div>
+              <div class="lb-ws-chip-price">${priceLabel}</div>
+              ${subLabel ? `<div style="font-size:9px;color:rgba(160,200,255,.7)">${subLabel}</div>` : ''}
+            </div>`;
+          }).join('')}</div>`
         : '';
       priceContent = `<span class="lb-price">${fmt(pp.retail)}</span>
         <span class="lb-price-ws">🏭 批發專屬階梯</span>
