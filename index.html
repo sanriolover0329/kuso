@@ -30,7 +30,11 @@
 html { scroll-behavior: smooth; }
 body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
 
-/* ── Hero ── */
+/* ── 公告欄 ── */
+.announce-bar { width: 100%; padding: 8px 20px; text-align: center; font-size: 13px; font-weight: 500; position: relative; overflow: hidden; }
+.announce-bar.marquee-mode .announce-text { display: inline-block; white-space: nowrap; animation: marqueeScroll 20s linear infinite; padding-left: 100%; }
+@keyframes marqueeScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
+.announce-bar.static-mode .announce-text { display: block; }
 .hero { background: #fce8ef; position: relative; overflow: hidden; border-bottom: 2px solid #f9b8cb; }
 .hero-logo-img { width: 100%; height: auto; max-height: 280px; display: block; object-fit: cover; object-position: center center; }
 @media (max-width: 768px) { .hero-logo-img { max-height: 180px; } }
@@ -163,28 +167,45 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .lb-close { position: fixed; top: 18px; right: 20px; width: 38px; height: 38px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 20px; transition: background 0.15s; }
 .lb-close:hover { background: #c04040; border-color: #c04040; }
 
-/* ── Scroll to top ── */
-body { overflow-y: auto; }
+/* ── Social Float（右下角展開式聯絡按鈕）── */
+.social-float { position: fixed; bottom: 24px; right: 20px; z-index: 200; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.social-toggle-btn {
+  width: 52px; height: 52px; border-radius: 50%; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(232,96,138,0.45);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff; font-size: 22px; transition: transform .2s, box-shadow .2s;
+  position: relative; z-index: 1;
+}
+.social-toggle-btn:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(232,96,138,0.55); }
+.social-toggle-btn.open { transform: rotate(45deg); }
+.social-items { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.social-item {
+  display: flex; align-items: center; gap: 8px;
+  opacity: 0; transform: translateY(10px) scale(0.9);
+  transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.social-item.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+.social-item-label {
+  background: rgba(0,0,0,.7); color: #fff; font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 14px; white-space: nowrap; backdrop-filter: blur(6px);
+}
+.social-item-btn {
+  width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.2); transition: transform .15s;
+  flex-shrink: 0;
+}
+.social-item-btn:hover { transform: scale(1.12); }
+.social-item-btn.line-color   { background: #06C755; }
+.social-item-btn.fb-color     { background: #1877F2; }
+.social-item-btn.phone-color  { background: var(--accent); }
+.social-float-label { font-size: 10px; font-weight: 700; background: #fff; border-radius: 8px; padding: 2px 8px; box-shadow: 0 2px 8px rgba(0,0,0,.1); color: var(--accent-dark); white-space: nowrap; margin-right: 4px; }
 #toTop { position: fixed; bottom: 100px; right: 20px; width: 40px; height: 40px; background: var(--accent); border: none; border-radius: 50%; color: #fff; font-size: 18px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.25s; display: flex; align-items: center; justify-content: center; z-index: 50; }
 #toTop.show { opacity: 1; pointer-events: all; }
 
-/* ── LINE Float ── */
-.line-float { position: fixed; bottom: 24px; left: 20px; z-index: 200; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
-.line-float-btn { width: 52px; height: 52px; background: #06C755; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(6,199,85,0.45); transition: transform 0.2s, box-shadow 0.2s; border: none; cursor: pointer; }
-.line-float-btn:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(6,199,85,0.55); }
-.line-float-btn svg { width: 28px; height: 28px; fill: #fff; }
-.line-float-label { font-size: 10px; color: #06C755; font-weight: 700; background: #fff; border-radius: 8px; padding: 2px 7px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); white-space: nowrap; letter-spacing: 0.04em; }
-.line-modal-bg { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); align-items: center; justify-content: center; }
-.line-modal-bg.open { display: flex; animation: fadeIn 0.2s ease; }
-.line-modal { background: #fff; border-radius: 20px; padding: 28px 24px; text-align: center; width: 300px; max-width: 90vw; box-shadow: 0 24px 60px rgba(0,0,0,0.25); position: relative; }
-.line-modal-icon { font-size: 2rem; margin-bottom: 4px; }
-.line-modal-title { font-size: 16px; font-weight: 700; color: #06C755; margin-bottom: 2px; }
-.line-modal-sub { font-size: 12px; color: #888; margin-bottom: 16px; }
-.line-modal-qr { width: 180px; height: 180px; object-fit: contain; border-radius: 12px; border: 3px solid #06C755; margin-bottom: 14px; }
-.line-modal-cta { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; background: #06C755; color: #fff; border-radius: 10px; font-size: 14px; font-weight: 700; text-decoration: none; transition: background 0.15s; cursor: pointer; border: none; font-family: var(--sans); }
-.line-modal-cta:hover { background: #05a648; }
-.line-modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 20px; color: #aaa; cursor: pointer; }
-.line-modal-hint { font-size: 11px; color: #aaa; margin-top: 10px; }
+/* ── Scroll to top ── */
+body { overflow-y: auto; }
 
 /* ── MODAL OVERLAY BASE ── */
 .modal-bg { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(58,32,48,0.5); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 16px; }
@@ -311,8 +332,6 @@ body { overflow-y: auto; }
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--accent-dark); color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; z-index: 999; display: none; box-shadow: 0 4px 20px rgba(180,80,130,.3); max-width: 300px; }
 
 /* ── Admin link ── */
-.admin-link { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: rgba(255,255,255,0.6); font-size: 11px; font-family: var(--mono); padding: 7px 12px; border-radius: 7px; text-decoration: none; transition: color 0.15s; z-index: 50; }
-.admin-link:hover { color: #fff; }
 
 @media (max-width: 600px) {
   .sticky-inner, .cat-inner, .gallery-wrap { padding-left: 12px; padding-right: 12px; }
@@ -325,6 +344,8 @@ body { overflow-y: auto; }
 </style>
 </head>
 <body>
+
+<div id="announceBar" style="display:none"></div>
 
 <div id="app"></div>
 
@@ -347,28 +368,10 @@ body { overflow-y: auto; }
 
 <button id="toTop" aria-label="回頂部">↑</button>
 
-<!-- LINE Float -->
-<div class="line-float" onclick="openLineModal()">
-  <button class="line-float-btn" aria-label="加入LINE群組">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.070 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-  </button>
-  <div class="line-float-label">加入群組</div>
-</div>
-
-<!-- LINE Modal -->
-<div class="line-modal-bg" id="lineModal" onclick="closeLineModal(event)">
-  <div class="line-modal">
-    <button class="line-modal-close" onclick="closeLineModalDirect()">×</button>
-    <div class="line-modal-icon">💚</div>
-    <div class="line-modal-title">加入 LINE 群組</div>
-    <div class="line-modal-sub">掃描 QR Code 或點擊按鈕即可加入</div>
-    <img class="line-modal-qr" src="line-qr.jpg" alt="LINE QR Code">
-    <button class="line-modal-cta" id="lineJoinBtn">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.070 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
-      立即加入群組
-    </button>
-    <div class="line-modal-hint">手機用戶點擊按鈕可直接開啟 LINE</div>
-  </div>
+<!-- 右下角社群聯絡浮動按鈕（由後台contactInfo設定控制） -->
+<div class="social-float" id="socialFloat">
+  <div class="social-items" id="socialItems"></div>
+  <button class="social-toggle-btn" id="socialToggleBtn" onclick="toggleSocialFloat()" aria-label="聯絡我們">＋</button>
 </div>
 
 <!-- Auth Modal (Login / Register) -->
@@ -385,8 +388,8 @@ body { overflow-y: auto; }
       </div>
       <!-- Login -->
       <div id="loginForm">
-        <div class="f-group"><label>Email</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
-        <div class="f-group"><label>密碼</label><input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="f-group"><label>帳號（Email 或電話）</label><input type="text" id="loginEmail" placeholder="Email 或手機號碼" autocomplete="username"></div>
+        <div class="f-group"><label>密碼</label><input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password"></div>
         <button class="btn-full" onclick="doLogin()">🌸 登入</button>
         <div style="text-align:center;margin-top:10px">
           <button onclick="closeModal('authModal');openModal('forgotModal')" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;text-decoration:underline">忘記密碼？</button>
@@ -508,7 +511,6 @@ body { overflow-y: auto; }
     <div class="modal-body" id="notifyModalBody"></div>
   </div>
 </div>
-<a class="admin-link" href="admin.html">⚙ 後台</a>
 
 <script>
 // ═══════════════════════════════════════
@@ -517,7 +519,6 @@ body { overflow-y: auto; }
 const CLOUD_NAME = 'dkwviksvr';
 const SHOP_TAG   = 'shop';
 const CONFIG_URL = 'config.json';
-const LINE_URL   = 'https://line.me/R/ti/g/6NrgspyX5H';
 
 const EMBEDDED_CONFIG = null; // admin-replace-marker
 
@@ -568,6 +569,12 @@ function loadShopDB() {
         { qty:6,  discount:15 },
         { qty:12, discount:20 },
       ];
+      if (db.settings.globalMinQty === undefined) db.settings.globalMinQty = 0;
+      if (db.settings.globalMaxQty === undefined) db.settings.globalMaxQty = 0;
+      if (db.settings.stockAlertThreshold === undefined) db.settings.stockAlertThreshold = 5;
+      // 遷移：公告與優惠券
+      if (!db.announcement) db.announcement = { enabled:false, text:'', bgColor:'#f9b8cb', textColor:'#3d2040', style:'static' };
+      if (!db.coupons) db.coupons = [];
       // 補上 cvs_stores（若舊資料沒有）
       if (!db.cvs_stores) db.cvs_stores = { '711':[], family:[], hilife:[], ok:[] };
       // 遷移：contactInfo 新版結構
@@ -626,12 +633,17 @@ function loadShopDB() {
     cvs_stores: { '711':[], family:[], hilife:[], ok:[] },
     settings: {
       allowWsUpgrade: true,
+      globalMinQty: 0,
+      globalMaxQty: 0,
+      stockAlertThreshold: 5,
       globalWsTiers: [
         { qty:3,  discount:10 },
         { qty:6,  discount:15 },
         { qty:12, discount:20 },
       ]
-    }
+    },
+    announcement: { enabled:false, text:'', bgColor:'#f9b8cb', textColor:'#3d2040', style:'static' },
+    coupons: []
   };
 }
 function saveShopDB() {
@@ -803,6 +815,24 @@ async function init() {
   } catch(err) {
     showError(err.message);
   }
+  renderSocialFloat();
+  renderAnnounceBar();
+}
+
+// ═══════════════════════════════════════
+// 公告欄
+// ═══════════════════════════════════════
+function renderAnnounceBar() {
+  const ann = shopDB.announcement || {};
+  const bar = document.getElementById('announceBar');
+  if (!bar) return;
+  if (!ann.enabled || !ann.text) { bar.style.display = 'none'; return; }
+  bar.style.display = 'block';
+  bar.style.background = ann.bgColor || '#f9b8cb';
+  bar.style.color = ann.textColor || '#3d2040';
+  const isMarquee = ann.style === 'marquee';
+  bar.className = `announce-bar ${isMarquee ? 'marquee-mode' : 'static-mode'}`;
+  bar.innerHTML = `<span class="announce-text">${ann.text}</span>`;
 }
 
 function showLoading() {
@@ -1082,6 +1112,12 @@ function addToCart(pid) {
   if (!pp || !pp.retail) { showToast('此商品尚未設定價格'); return; }
   if (pp.stock === 0 && !pp.preorder) { showToast('此商品目前缺貨'); return; }
   const existing = cart.find(c => c.id === pid);
+  const newQty = (existing ? existing.qty : 0) + 1;
+  // 數量上限檢查（下限於結帳前提示，這裡只擋上限）
+  const maxLimit = pp.maxQty || shopDB.settings?.globalMaxQty || 0;
+  if (maxLimit > 0 && newQty > maxLimit) {
+    showToast(`⚠ 此商品單次最多購買 ${maxLimit} 件`); return;
+  }
   if (existing) existing.qty++;
   else cart.push({ id: pid, name: p.name || pid, url: buildUrl(p), qty: 1, retail: pp.retail, preorder: pp.stock===0 && pp.preorder });
   showToast('✅ 已加入購物車：' + (p.name || pid));
@@ -1138,7 +1174,8 @@ function renderCartModal() {
   });
 
   const discAmt = isMemberRole() ? Math.round(subtotal * disc / 100) : 0;
-  const finalTotal = subtotal - discAmt;
+  const couponDiscAmt = calcCouponDiscount(subtotal - discAmt);
+  const finalTotal = subtotal - discAmt - couponDiscAmt;
   const hasPreorder = cart.some(c => c.preorder);
   const deposit = hasPreorder ? Math.round(finalTotal * 0.5) : 0;
 
@@ -1193,6 +1230,7 @@ function renderCartModal() {
       <div class="summary-row"><span class="label">商品小計</span><span>${fmt(subtotal)}</span></div>
       ${isWholesale() ? `<div class="summary-row"><span class="label" style="color:#2850b0">🏭 批發價格已套用</span><span style="color:#2850b0">依數量階梯計算</span></div>` : ''}
       ${isMemberRole() && disc > 0 ? `<div class="summary-row"><span class="label">會員折扣 (${disc}%)</span><span style="color:var(--success)">−${fmt(discAmt)}</span></div>` : ''}
+      ${couponDiscAmt > 0 ? `<div class="summary-row"><span class="label">🎫 優惠券 (${appliedCoupon.code})</span><span style="color:var(--success)">−${fmt(couponDiscAmt)}</span></div>` : ''}
       ${hasPreorder ? `<div class="summary-row"><span class="label">📦 預購訂金 (50%)</span><span style="color:var(--warning);font-weight:700">${fmt(deposit)}</span></div>` : ''}
       <div class="summary-row total"><span>${hasPreorder ? '今日應付訂金' : '訂單總計'}</span><span>${fmt(hasPreorder ? deposit : finalTotal)}</span></div>
     </div>
@@ -1203,6 +1241,16 @@ function renderCartModal() {
       <div>・剩餘款項 ${fmt(finalTotal - deposit)} 於商品到貨前付清</div>
       <div style="margin-top:6px;font-size:11px;color:#9a8040">付款方式限「先付款後出貨」類型，確保訂金到位後盡快安排備貨</div>
     </div>` : ''}
+
+    <!-- 優惠券 -->
+    <div style="margin-top:14px;display:flex;gap:8px;align-items:flex-end">
+      <div class="f-group" style="flex:1;margin:0">
+        <label>優惠券 / 折扣碼</label>
+        <input type="text" id="couponInput" placeholder="輸入折扣碼" style="text-transform:uppercase;letter-spacing:1px">
+      </div>
+      <button style="padding:10px 16px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);white-space:nowrap" onclick="applyCoupon()">套用</button>
+    </div>
+    <div id="couponResult" style="font-size:12px;margin-top:6px"></div>
     <div class="checkout-section">
       <div class="section-title">配送方式</div>
       ${logHtml}
@@ -1222,6 +1270,13 @@ function renderCartModal() {
 function cartQty(id, delta) {
   const item = cart.find(c => c.id === id);
   if (!item) return;
+  if (delta > 0) {
+    const pp = shopDB.productPrices[id] || {};
+    const maxLimit = pp.maxQty || shopDB.settings?.globalMaxQty || 0;
+    if (maxLimit > 0 && item.qty + delta > maxLimit) {
+      showToast(`⚠ 此商品單次最多購買 ${maxLimit} 件`); return;
+    }
+  }
   item.qty += delta;
   if (item.qty <= 0) removeFromCart(id);
   else renderCartModal();
@@ -1374,6 +1429,11 @@ function toggleTransferField() {
 }
 
 function submitOrder() {
+  // 數量下限檢查
+  for (const item of cart) {
+    const limitErr = checkQtyLimits(item.id, item.qty);
+    if (limitErr) { showToast(`❌ ${item.name}：${limitErr}`); return; }
+  }
   const shipName  = document.getElementById('shipName')?.value.trim();
   const shipPhone = document.getElementById('shipPhone')?.value.trim();
   const logEl = document.querySelector('input[name=logistics]:checked');
@@ -1415,14 +1475,18 @@ function submitOrder() {
     return { id: c.id, name: c.name, qty: c.qty, price: eff, preorder: c.preorder };
   });
   const discAmt = isMemberRole() ? Math.round(subtotal * disc / 100) : 0;
-  const final   = subtotal - discAmt;
+  const couponDiscAmt = calcCouponDiscount(subtotal - discAmt);
+  const final   = subtotal - discAmt - couponDiscAmt;
   const hasPreorder = cart.some(c => c.preorder);
   const order = {
     id: genOrderId(),
     userId:    currentUser ? currentUser.id : 0,
     userName:  shipName,
     userPhone: shipPhone,
-    items, subtotal, discount: discAmt, finalTotal: final,
+    items, subtotal, discount: discAmt,
+    couponCode: appliedCoupon ? appliedCoupon.code : '',
+    couponDiscount: couponDiscAmt,
+    finalTotal: final,
     status:    'pending',
     logistics: logId,
     logisticsName: logObj.name || logId,
@@ -1443,8 +1507,14 @@ function submitOrder() {
     const u = shopDB.users.find(x => x.id === currentUser.id);
     if (u && (order.payStatus === 'pending_verify' || order.payStatus === 'paid')) u.totalSpent += final;
   }
+  // 更新優惠券使用次數
+  if (appliedCoupon) {
+    const c = (shopDB.coupons || []).find(c => c.code === appliedCoupon.code);
+    if (c) c.usedCount = (c.usedCount || 0) + 1;
+  }
   saveShopDB();
   cart = [];
+  appliedCoupon = null;
   closeModal('cartModal');
   // 重新整理 app（更新購物車角標）
   renderApp();
@@ -1467,12 +1537,21 @@ function switchAuthTab(tab, btn) {
 }
 
 function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
+  const input = document.getElementById('loginEmail').value.trim();
   const pwd   = document.getElementById('loginPwd').value;
-  const user  = shopDB.users.find(u => u.email === email && u.pwd === pwd);
+  if (!input || !pwd) { showToast('❌ 請填寫帳號與密碼'); return; }
+
+  // 同時支援 Email 或電話號碼登入（電話去除符號比對）
+  const cleanInput = input.replace(/[-\s]/g, '');
+  const user = shopDB.users.find(u =>
+    (u.email === input || (u.phone || '').replace(/[-\s]/g, '') === cleanInput)
+    && u.pwd === pwd
+  );
+
   if (!user) { showToast('❌ 帳號或密碼錯誤'); return; }
   if (user.status === 'pending')  { showToast('⏳ 帳號尚未審核，請等待通知'); return; }
   if (user.status === 'disabled') { showToast('❌ 帳號已停用，請聯繫管理員'); return; }
+
   currentUser = user;
   closeModal('authModal');
   showToast('✅ 歡迎回來，' + user.name + '！');
@@ -1581,6 +1660,60 @@ function renderMemberModal() {
 }
 
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+// 優惠券驗證
+// ═══════════════════════════════════════
+var appliedCoupon = null;
+
+function applyCoupon() {
+  var code = (document.getElementById('couponInput') ? document.getElementById('couponInput').value : '').trim().toUpperCase();
+  var resultEl = document.getElementById('couponResult');
+  if (!code) { if (resultEl) resultEl.innerHTML = ''; appliedCoupon = null; return; }
+  var coupons = shopDB.coupons || [];
+  var coupon = coupons.find(function(c) { return c.code === code && c.active; });
+  if (!coupon) { if (resultEl) resultEl.innerHTML = '<span style="color:var(--accent-dark)">❌ 折扣碼無效或已停用</span>'; return; }
+  if (coupon.expiry && new Date(coupon.expiry) < new Date()) {
+    if (resultEl) resultEl.innerHTML = '<span style="color:var(--accent-dark)">❌ 此折扣碼已過期</span>'; return;
+  }
+  if (coupon.maxUse > 0 && (coupon.usedCount || 0) >= coupon.maxUse) {
+    if (resultEl) resultEl.innerHTML = '<span style="color:var(--accent-dark)">❌ 此折扣碼已達使用上限</span>'; return;
+  }
+  var subtotal = 0;
+  cart.forEach(function(item) { subtotal += getEffectivePrice(item.id, item.qty) * item.qty; });
+  if (coupon.minSpend > 0 && subtotal < coupon.minSpend) {
+    if (resultEl) resultEl.innerHTML = '<span style="color:var(--accent-dark)">❌ 需消費滿 ' + fmt(coupon.minSpend) + ' 才能使用</span>'; return;
+  }
+  appliedCoupon = coupon;
+  var discLabel = coupon.type === 'percent' ? coupon.value + '% 折扣' : '折抵 ' + fmt(coupon.value);
+  if (resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 折扣碼已套用：' + discLabel + '</span>';
+  renderCartModal();
+  setTimeout(function() {
+    var inp = document.getElementById('couponInput');
+    if (inp) inp.value = code;
+    var res = document.getElementById('couponResult');
+    if (res) res.innerHTML = '<span style="color:var(--success)">✅ 折扣碼已套用：' + discLabel + '</span>';
+  }, 50);
+}
+
+function calcCouponDiscount(subtotal) {
+  if (!appliedCoupon) return 0;
+  if (appliedCoupon.type === 'percent') return Math.round(subtotal * appliedCoupon.value / 100);
+  return Math.min(appliedCoupon.value, subtotal);
+}
+
+// ═══════════════════════════════════════
+// 數量限制驗證
+// ═══════════════════════════════════════
+function checkQtyLimits(pid, qty) {
+  var s = shopDB.settings || {};
+  var pp = shopDB.productPrices[pid] || {};
+  var min = pp.minQty || s.globalMinQty || 0;
+  var max = pp.maxQty || s.globalMaxQty || 0;
+  if (min > 0 && qty < min) return '最少需購買 ' + min + ' 件';
+  if (max > 0 && qty > max) return '單次最多購買 ' + max + ' 件';
+  return null;
+}
+
 // 下單成功彈窗（含聯絡資訊）
 // ═══════════════════════════════════════
 function showOrderSuccess(order) {
@@ -1756,7 +1889,10 @@ function doForgotPassword() {
   const res = document.getElementById('forgotResult');
   if (!email || !phone) { res.innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 請填寫 Email 與電話</p>'; return; }
   if (!newPwd || newPwd.length < 6) { res.innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 新密碼至少需要6碼</p>'; return; }
-  const user = shopDB.users.find(u => u.email === email && (u.phone||'').replace(/[-\s]/g,'') === phone.replace(/[-\s]/g,''));
+  const user = shopDB.users.find(u =>
+    u.email === email &&
+    (u.phone || '').replace(/[-\s]/g, '') === phone.replace(/[-\s]/g, '')
+  );
   if (!user) { res.innerHTML = '<p style="color:var(--accent-dark);font-size:13px">❌ 查無符合的帳號，請確認 Email 與電話是否正確</p>'; return; }
   // 建立申請記錄
   if (!shopDB.pwdResetRequests) shopDB.pwdResetRequests = [];
@@ -1803,9 +1939,61 @@ function doWsUpgradeRequest() {
   closeModal('wsUpgradeModal');
   showToast('✅ 批發升等申請已送出，等待管理員審核！', 4000);
 }
-function openLineModal() { document.getElementById('lineModal').classList.add('open'); document.getElementById('lineJoinBtn').onclick = () => window.open(LINE_URL,'_blank','noopener'); }
-function closeLineModal(e) { if (e.target === document.getElementById('lineModal')) document.getElementById('lineModal').classList.remove('open'); }
-function closeLineModalDirect() { document.getElementById('lineModal').classList.remove('open'); }
+// ═══════════════════════════════════════
+// 右下角社群浮動按鈕
+// ═══════════════════════════════════════
+let socialFloatOpen = false;
+
+function renderSocialFloat() {
+  const ci = shopDB.contactInfo || {};
+  const items = document.getElementById('socialItems');
+  if (!items) return;
+
+  const contacts = [];
+  if (ci.line   && ci.line.enabled   && ci.line.id)
+    contacts.push({ label:'LINE 私訊',    color:'line-color',  icon:'💚', href:'https://line.me/ti/p/~'+ci.line.id,  isPhone:false });
+  if (ci.lineat && ci.lineat.enabled && ci.lineat.url)
+    contacts.push({ label:'LINE@',         color:'line-color',  icon:'💚', href:ci.lineat.url,                          isPhone:false });
+  if (ci.fb     && ci.fb.enabled     && ci.fb.url)
+    contacts.push({ label:'FB 粉專',       color:'fb-color',    icon:'📘', href:ci.fb.url,                              isPhone:false });
+  if (ci.phone  && ci.phone.enabled  && ci.phone.number)
+    contacts.push({ label:ci.phone.number, color:'phone-color', icon:'📞', href:'tel:'+ci.phone.number,                isPhone:true  });
+
+  const float = document.getElementById('socialFloat');
+  if (contacts.length === 0) {
+    if (float) float.style.display = 'none';
+    return;
+  }
+  if (float) float.style.display = 'flex';
+
+  items.innerHTML = contacts.map(function(c, i) {
+    return '<div class="social-item" id="si_'+i+'" style="transition-delay:'+(i*0.05)+'s">'
+      + '<span class="social-float-label">'+c.label+'</span>'
+      + '<a href="'+c.href+'" target="'+(c.isPhone?'_self':'_blank')+'" rel="noopener"'
+      + ' class="social-item-btn '+c.color+'" title="'+c.label+'">'+c.icon+'</a>'
+      + '</div>';
+  }).join('');
+}
+
+function toggleSocialFloat() {
+  socialFloatOpen = !socialFloatOpen;
+  const btn = document.getElementById('socialToggleBtn');
+  if (btn) btn.classList.toggle('open', socialFloatOpen);
+  document.querySelectorAll('.social-item').forEach(function(el, i) {
+    setTimeout(function() { el.classList.toggle('visible', socialFloatOpen); }, i * 50);
+  });
+}
+
+document.addEventListener('click', function(e) {
+  const float = document.getElementById('socialFloat');
+  if (socialFloatOpen && float && !float.contains(e.target)) {
+    socialFloatOpen = false;
+    const btn = document.getElementById('socialToggleBtn');
+    if (btn) btn.classList.remove('open');
+    document.querySelectorAll('.social-item').forEach(function(el) { el.classList.remove('visible'); });
+  }
+});
+
 
 // Close modals on background click
 document.querySelectorAll('.modal-bg').forEach(bg => {
@@ -1813,7 +2001,7 @@ document.querySelectorAll('.modal-bg').forEach(bg => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-bg.open, .line-modal-bg.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
     if (document.getElementById('lightbox').classList.contains('open')) closeLightbox();
   }
 });

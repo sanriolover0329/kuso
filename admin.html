@@ -31,7 +31,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}.btn-ghost:hover{background:var(--surface2);color:var(--text)}
 .btn-success{background:var(--success-light);color:var(--success);border:1px solid #b8dfc9}.btn-success:hover{background:#d4eddf}
 .btn-danger{background:var(--danger-light);color:var(--danger);border:1px solid #f0cece}.btn-danger:hover{background:#fbdede}
-.btn-sm{padding:5px 10px;font-size:12px}
+.btn-info{background:var(--info-light);color:var(--info);border:1px solid #c0d4f8}.btn-info:hover{background:#d0e0ff}
+.btn-warning{background:#fffbf0;color:#7a6010;border:1px solid #f0dfa0}.btn-warning:hover{background:#fff0c8}
 .content{padding:24px;flex:1;min-width:0;overflow-x:hidden}
 .panel{display:none}.panel.active{display:block}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px}
@@ -234,6 +235,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       <button class="btn btn-ghost btn-sm" onclick="changePassword()">🔑 改密碼</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()">登出</button>
       <button class="btn btn-success btn-sm" onclick="exportConfig()">⬇ config.json</button>
+      <button class="btn btn-info btn-sm" onclick="exportOrdersCSV()">📊 匯出訂單 CSV</button>
       <button class="btn btn-ghost btn-sm" onclick="exportData()">匯出設定</button>
       <button class="btn btn-primary btn-sm" onclick="window.open('index.html','_blank')">↗ 預覽前台</button>
     </div>
@@ -244,6 +246,17 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
     <!-- ① 總覽 -->
     <div class="panel active" id="panel-overview">
       <div class="stats-row" id="overviewStats"></div>
+      <!-- 庫存警示 -->
+      <div class="card" style="margin-bottom:14px;display:none" id="lowStockAlert">
+        <div class="card-header" style="background:#fff8e0;border-radius:var(--radius) var(--radius) 0 0">
+          <div class="card-title" style="color:#8a6010">⚠️ 庫存不足警示</div>
+          <span id="lowStockCount" style="font-size:12px;color:#8a6010"></span>
+        </div>
+        <div class="card-body" style="padding:0;overflow-x:auto">
+          <table class="tbl"><thead><tr><th>商品</th><th>現有庫存</th><th>警戒值</th><th>狀態</th><th>操作</th></tr></thead>
+          <tbody id="lowStockTbody"></tbody></table>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="card">
           <div class="card-header"><div class="card-title">🚀 快速開始</div></div>
@@ -523,6 +536,27 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 
     <!-- ⑪ 商店設定 -->
     <div class="panel" id="panel-shopsettings">
+      <!-- 公告/跑馬燈 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">📢 前台公告設定</div></div>
+        <div class="card-body" id="announcementBody"></div>
+      </div>
+      <!-- 優惠券 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div class="card-title">🎫 優惠券 / 折扣碼</div>
+          <button class="btn btn-primary btn-sm" onclick="addCoupon()">+ 新增</button>
+        </div>
+        <div class="card-body" style="padding:0;overflow-x:auto">
+          <table class="tbl"><thead><tr><th>折扣碼</th><th>類型</th><th>折扣值</th><th>最低消費</th><th>使用次數</th><th>有效期限</th><th>啟用</th><th>操作</th></tr></thead>
+          <tbody id="couponTbody"></tbody></table>
+        </div>
+      </div>
+      <!-- 數量限制 & 庫存警示 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">📦 購買數量限制 &amp; 庫存警示閾值</div></div>
+        <div class="card-body" id="qtyLimitsBody"></div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div>
           <div class="card">
@@ -640,6 +674,32 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
   </div>
 </div>
 
+<!-- 優惠券 Modal -->
+<div class="modal-bg" id="couponModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="couponModalTitle">新增優惠券</div><button class="modal-close" onclick="closeModal('couponModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>折扣碼 *（大寫英數）</label><input type="text" id="cpCode" placeholder="例：SANRIO10" style="text-transform:uppercase"></div>
+      <div class="form-group"><label>折扣類型</label>
+        <select id="cpType">
+          <option value="percent">百分比折扣（%）</option>
+          <option value="fixed">固定金額折扣（NT$）</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>折扣值</label><input type="number" id="cpValue" placeholder="10（%）或 100（元）"></div>
+        <div class="form-group"><label>最低消費（NT$，0=不限）</label><input type="number" id="cpMinSpend" value="0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>使用次數上限（0=無限）</label><input type="number" id="cpMaxUse" value="0"></div>
+        <div class="form-group"><label>有效期限（留空=永久）</label><input type="date" id="cpExpiry"></div>
+      </div>
+      <div class="form-group"><label style="display:flex;align-items:center;gap:8px;font-weight:400"><input type="checkbox" id="cpActive" checked> 立即啟用</label></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('couponModal')">取消</button><button class="btn btn-primary" onclick="saveCoupon()">儲存</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -709,6 +769,11 @@ function loadShopDB(){
       if(!db.faceNote)db.faceNote='下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。';
       if(!db.settings)db.settings={allowWsUpgrade:true};
       if(!db.settings.globalWsTiers)db.settings.globalWsTiers=[{qty:3,discount:10},{qty:6,discount:15},{qty:12,discount:20}];
+      if(db.settings.globalMinQty===undefined)db.settings.globalMinQty=0;
+      if(db.settings.globalMaxQty===undefined)db.settings.globalMaxQty=0;
+      if(db.settings.stockAlertThreshold===undefined)db.settings.stockAlertThreshold=5;
+      if(!db.announcement)db.announcement={enabled:false,text:'',bgColor:'#f9b8cb',textColor:'#3d2040',style:'static'};
+      if(!db.coupons)db.coupons=[];
       return db;
     }
   }catch(e){}
@@ -767,11 +832,13 @@ function loadShopDB(){
       note:'',
     },
     faceNote:'下單後將由內部人員與您聯絡，約定面交時間與地點（以中壢地區為主）。',
-    settings:{ allowWsUpgrade:true, globalWsTiers:[
+    settings:{ allowWsUpgrade:true, globalMinQty:0, globalMaxQty:0, stockAlertThreshold:5, globalWsTiers:[
       { qty:3,  discount:10 },
       { qty:6,  discount:15 },
       { qty:12, discount:20 },
-    ]}
+    ]},
+    announcement: { enabled:false, text:'', bgColor:'#f9b8cb', textColor:'#3d2040', style:'static' },
+    coupons: []
   };
 }
 function saveShopDB(){localStorage.setItem('sanrio_shop_db',JSON.stringify(shopDB));}
@@ -805,6 +872,7 @@ function showPanel(id,btn){
 // ══════════════════════════════════════════
 function renderOverview(){
   updateStats();
+  renderLowStockAlert();
   // Stats row
   const paidOrders=shopDB.orders.filter(o=>o.payStatus==='paid'&&o.status!=='cancelled');
   const totalRevenue=paidOrders.reduce((a,o)=>a+o.finalTotal,0);
@@ -862,7 +930,16 @@ function renderOrders(){
       <td style="font-size:12px">${o.createdAt}<br><span style="color:var(--text3)">${o.userPhone||''}</span></td>
       <td style="font-size:12px">${u?u.name:(o.userName||'訪客')}</td>
       <td style="font-size:11px;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.items.map(i=>i.name+'×'+i.qty).join('、')}</td>
-      <td style="font-weight:700">${fmt(o.finalTotal)}${o.isPreorder?`<br><span style="font-size:10px;color:var(--text3)">訂金:${fmt(o.deposit)}</span>`:''}</td>
+      <td style="font-weight:700">${fmt(o.finalTotal)}${o.isPreorder?`<br><span style="font-size:10px;color:var(--text3)">訂金:${fmt(o.deposit)}</span>`:''}
+        ${o.isPreorder ? `<br><div style="margin-top:4px;display:flex;flex-direction:column;gap:3px">
+          ${o.preorderContactStatus !== 'contacted' && o.preorderContactStatus !== 'balance_paid'
+            ? `<button class="btn btn-warning btn-sm" style="font-size:10px" onclick="markPreorderContacted('${o.id}')">📞 已聯繫</button>` : ''}
+          ${o.preorderContactStatus === 'contacted'
+            ? `<span class="tag tag-info" style="font-size:10px">已聯繫</span>
+               <button class="btn btn-success btn-sm" style="font-size:10px" onclick="markPreorderBalancePaid('${o.id}')">💰 尾款已付</button>` : ''}
+          ${o.preorderContactStatus === 'balance_paid'
+            ? `<span class="tag tag-success" style="font-size:10px">尾款已付✓</span>` : ''}
+        </div>` : ''}</td>
       <td>${payLabel[o.payStatus]||o.payStatus}
         ${o.transferCode?`<div style="font-family:var(--mono);font-size:11px;margin-top:4px;background:#fff8e0;padding:2px 6px;border-radius:4px;display:inline-block">後五碼：<strong>${o.transferCode}</strong></div>`:''}
         ${o.payStatus!=='paid'?`<br><button class="btn btn-success btn-sm" style="margin-top:4px;font-size:10px" onclick="markPaid('${o.id}')">✓ 確認收款</button>`:''}
@@ -1391,6 +1468,9 @@ function savePrice(){
 // SHOP SETTINGS
 // ══════════════════════════════════════════
 function renderShopSettings(){
+  renderAnnouncementSettings();
+  renderCoupons();
+  renderQtyLimits();
   // Tier settings
   document.getElementById('tierSettingsBody').innerHTML=shopDB.tierSettings.map((t,i)=>`
     <div style="padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
@@ -1570,7 +1650,276 @@ function addGift(){
 }
 
 // ══════════════════════════════════════════
-// ORIGINAL: Cloudinary / Categories / Products / Display
+// ① 訂單匯出 CSV
+// ══════════════════════════════════════════
+function exportOrdersCSV() {
+  const statusLabel = {pending:'待確認',confirmed:'已確認',packing:'備貨中',shipping:'運送中',delivered:'已到貨',cancelled:'已取消'};
+  const payLabel    = {paid:'已付款',unpaid:'未付款',pending_payment:'待付款',pending_verify:'核對中'};
+  const logMap      = {blackcat:'黑貓',hsinchu:'新竹','711':'7-11',family:'全家',face:'面交',hilife:'萊爾富',ok:'OK'};
+  const payNames    = {cod:'貨到付款',prepay:'先付款後出貨',transfer_face:'先轉帳後面交',face_pay:'面交付款'};
+  const header = ['訂單編號','日期','會員姓名','電話','商品','商品數量','小計','折扣','訂單總額','訂金','付款狀態','付款方式','後五碼','訂單狀態','配送方式','物流單號','地址','預購'];
+  const rows = shopDB.orders.map(o => {
+    const u = shopDB.users.find(x => x.id === o.userId);
+    const items = o.items.map(i => i.name).join('；');
+    const qty   = o.items.map(i => i.qty).reduce((a,b)=>a+b, 0);
+    return [
+      o.id, o.createdAt, o.userName||u?.name||'訪客', o.userPhone||u?.phone||'',
+      items, qty, o.subtotal||o.finalTotal, o.discount||0, o.finalTotal,
+      o.deposit||0, payLabel[o.payStatus]||o.payStatus, payNames[o.payment]||o.payment,
+      o.transferCode||'', statusLabel[o.status]||o.status,
+      logMap[o.logistics]||o.logistics, o.logisticsNum||'',
+      (o.address||'').replace(/,/g,'，'), o.isPreorder?'是':'否'
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+  });
+  const bom = '\uFEFF'; // UTF-8 BOM for Excel
+  const csv = bom + header.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast(`✓ 已匯出 ${shopDB.orders.length} 筆訂單`);
+}
+
+// ══════════════════════════════════════════
+// ② 庫存低量警示
+// ══════════════════════════════════════════
+function renderLowStockAlert() {
+  const threshold = shopDB.settings?.stockAlertThreshold ?? 5;
+  const lowItems = Object.entries(shopDB.productPrices)
+    .filter(([, pp]) => pp.stock !== undefined && pp.stock <= threshold && !pp.preorder)
+    .map(([id, pp]) => ({ id, stock: pp.stock, pp }));
+  const alertEl = document.getElementById('lowStockAlert');
+  if (!alertEl) return;
+  if (lowItems.length === 0) { alertEl.style.display = 'none'; return; }
+  alertEl.style.display = 'block';
+  document.getElementById('lowStockCount').textContent = `共 ${lowItems.length} 件需補貨`;
+  const tbody = document.getElementById('lowStockTbody');
+  tbody.innerHTML = lowItems.map(({ id, stock, pp }) => {
+    const prod = state.products.find(p => p.id === id);
+    const statusTag = stock === 0
+      ? '<span class="tag" style="background:var(--danger-light);color:var(--danger)">缺貨</span>'
+      : `<span class="tag tag-warn">偏低 (${stock}件)</span>`;
+    return `<tr>
+      <td style="font-weight:600">${prod?.name||id}<br><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${id}</span></td>
+      <td style="font-family:var(--mono);font-weight:700;${stock===0?'color:var(--danger)':''}">${stock}</td>
+      <td style="font-family:var(--mono);color:var(--text3)">≤${threshold}</td>
+      <td>${statusTag}</td>
+      <td><button class="btn btn-success btn-sm" onclick="quickInbound('${id}')">+ 快速入庫</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function quickInbound(pid) {
+  const qty = +prompt(`補貨數量（${pid}）：`);
+  if (!qty || qty <= 0) return;
+  const pp = shopDB.productPrices[pid];
+  if (pp) { pp.stock = (pp.stock || 0) + qty; saveShopDB(); renderLowStockAlert(); renderOverview(); toast(`✓ 已入庫 ${qty} 件：${pid}`); }
+}
+
+// ══════════════════════════════════════════
+// ③ 公告/跑馬燈
+// ══════════════════════════════════════════
+function renderAnnouncementSettings() {
+  const ann = shopDB.announcement || {};
+  const el = document.getElementById('announcementBody');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="toggle-wrap" style="padding:0 0 12px;border-bottom:1px solid var(--surface2);margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:600">顯示前台公告</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">開啟後在前台頂部顯示公告列</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="annEnabled" ${ann.enabled?'checked':''}
+          onchange="if(!shopDB.announcement)shopDB.announcement={};shopDB.announcement.enabled=this.checked;saveShopDB();toast('✓ 已儲存')">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="form-group"><label>公告內容</label>
+      <input type="text" value="${ann.text||''}" placeholder="例：🌸 新品上架！精選三麗鷗商品限時優惠中 →"
+        onchange="if(!shopDB.announcement)shopDB.announcement={};shopDB.announcement.text=this.value;saveShopDB();toast('✓ 已儲存')">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="form-group" style="margin:0"><label>背景色</label>
+        <input type="color" value="${ann.bgColor||'#f9b8cb'}" style="width:100%;height:38px;padding:2px;border:1px solid var(--border);border-radius:7px"
+          onchange="if(!shopDB.announcement)shopDB.announcement={};shopDB.announcement.bgColor=this.value;saveShopDB()">
+      </div>
+      <div class="form-group" style="margin:0"><label>文字色</label>
+        <input type="color" value="${ann.textColor||'#3d2040'}" style="width:100%;height:38px;padding:2px;border:1px solid var(--border);border-radius:7px"
+          onchange="if(!shopDB.announcement)shopDB.announcement={};shopDB.announcement.textColor=this.value;saveShopDB()">
+      </div>
+      <div class="form-group" style="margin:0"><label>樣式</label>
+        <select onchange="if(!shopDB.announcement)shopDB.announcement={};shopDB.announcement.style=this.value;saveShopDB();toast('✓ 已儲存')">
+          <option value="static" ${!ann.style||ann.style==='static'?'selected':''}>固定顯示</option>
+          <option value="marquee" ${ann.style==='marquee'?'selected':''}>跑馬燈滾動</option>
+        </select>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// ④ 優惠券/折扣碼
+// ══════════════════════════════════════════
+let editingCouponIdx = -1;
+
+function renderCoupons() {
+  const coupons = shopDB.coupons || [];
+  const tbody = document.getElementById('couponTbody');
+  if (!tbody) return;
+  if (coupons.length === 0) {
+    tbody.innerHTML = '<tr><td colspan=8 style="text-align:center;color:var(--text3);padding:20px">尚未建立任何優惠券</td></tr>';
+    return;
+  }
+  tbody.innerHTML = coupons.map((c, i) => {
+    const typeLabel = c.type === 'percent' ? `${c.value}% 折扣` : `NT$${c.value} 折`;
+    const useInfo   = `${c.usedCount||0} / ${c.maxUse||'∞'}`;
+    const expired   = c.expiry && new Date(c.expiry) < new Date();
+    return `<tr style="${expired?'opacity:.5':''}">
+      <td><strong style="font-family:var(--mono);font-size:13px;letter-spacing:1px">${c.code}</strong></td>
+      <td>${typeLabel}</td>
+      <td style="font-weight:700">${c.type==='percent'?c.value+'%':'NT$'+c.value}</td>
+      <td style="font-size:12px">${c.minSpend>0?'滿 NT$'+c.minSpend:'不限'}</td>
+      <td style="font-size:12px">${useInfo}</td>
+      <td style="font-size:12px">${c.expiry||'永久'}</td>
+      <td>${c.active&&!expired?'<span class="tag tag-success">啟用</span>':'<span class="tag" style="background:var(--surface2);color:var(--text3)">停用</span>'}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="editCoupon(${i})">編輯</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCoupon(${i})">刪除</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function addCoupon() {
+  editingCouponIdx = -1;
+  document.getElementById('couponModalTitle').textContent = '新增優惠券';
+  ['cpCode','cpValue','cpExpiry'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('cpMinSpend').value = '0';
+  document.getElementById('cpMaxUse').value   = '0';
+  document.getElementById('cpType').value     = 'percent';
+  document.getElementById('cpActive').checked = true;
+  openModal('couponModal');
+}
+
+function editCoupon(idx) {
+  editingCouponIdx = idx;
+  const c = shopDB.coupons[idx];
+  document.getElementById('couponModalTitle').textContent = '編輯優惠券';
+  document.getElementById('cpCode').value     = c.code;
+  document.getElementById('cpType').value     = c.type;
+  document.getElementById('cpValue').value    = c.value;
+  document.getElementById('cpMinSpend').value = c.minSpend || 0;
+  document.getElementById('cpMaxUse').value   = c.maxUse  || 0;
+  document.getElementById('cpExpiry').value   = c.expiry  || '';
+  document.getElementById('cpActive').checked = c.active;
+  openModal('couponModal');
+}
+
+function saveCoupon() {
+  const code = document.getElementById('cpCode').value.trim().toUpperCase();
+  if (!code) { toast('請填寫折扣碼'); return; }
+  const val  = +document.getElementById('cpValue').value;
+  if (!val || val <= 0) { toast('請填寫折扣值'); return; }
+  if (!shopDB.coupons) shopDB.coupons = [];
+  // 檢查重複
+  const dupIdx = shopDB.coupons.findIndex(c => c.code === code);
+  if (dupIdx >= 0 && dupIdx !== editingCouponIdx) { toast('此折扣碼已存在'); return; }
+  const coupon = {
+    code, type: document.getElementById('cpType').value,
+    value: val, minSpend: +document.getElementById('cpMinSpend').value || 0,
+    maxUse: +document.getElementById('cpMaxUse').value || 0,
+    expiry: document.getElementById('cpExpiry').value || '',
+    active: document.getElementById('cpActive').checked,
+    usedCount: editingCouponIdx >= 0 ? (shopDB.coupons[editingCouponIdx].usedCount || 0) : 0
+  };
+  if (editingCouponIdx >= 0) shopDB.coupons[editingCouponIdx] = coupon;
+  else shopDB.coupons.push(coupon);
+  saveShopDB(); closeModal('couponModal'); renderCoupons();
+  toast(`✓ 優惠券 ${code} 已${editingCouponIdx >= 0 ? '更新' : '建立'}`);
+}
+
+function deleteCoupon(idx) {
+  if (!confirm('確定刪除此優惠券？')) return;
+  shopDB.coupons.splice(idx, 1); saveShopDB(); renderCoupons(); toast('已刪除');
+}
+
+// ══════════════════════════════════════════
+// ⑤ 商品名稱快速編輯（商品管理頁）
+// ══════════════════════════════════════════
+function startEditName(pid) {
+  const cell = document.getElementById('namecell_' + pid);
+  if (!cell) return;
+  const current = state.products.find(p => p.id === pid)?.name || pid;
+  cell.innerHTML = `<input type="text" value="${current}" style="width:100%;padding:4px 7px;border:1.5px solid var(--accent);border-radius:5px;font-size:12px"
+    onblur="saveEditName('${pid}',this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')renderProducts()">`;
+  cell.querySelector('input').focus();
+}
+
+function saveEditName(pid, name) {
+  if (!name.trim()) { renderProducts(); return; }
+  const prod = state.products.find(p => p.id === pid);
+  if (prod) { prod.name = name.trim(); saveState(); }
+  const cell = document.getElementById('namecell_' + pid);
+  if (cell) cell.innerHTML = `<span ondblclick="startEditName('${pid}')" title="雙擊編輯">${name.trim()}</span>`;
+  toast('✓ 名稱已更新：' + pid);
+}
+
+// ══════════════════════════════════════════
+// ⑥ 預購到貨追蹤（訂單管理）
+// ══════════════════════════════════════════
+function markPreorderContacted(oid) {
+  const o = shopDB.orders.find(x => x.id === oid);
+  if (!o) return;
+  if (!o.preorderLog) o.preorderLog = [];
+  o.preorderLog.push({ action: 'contacted', time: new Date().toISOString(), by: currentAdminUser?.name || '管理員' });
+  o.preorderContactStatus = 'contacted';
+  saveShopDB(); renderOrders(); toast('✓ 已標記「已聯繫」');
+}
+
+function markPreorderBalancePaid(oid) {
+  const o = shopDB.orders.find(x => x.id === oid);
+  if (!o) return;
+  if (!o.preorderLog) o.preorderLog = [];
+  o.preorderLog.push({ action: 'balance_paid', time: new Date().toISOString(), by: currentAdminUser?.name || '管理員' });
+  o.preorderContactStatus = 'balance_paid';
+  o.payStatus = 'paid';
+  saveShopDB(); renderOrders(); toast('✓ 已標記「尾款已付」');
+}
+
+// ══════════════════════════════════════════
+// ⑦ 下單數量限制（在 renderShopSettings）
+// ══════════════════════════════════════════
+function renderQtyLimits() {
+  const el = document.getElementById('qtyLimitsBody');
+  if (!el) return;
+  const s = shopDB.settings || {};
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="form-group" style="margin:0">
+        <label>全域最小購買量（0=不限）</label>
+        <input type="number" value="${s.globalMinQty||0}" min=0
+          onchange="if(!shopDB.settings)shopDB.settings={};shopDB.settings.globalMinQty=+this.value;saveShopDB();toast('✓ 已儲存')">
+        <div class="hint">批發最低起訂量，設0表示無限制</div>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>全域最大購買量（0=不限）</label>
+        <input type="number" value="${s.globalMaxQty||0}" min=0
+          onchange="if(!shopDB.settings)shopDB.settings={};shopDB.settings.globalMaxQty=+this.value;saveShopDB();toast('✓ 已儲存')">
+        <div class="hint">防止單次過量採購，設0表示無限制</div>
+      </div>
+    </div>
+    <div class="form-group" style="margin:0">
+      <label>庫存警示閾值（件數 ≤ 此值時顯示警示）</label>
+      <input type="number" value="${s.stockAlertThreshold??5}" min=0
+        onchange="if(!shopDB.settings)shopDB.settings={};shopDB.settings.stockAlertThreshold=+this.value;saveShopDB();toast('✓ 已儲存')">
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// renderShopSettings 追加新區塊
+// ══════════════════════════════════════════
 // ══════════════════════════════════════════
 function loadCloudinaryForm(){
   document.getElementById('cloudName').value=state.cloudName||'';
@@ -1738,13 +2087,39 @@ function deleteCat(id){if(!confirm('確定刪除分類？'))return;state.categor
 // Products (original)
 let selectedIds=new Set();
 function renderProducts(){
-  const q=document.getElementById('prodSearch').value.toLowerCase();const filterCat=document.getElementById('filterCat').value;const filterAssigned=document.getElementById('filterAssigned').value;
-  const prods=state.products.filter(p=>{const matchQ=!q||p.id.toLowerCase().includes(q)||(p.name||'').toLowerCase().includes(q);const matchCat=!filterCat||p.category===filterCat;const matchA=!filterAssigned||(filterAssigned==='yes'?!!p.category:!p.category);return matchQ&&matchCat&&matchA;});
+  const q=document.getElementById('prodSearch').value.toLowerCase();
+  const filterCat=document.getElementById('filterCat').value;
+  const filterAssigned=document.getElementById('filterAssigned').value;
+  const prods=state.products.filter(p=>{
+    const matchQ=!q||p.id.toLowerCase().includes(q)||(p.name||'').toLowerCase().includes(q);
+    const matchCat=!filterCat||p.category===filterCat;
+    const matchA=!filterAssigned||(filterAssigned==='yes'?!!p.category:!p.category);
+    return matchQ&&matchCat&&matchA;
+  });
   const grid=document.getElementById('productsGrid');
   if(prods.length===0){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">沒有符合條件的商品</div>';return;}
-  grid.innerHTML=prods.map(p=>{const cat=state.categories.find(c=>c.id===p.category);const imgUrl=buildThumbUrl(p);const sel=selectedIds.has(p.id);
-    return`<div class="prod-card${sel?' selected':''}" onclick="toggleSelect('${p.id}')" data-id="${p.id}"><div class="prod-img">${imgUrl?`<img src="${imgUrl}" alt="${p.id}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img>🧸<br><span style=font-size:10px>${p.id}</span></div>'">`:'<div class="no-img">🧸<br><span style="font-size:10px">'+p.id+'</span></div>'}</div><div class="prod-foot"><div class="prod-id">${p.id}</div><div class="prod-name">${p.name||p.id}</div>${cat?`<div class="prod-cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${cat.name}</div>`:'<div class="prod-cat-badge" style="background:var(--surface2);color:var(--text3)">未分類</div>'}</div></div>`;
-  }).join('');updateBatchBar();
+  grid.innerHTML=prods.map(p=>{
+    const cat=state.categories.find(c=>c.id===p.category);
+    const imgUrl=buildThumbUrl(p);
+    const sel=selectedIds.has(p.id);
+    const imgHtml=imgUrl
+      ? `<img src="${imgUrl}" alt="${p.id}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img>🧸<br><span style=font-size:10px>${p.id}</span></div>'">`
+      : `<div class="no-img">🧸<br><span style="font-size:10px">${p.id}</span></div>`;
+    const catBadge=cat
+      ? `<div class="prod-cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${cat.name}</div>`
+      : `<div class="prod-cat-badge" style="background:var(--surface2);color:var(--text3)">未分類</div>`;
+    return `<div class="prod-card${sel?' selected':''}" onclick="toggleSelect('${p.id}')" data-id="${p.id}">
+      <div class="prod-img">${imgHtml}</div>
+      <div class="prod-foot">
+        <div class="prod-id">${p.id}</div>
+        <div class="prod-name" id="namecell_${p.id}" title="雙擊可快速編輯名稱">
+          <span ondblclick="event.stopPropagation();startEditName('${p.id}')">${p.name||p.id}</span>
+        </div>
+        ${catBadge}
+      </div>
+    </div>`;
+  }).join('');
+  updateBatchBar();
 }
 function toggleSelect(id){selectedIds.has(id)?selectedIds.delete(id):selectedIds.add(id);const card=document.querySelector(`[data-id="${id}"]`);if(card)card.classList.toggle('selected',selectedIds.has(id));updateBatchBar();}
 function selectAll(){document.querySelectorAll('.prod-card').forEach(c=>{selectedIds.add(c.dataset.id);c.classList.add('selected')});updateBatchBar();}
