@@ -427,6 +427,42 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       <div class="info-box" style="margin-bottom:16px">
         💡 為每件商品設定<strong>零售價、批發起價、成本</strong>（成本僅後台可見）及庫存。批發階梯：購買 N 件以上套用對應價格。
       </div>
+
+      <!-- 批次套用價格/成本/庫存 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div class="card-title">⚡ 批次套用（初期匯入大量商品用）</div>
+        </div>
+        <div class="card-body">
+          <div class="hint" style="margin-bottom:10px">設定一套預設值，套用到指定範圍的商品。已個別設定過的商品也可選擇覆蓋。</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+            <div class="form-group" style="margin:0"><label>零售價（留空=不變更）</label><input type="number" id="bulkRetail" placeholder="例：450"></div>
+            <div class="form-group" style="margin:0"><label>成本（留空=不變更）</label><input type="number" id="bulkCost" placeholder="例：170"></div>
+            <div class="form-group" style="margin:0"><label>庫存（留空=不變更）</label><input type="number" id="bulkStock" placeholder="例：50"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div class="form-group" style="margin:0">
+              <label>套用範圍</label>
+              <select id="bulkScope" onchange="toggleBulkScope()">
+                <option value="unpriced">僅未設定價格的商品（建議：初期匯入用）</option>
+                <option value="category">指定分類的商品</option>
+                <option value="all">全部商品（含已設定過的，將被覆蓋）</option>
+              </select>
+            </div>
+            <div class="form-group" id="bulkCategoryWrap" style="margin:0;display:none">
+              <label>選擇分類</label>
+              <select id="bulkCategory"></select>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400;margin-bottom:12px">
+            <input type="checkbox" id="bulkUseGlobalTiers" checked>
+            批發階梯套用全域設定（取消勾選則保留商品原有批發設定）
+          </label>
+          <button class="btn btn-primary" onclick="applyBulkPrice()">⚡ 套用設定</button>
+          <span id="bulkResult" style="font-size:12px;color:var(--text2);margin-left:10px"></span>
+        </div>
+      </div>
+
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1417,7 +1453,78 @@ function renderAccounting(){
 // ══════════════════════════════════════════
 let editingPriceId=null;
 
+// ══════════════════════════════════════════
+// 批次套用價格/成本/庫存
+// ══════════════════════════════════════════
+function populateBulkCategorySelect() {
+  const sel = document.getElementById('bulkCategory');
+  if (!sel) return;
+  sel.innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+    || '<option value="">（尚無分類）</option>';
+}
+
+function toggleBulkScope() {
+  const scope = document.getElementById('bulkScope')?.value;
+  const wrap  = document.getElementById('bulkCategoryWrap');
+  if (wrap) wrap.style.display = scope === 'category' ? 'block' : 'none';
+}
+
+function applyBulkPrice() {
+  const retailVal = document.getElementById('bulkRetail').value;
+  const costVal   = document.getElementById('bulkCost').value;
+  const stockVal  = document.getElementById('bulkStock').value;
+  const scope     = document.getElementById('bulkScope').value;
+  const useGlobalTiers = document.getElementById('bulkUseGlobalTiers').checked;
+  const resultEl  = document.getElementById('bulkResult');
+
+  if (retailVal === '' && costVal === '' && stockVal === '') {
+    resultEl.textContent = '⚠ 請至少填寫一項數值';
+    return;
+  }
+
+  // 決定要套用的商品清單
+  let targets = [];
+  if (scope === 'unpriced') {
+    targets = state.products.filter(p => {
+      const pp = shopDB.productPrices[p.id];
+      return !pp || !pp.retail;
+    });
+  } else if (scope === 'category') {
+    const catId = document.getElementById('bulkCategory').value;
+    if (!catId) { resultEl.textContent = '⚠ 請選擇分類'; return; }
+    targets = state.products.filter(p => p.category === catId);
+  } else { // all
+    targets = state.products;
+  }
+
+  if (targets.length === 0) {
+    resultEl.textContent = '⚠ 沒有符合條件的商品';
+    return;
+  }
+
+  if (scope === 'all' && !confirm(`確定要將設定套用到【全部 ${targets.length} 件商品】？\n已個別設定過的商品將被覆蓋。`)) return;
+  if (scope === 'category' && !confirm(`確定要套用到此分類的 ${targets.length} 件商品？`)) return;
+
+  let count = 0;
+  targets.forEach(p => {
+    const pp = shopDB.productPrices[p.id] || { retail:0, cost:0, stock:0, preorder:false, wsTiers:[], useGlobalWsTiers:true };
+    if (retailVal !== '') pp.retail = +retailVal;
+    if (costVal   !== '') pp.cost   = +costVal;
+    if (stockVal  !== '') pp.stock  = +stockVal;
+    if (useGlobalTiers) { pp.useGlobalWsTiers = true; pp.wsTiers = []; }
+    shopDB.productPrices[p.id] = pp;
+    count++;
+  });
+
+  saveShopDB();
+  renderPrices();
+  renderLowStockAlert();
+  resultEl.textContent = `✓ 已套用至 ${count} 件商品`;
+  toast(`✓ 批次設定完成，共更新 ${count} 件商品`);
+}
+
 function renderPrices(){
+  populateBulkCategorySelect();
   const q=(document.getElementById('priceSearch')?.value||'').toLowerCase();
   const flt=document.getElementById('priceFilter')?.value||'';
   const prods=state.products.filter(p=>{
