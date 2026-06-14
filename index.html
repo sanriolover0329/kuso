@@ -436,6 +436,17 @@ body { overflow-y: auto; }
   </div>
 </div>
 
+<!-- Account Settings Modal -->
+<div class="modal-bg" id="accountSettingsModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-head">
+      <h2>帳號設定 ⚙️</h2>
+      <button class="modal-close-btn" onclick="closeModal('accountSettingsModal')">×</button>
+    </div>
+    <div class="modal-body" id="accountSettingsBody"></div>
+  </div>
+</div>
+
 <!-- Order Success + Contact Modal -->
 <div class="modal-bg" id="orderSuccessModal">
   <div class="modal-box" style="max-width:440px">
@@ -651,7 +662,22 @@ function saveShopDB() {
 }
 let shopDB = loadShopDB();
 let currentUser = null;
-let cart = []; // [{id, name, url, qty, price, retail, preorder}]
+
+// 購物車持久化（localStorage）
+function loadCart() {
+  try {
+    const s = localStorage.getItem('sanrio_cart');
+    if (s) {
+      const parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch(e) {}
+  return [];
+}
+function saveCart() {
+  try { localStorage.setItem('sanrio_cart', JSON.stringify(cart)); } catch(e) {}
+}
+let cart = loadCart(); // [{id, name, url, qty, price, retail, preorder}]
 
 // ═══════════════════════════════════════
 // HELPERS
@@ -1120,6 +1146,7 @@ function addToCart(pid) {
   }
   if (existing) existing.qty++;
   else cart.push({ id: pid, name: p.name || pid, url: buildUrl(p), qty: 1, retail: pp.retail, preorder: pp.stock===0 && pp.preorder });
+  saveCart();
   showToast('✅ 已加入購物車：' + (p.name || pid));
   // refresh header cart badge
   const badge = document.querySelector('.cart-badge');
@@ -1153,8 +1180,10 @@ function renderCartModal() {
     const eff = getEffectivePrice(item.id, item.qty);
     const rowTotal = eff * item.qty;
     subtotal += rowTotal;
+    // 即時讀取目前零售價（而非加入購物車時的快照），避免後台改價後顯示舊資料
+    const liveRetail = shopDB.productPrices[item.id]?.retail ?? item.retail;
     const priceNote = isWholesale() ? '批發價（依數量）'
-      : isMemberRole() && disc > 0 ? `零售 ${fmt(item.retail)} / 會員折扣 ${disc}%`
+      : isMemberRole() && disc > 0 ? `零售 ${fmt(liveRetail)} / 會員折扣 ${disc}%`
       : '零售價';
     itemsHtml += `<div class="cart-item">
       <img class="cart-img" src="${item.url}" alt="${item.name}" onerror="this.style.display='none'">
@@ -1279,10 +1308,11 @@ function cartQty(id, delta) {
   }
   item.qty += delta;
   if (item.qty <= 0) removeFromCart(id);
-  else renderCartModal();
+  else { saveCart(); renderCartModal(); }
 }
 function removeFromCart(id) {
   cart = cart.filter(c => c.id !== id);
+  saveCart();
   renderCartModal();
 }
 
@@ -1503,6 +1533,13 @@ function submitOrder() {
     address:    shipAddr
   };
   shopDB.orders.push(order);
+  // 扣減庫存（預購商品不扣庫存，因為其 stock 通常為0且代表預購）
+  items.forEach(it => {
+    const pp = shopDB.productPrices[it.id];
+    if (pp && !it.preorder && typeof pp.stock === 'number') {
+      pp.stock = Math.max(0, pp.stock - it.qty);
+    }
+  });
   if (currentUser) {
     const u = shopDB.users.find(x => x.id === currentUser.id);
     if (u && (order.payStatus === 'pending_verify' || order.payStatus === 'paid')) u.totalSpent += final;
@@ -1514,6 +1551,7 @@ function submitOrder() {
   }
   saveShopDB();
   cart = [];
+  saveCart();
   appliedCoupon = null;
   closeModal('cartModal');
   // 重新整理 app（更新購物車角標）
@@ -1604,7 +1642,10 @@ function renderMemberModal() {
       </div>
       <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
         <div style="font-size:13px;font-weight:600;color:var(--text)">我的訂單</div>
-        <button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer" onclick="currentUser=null;renderApp();closeModal('memberModal')">登出</button>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer" onclick="openAccountSettings()">⚙️ 帳號設定</button>
+          <button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer" onclick="currentUser=null;renderApp();closeModal('memberModal')">登出</button>
+        </div>
       </div>
       ${ordersHtml}`;
     return;
@@ -1654,14 +1695,72 @@ function renderMemberModal() {
     ${(shopDB.settings?.allowWsUpgrade !== false)?`<div style="background:linear-gradient(135deg,#e8f0fe,#d4e4ff);border:1.5px solid #a0c0f0;border-radius:10px;padding:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div style="font-size:13px;font-weight:600;color:#2850b0">🏭 升等批發會員</div><div style="font-size:11px;color:#5070a0;margin-top:2px">享批發階梯價格，大量購買更優惠</div></div><button style="padding:8px 16px;background:#2850b0;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)" onclick="openWsUpgradeModal()">申請升等 →</button></div>`:''}
     <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:13px;font-weight:600;color:var(--text)">我的訂單</div>
-      <button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer" onclick="currentUser=null;renderApp();closeModal('memberModal')">登出</button>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer" onclick="openAccountSettings()">⚙️ 帳號設定</button>
+        <button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer" onclick="currentUser=null;renderApp();closeModal('memberModal')">登出</button>
+      </div>
     </div>
     ${ordersHtml}`;
 }
 
 // ═══════════════════════════════════════
+// 帳號設定（會員自助：改個人資料/密碼）
 // ═══════════════════════════════════════
-// 優惠券驗證
+function openAccountSettings() {
+  if (!currentUser) return;
+  const body = document.getElementById('accountSettingsBody');
+  body.innerHTML = `
+    <div class="f-group"><label>姓名</label><input type="text" id="accName" value="${currentUser.name}"></div>
+    <div class="f-group"><label>電話</label><input type="tel" id="accPhone" value="${currentUser.phone || ''}"></div>
+    <div class="f-group"><label>Email（僅供顯示，無法修改）</label><input type="email" value="${currentUser.email}" disabled style="opacity:.6"></div>
+    <button class="btn-full" onclick="saveAccountProfile()" style="margin-top:4px">儲存資料</button>
+
+    <div style="margin:18px 0;border-top:1px dashed var(--border)"></div>
+
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">🔑 修改密碼</div>
+    <div class="f-group"><label>目前密碼</label><input type="password" id="accCurPwd" placeholder="輸入目前密碼"></div>
+    <div class="f-group"><label>新密碼</label><input type="password" id="accNewPwd" placeholder="至少6碼"></div>
+    <div class="f-group"><label>確認新密碼</label><input type="password" id="accNewPwd2" placeholder="再次輸入新密碼"></div>
+    <button class="btn-full" onclick="changeMyPassword()" style="margin-top:4px;background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">修改密碼</button>
+    <div id="accMsg" style="font-size:12px;margin-top:10px;text-align:center"></div>`;
+  openModal('accountSettingsModal');
+}
+
+function saveAccountProfile() {
+  const name  = document.getElementById('accName').value.trim();
+  const phone = document.getElementById('accPhone').value.trim();
+  if (!name)  { showToast('❌ 請填寫姓名'); return; }
+  if (!phone) { showToast('❌ 請填寫電話'); return; }
+  const u = shopDB.users.find(x => x.id === currentUser.id);
+  if (!u) return;
+  u.name = name; u.phone = phone;
+  currentUser.name = name; currentUser.phone = phone;
+  saveShopDB();
+  showToast('✅ 資料已更新');
+  renderApp();
+  renderMemberModal();
+}
+
+function changeMyPassword() {
+  const cur  = document.getElementById('accCurPwd').value;
+  const newP = document.getElementById('accNewPwd').value;
+  const newP2 = document.getElementById('accNewPwd2').value;
+  const msgEl = document.getElementById('accMsg');
+  const u = shopDB.users.find(x => x.id === currentUser.id);
+  if (!u) return;
+  if (!cur)  { msgEl.innerHTML = '<span style="color:var(--accent-dark)">請輸入目前密碼</span>'; return; }
+  if (u.pwd !== cur) { msgEl.innerHTML = '<span style="color:var(--accent-dark)">目前密碼錯誤</span>'; return; }
+  if (!newP || newP.length < 6) { msgEl.innerHTML = '<span style="color:var(--accent-dark)">新密碼至少需要6碼</span>'; return; }
+  if (newP !== newP2) { msgEl.innerHTML = '<span style="color:var(--accent-dark)">兩次輸入的密碼不同</span>'; return; }
+  u.pwd = newP;
+  saveShopDB();
+  document.getElementById('accCurPwd').value = '';
+  document.getElementById('accNewPwd').value = '';
+  document.getElementById('accNewPwd2').value = '';
+  msgEl.innerHTML = '<span style="color:var(--success)">✅ 密碼已更新</span>';
+}
+
+
 // ═══════════════════════════════════════
 var appliedCoupon = null;
 
@@ -2009,6 +2108,36 @@ document.addEventListener('keydown', e => {
 // Scroll to top
 window.addEventListener('scroll', () => { document.getElementById('toTop').classList.toggle('show', window.scrollY > 400); });
 document.getElementById('toTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+// ═══════════════════════════════════════
+// 跨分頁同步：當其他分頁修改 localStorage 時自動刷新
+// ═══════════════════════════════════════
+window.addEventListener('storage', (e) => {
+  if (e.key === 'sanrio_shop_db') {
+    shopDB = loadShopDB();
+    // 若目前登入的會員資料有變動（例如後台調整角色/狀態），同步更新 currentUser
+    if (currentUser) {
+      const updated = shopDB.users.find(u => u.id === currentUser.id);
+      if (updated) {
+        if (updated.status === 'disabled') {
+          currentUser = null;
+          showToast('⚠ 您的帳號已被停用，已自動登出');
+        } else {
+          currentUser = updated;
+        }
+      }
+    }
+    renderApp();
+    renderSocialFloat();
+    renderAnnounceBar();
+    // 若購物車彈窗開啟中，重新渲染以更新庫存/價格
+    if (document.getElementById('cartModal')?.classList.contains('open')) renderCartModal();
+  } else if (e.key === 'sanrio_cart') {
+    cart = loadCart();
+    if (document.getElementById('cartModal')?.classList.contains('open')) renderCartModal();
+    renderApp();
+  }
+});
 
 init();
 </script>
