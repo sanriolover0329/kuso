@@ -1416,14 +1416,16 @@ function saveMember(){
 function renderAccounting(){
   const paidOrders=shopDB.orders.filter(o=>o.payStatus==='paid'&&o.status!=='cancelled');
   const totalRevenue=paidOrders.reduce((a,o)=>a+o.finalTotal,0);
+  const totalShipping=paidOrders.reduce((a,o)=>a+(o.shippingFee||0),0);
+  const productRevenue=totalRevenue-totalShipping;
   let totalCost=0;
   shopDB.orders.forEach(o=>o.items.forEach(i=>{const pp=shopDB.productPrices[i.id];if(pp)totalCost+=pp.cost*i.qty;}));
-  const profit=totalRevenue-totalCost;
+  const profit=productRevenue-totalCost;
   document.getElementById('accountingStats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">已收款</div><div class="stat-value">${fmt(totalRevenue)}</div></div>
+    <div class="stat-card"><div class="stat-label">已收款（含運費）</div><div class="stat-value">${fmt(totalRevenue)}</div><div class="stat-sub">運費收入 ${fmt(totalShipping)}</div></div>
     <div class="stat-card"><div class="stat-label">商品成本</div><div class="stat-value" style="color:var(--danger)">${fmt(totalCost)}</div></div>
-    <div class="stat-card"><div class="stat-label">毛利</div><div class="stat-value" style="color:var(--success)">${fmt(profit)}</div></div>
-    <div class="stat-card"><div class="stat-label">毛利率</div><div class="stat-value">${totalRevenue>0?Math.round(profit/totalRevenue*100):0}%</div></div>`;
+    <div class="stat-card"><div class="stat-label">商品毛利</div><div class="stat-value" style="color:var(--success)">${fmt(profit)}</div></div>
+    <div class="stat-card"><div class="stat-label">毛利率</div><div class="stat-value">${productRevenue>0?Math.round(profit/productRevenue*100):0}%</div></div>`;
   const unpaid=shopDB.orders.filter(o=>o.payStatus!=='paid'&&o.status!=='cancelled');
   const payNames={face:'面交',transfer_face:'轉帳後面交',cod:'貨到付款',prepay:'先付後出'};
   document.getElementById('unpaidTbody').innerHTML=unpaid.length===0?'<tr><td colspan=5 style="text-align:center;color:var(--text3);padding:20px">無待收款訂單</td></tr>':
@@ -1870,14 +1872,14 @@ function exportOrdersCSV() {
   const payLabel    = {paid:'已付款',unpaid:'未付款',pending_payment:'待付款',pending_verify:'核對中'};
   const logMap      = {blackcat:'黑貓',hsinchu:'新竹','711':'7-11',family:'全家',face:'面交',hilife:'萊爾富',ok:'OK'};
   const payNames    = {cod:'貨到付款',prepay:'先付款後出貨',transfer_face:'先轉帳後面交',face_pay:'面交付款'};
-  const header = ['訂單編號','日期','會員姓名','電話','商品','商品數量','小計','折扣','訂單總額','訂金','付款狀態','付款方式','後五碼','訂單狀態','配送方式','物流單號','地址','預購'];
+  const header = ['訂單編號','日期','會員姓名','電話','商品','商品數量','小計','折扣','優惠券折抵','運費','訂單總額','訂金','付款狀態','付款方式','後五碼','訂單狀態','配送方式','物流單號','地址','預購'];
   const rows = shopDB.orders.map(o => {
     const u = shopDB.users.find(x => x.id === o.userId);
     const items = o.items.map(i => i.name).join('；');
     const qty   = o.items.map(i => i.qty).reduce((a,b)=>a+b, 0);
     return [
       o.id, o.createdAt, o.userName||u?.name||'訪客', o.userPhone||u?.phone||'',
-      items, qty, o.subtotal||o.finalTotal, o.discount||0, o.finalTotal,
+      items, qty, o.subtotal||o.finalTotal, o.discount||0, o.couponDiscount||0, o.shippingFee||0, o.finalTotal,
       o.deposit||0, payLabel[o.payStatus]||o.payStatus, payNames[o.payment]||o.payment,
       o.transferCode||'', statusLabel[o.status]||o.status,
       logMap[o.logistics]||o.logistics, o.logisticsNum||'',

@@ -240,6 +240,9 @@ body { overflow-y: auto; }
 .cart-qty-ctrl { display: flex; align-items: center; gap: 8px; }
 .qty-btn { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface2); cursor: pointer; font-size: 14px; color: var(--accent-dark); display: flex; align-items: center; justify-content: center; transition: all .2s; }
 .qty-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.qty-input { width: 44px; height: 26px; text-align: center; border: 1.5px solid var(--border); border-radius: 6px; font-size: 13px; font-weight: 600; font-family: var(--sans); color: var(--text); background: var(--surface); padding: 0; }
+.qty-input:focus { border-color: var(--accent); outline: none; }
+.qty-input::-webkit-outer-spin-button, .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .cart-item-price { font-weight: 700; font-size: 14px; color: var(--accent-dark); font-family: var(--mono); min-width: 70px; text-align: right; }
 .remove-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; padding: 4px; }
 .remove-btn:hover { color: #c04040; }
@@ -419,7 +422,10 @@ body { overflow-y: auto; }
   <div class="modal-box">
     <div class="modal-head">
       <h2>購物車 🛒</h2>
-      <button class="modal-close-btn" onclick="closeModal('cartModal')">×</button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button id="clearCartBtn" onclick="clearCart()" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;text-decoration:underline;display:none">清空購物車</button>
+        <button class="modal-close-btn" onclick="closeModal('cartModal')">×</button>
+      </div>
     </div>
     <div class="modal-body" id="cartModalBody"></div>
   </div>
@@ -741,6 +747,21 @@ function getEffectivePrice(pid, qty) {
   }
   // 訪客：零售價
   return retail;
+}
+
+// 統一計算購物車金額（含運費）
+function getCartTotals(shippingFee) {
+  shippingFee = shippingFee || 0;
+  const disc = currentUser ? getTierDiscount(currentUser) : 0;
+  let subtotal = 0;
+  cart.forEach(item => { subtotal += getEffectivePrice(item.id, item.qty) * item.qty; });
+  const discAmt = isMemberRole() ? Math.round(subtotal * disc / 100) : 0;
+  const couponDiscAmt = calcCouponDiscount(subtotal - discAmt);
+  const finalTotal = subtotal - discAmt - couponDiscAmt + shippingFee;
+  const hasPreorder = cart.some(c => c.preorder);
+  // 訂金以「商品+折扣」為基準計算，運費於訂金階段一併收取（出貨時才需運費）
+  const deposit = hasPreorder ? Math.round((subtotal - discAmt - couponDiscAmt) * 0.5) + shippingFee : 0;
+  return { disc, subtotal, discAmt, couponDiscAmt, shippingFee, finalTotal, hasPreorder, deposit };
 }
 
 function showToast(msg, dur) {
@@ -1165,6 +1186,18 @@ function openCartModal() {
 
 function renderCartModal() {
   const body = document.getElementById('cartModalBody');
+
+  // 過濾掉已下架/已刪除商品（從 shopDB.productPrices 或 config.products 中移除的商品）
+  const removedItems = cart.filter(item => !shopDB.productPrices[item.id] || !config.products.find(p => p.id === item.id));
+  if (removedItems.length > 0) {
+    removedItems.forEach(item => showToast(`⚠ ${item.name} 已下架，已自動從購物車移除`));
+    cart = cart.filter(item => shopDB.productPrices[item.id] && config.products.find(p => p.id === item.id));
+    saveCart();
+  }
+
+  const clearBtn = document.getElementById('clearCartBtn');
+  if (clearBtn) clearBtn.style.display = cart.length > 0 ? 'inline' : 'none';
+
   if (cart.length === 0) {
     body.innerHTML = `<div style="text-align:center;padding:40px 0">
       <div style="font-size:48px;margin-bottom:12px">🛒</div>
@@ -1173,28 +1206,39 @@ function renderCartModal() {
         onclick="closeModal('cartModal')">去逛逛 →</button></div>`;
     return;
   }
-  const disc = currentUser ? getTierDiscount(currentUser) : 0;
-  let subtotal = 0;
   let itemsHtml = '';
   cart.forEach(item => {
     const eff = getEffectivePrice(item.id, item.qty);
     const rowTotal = eff * item.qty;
-    subtotal += rowTotal;
     // 即時讀取目前零售價（而非加入購物車時的快照），避免後台改價後顯示舊資料
     const liveRetail = shopDB.productPrices[item.id]?.retail ?? item.retail;
     const priceNote = isWholesale() ? '批發價（依數量）'
-      : isMemberRole() && disc > 0 ? `零售 ${fmt(liveRetail)} / 會員折扣 ${disc}%`
+      : isMemberRole() && getTierDiscount(currentUser) > 0 ? `零售 ${fmt(liveRetail)} / 會員折扣 ${getTierDiscount(currentUser)}%`
       : '零售價';
+
+    // 庫存不足警告
+    const pp = shopDB.productPrices[item.id] || {};
+    let stockWarning = '';
+    if (!item.preorder && typeof pp.stock === 'number') {
+      if (pp.stock === 0) {
+        stockWarning = `<div style="font-size:11px;color:var(--accent-dark);font-weight:600;margin-top:2px">⚠ 已售完，請移除此商品</div>`;
+      } else if (pp.stock < item.qty) {
+        stockWarning = `<div style="font-size:11px;color:var(--accent-dark);font-weight:600;margin-top:2px">⚠ 庫存只剩 ${pp.stock} 件，請調整數量</div>`;
+      }
+    }
+
     itemsHtml += `<div class="cart-item">
       <img class="cart-img" src="${item.url}" alt="${item.name}" onerror="this.style.display='none'">
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>
         <div class="cart-item-id">No. ${item.id}${item.preorder ? ' <span class="badge badge-info">預購</span>' : ''}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px">${priceNote}</div>
+        ${stockWarning}
       </div>
       <div class="cart-qty-ctrl">
         <button class="qty-btn" onclick="cartQty('${item.id}',-1)">−</button>
-        <span style="font-weight:600;min-width:22px;text-align:center;font-size:14px">${item.qty}</span>
+        <input type="number" class="qty-input" id="qtyinput_${item.id}" value="${item.qty}" min="1"
+          onchange="cartQtySet('${item.id}', this.value)" onclick="this.select()">
         <button class="qty-btn" onclick="cartQty('${item.id}',1)">+</button>
       </div>
       <div class="cart-item-price">${fmt(rowTotal)}</div>
@@ -1202,13 +1246,7 @@ function renderCartModal() {
     </div>`;
   });
 
-  const discAmt = isMemberRole() ? Math.round(subtotal * disc / 100) : 0;
-  const couponDiscAmt = calcCouponDiscount(subtotal - discAmt);
-  const finalTotal = subtotal - discAmt - couponDiscAmt;
-  const hasPreorder = cart.some(c => c.preorder);
-  const deposit = hasPreorder ? Math.round(finalTotal * 0.5) : 0;
-
-  // 配送方式（兩層：大類 → 廠商）
+  // 配送方式（兩層：大類 → 廠商）— 須先算出，才能取得運費計入總額
   const activeLogs = shopDB.logistics.filter(l => l.active);
   const deliveryLogs = activeLogs.filter(l => l.type === 'delivery');
   const cvsLogs     = activeLogs.filter(l => l.type === 'cvs');
@@ -1216,6 +1254,10 @@ function renderCartModal() {
   const firstLog  = activeLogs[0] || {};
   const firstType = firstLog.type || 'delivery';
   const firstId   = firstLog.id   || '';
+  const initialFee = firstLog.fee || 0;
+
+  const t = getCartTotals(initialFee);
+  const { disc, subtotal, discAmt, couponDiscAmt, shippingFee, finalTotal, hasPreorder, deposit } = t;
 
   // 建立大類按鈕（只顯示有啟用廠商的類別）
   const categories = [];
@@ -1259,15 +1301,16 @@ function renderCartModal() {
       <div class="summary-row"><span class="label">商品小計</span><span>${fmt(subtotal)}</span></div>
       ${isWholesale() ? `<div class="summary-row"><span class="label" style="color:#2850b0">🏭 批發價格已套用</span><span style="color:#2850b0">依數量階梯計算</span></div>` : ''}
       ${isMemberRole() && disc > 0 ? `<div class="summary-row"><span class="label">會員折扣 (${disc}%)</span><span style="color:var(--success)">−${fmt(discAmt)}</span></div>` : ''}
-      ${couponDiscAmt > 0 ? `<div class="summary-row"><span class="label">🎫 優惠券 (${appliedCoupon.code})</span><span style="color:var(--success)">−${fmt(couponDiscAmt)}</span></div>` : ''}
-      ${hasPreorder ? `<div class="summary-row"><span class="label">📦 預購訂金 (50%)</span><span style="color:var(--warning);font-weight:700">${fmt(deposit)}</span></div>` : ''}
-      <div class="summary-row total"><span>${hasPreorder ? '今日應付訂金' : '訂單總計'}</span><span>${fmt(hasPreorder ? deposit : finalTotal)}</span></div>
+      ${couponDiscAmt > 0 ? `<div class="summary-row"><span class="label">🎫 優惠券 (${appliedCoupon.code}) <button onclick="removeCoupon()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;text-decoration:underline;margin-left:4px">移除</button></span><span style="color:var(--success)">−${fmt(couponDiscAmt)}</span></div>` : ''}
+      <div class="summary-row" id="shippingFeeRow"><span class="label">運費</span><span>${shippingFee > 0 ? fmt(shippingFee) : '免運'}</span></div>
+      ${hasPreorder ? `<div class="summary-row"><span class="label">📦 預購訂金 (50%+運費)</span><span style="color:var(--warning);font-weight:700">${fmt(deposit)}</span></div>` : ''}
+      <div class="summary-row total"><span>${hasPreorder ? '今日應付訂金' : '訂單總計'}</span><span id="cartFinalTotal">${fmt(hasPreorder ? deposit : finalTotal)}</span></div>
     </div>
     ${hasPreorder ? `<div style="background:#fff8e0;border:1.5px solid #f0df90;border-radius:10px;padding:14px 16px;margin-top:12px;line-height:1.8;font-size:13px;color:#6a5010">
       <div style="font-weight:700;margin-bottom:6px;font-size:14px">📦 預購說明</div>
-      <div>・本次下單含<strong>預購商品</strong>，需先支付 <strong style="color:#e08020">${fmt(deposit)}</strong> 訂金</div>
+      <div>・本次下單含<strong>預購商品</strong>，需先支付 <strong class="preorder-deposit-amt" style="color:#e08020">${fmt(deposit)}</strong> 訂金（含運費）</div>
       <div>・訂金確認後，出貨人員將主動與您聯繫餘款付款方式</div>
-      <div>・剩餘款項 ${fmt(finalTotal - deposit)} 於商品到貨前付清</div>
+      <div>・剩餘款項 <span class="preorder-balance-amt">${fmt(finalTotal - deposit)}</span> 於商品到貨前付清</div>
       <div style="margin-top:6px;font-size:11px;color:#9a8040">付款方式限「先付款後出貨」類型，確保訂金到位後盡快安排備貨</div>
     </div>` : ''}
 
@@ -1310,10 +1353,39 @@ function cartQty(id, delta) {
   if (item.qty <= 0) removeFromCart(id);
   else { saveCart(); renderCartModal(); }
 }
+
+// 直接輸入數量
+function cartQtySet(id, value) {
+  const item = cart.find(c => c.id === id);
+  if (!item) return;
+  let qty = parseInt(value, 10);
+  if (isNaN(qty) || qty < 1) qty = 1;
+  const pp = shopDB.productPrices[id] || {};
+  const maxLimit = pp.maxQty || shopDB.settings?.globalMaxQty || 0;
+  if (maxLimit > 0 && qty > maxLimit) {
+    showToast(`⚠ 此商品單次最多購買 ${maxLimit} 件`);
+    qty = maxLimit;
+  }
+  item.qty = qty;
+  saveCart();
+  renderCartModal();
+}
+
 function removeFromCart(id) {
   cart = cart.filter(c => c.id !== id);
   saveCart();
   renderCartModal();
+}
+
+// 清空購物車
+function clearCart() {
+  if (cart.length === 0) return;
+  if (!confirm('確定要清空購物車嗎？')) return;
+  cart = [];
+  appliedCoupon = null;
+  saveCart();
+  renderCartModal();
+  showToast('🗑️ 購物車已清空');
 }
 
 // 點選大類按鈕（展開子選單）
@@ -1365,6 +1437,18 @@ function onLogisticsChange(type, logId) {
   document.querySelectorAll('input[name=logistics]').forEach(r => {
     r.checked = r.value === logId;
   });
+
+  // 重新計算含運費的總額並更新顯示
+  const logObj = shopDB.logistics.find(l => l.id === logId);
+  const fee = logObj?.fee || 0;
+  const t = getCartTotals(fee);
+  const feeRow = document.getElementById('shippingFeeRow');
+  if (feeRow) feeRow.innerHTML = `<span class="label">運費</span><span>${fee > 0 ? fmt(fee) : '免運'}</span>`;
+  const totalEl = document.getElementById('cartFinalTotal');
+  if (totalEl) totalEl.textContent = fmt(t.hasPreorder ? t.deposit : t.finalTotal);
+  // 預購說明區塊的訂金與餘款數字也要更新
+  document.querySelectorAll('.preorder-deposit-amt').forEach(el => el.textContent = fmt(t.deposit));
+  document.querySelectorAll('.preorder-balance-amt').forEach(el => el.textContent = fmt(t.finalTotal - t.deposit));
 
   const hasPreorder = cart.some(c => c.preorder);
 
@@ -1473,9 +1557,20 @@ function submitOrder() {
   if (!logEl)     { showToast('❌ 請選擇配送方式'); return; }
   if (!payEl)     { showToast('❌ 請選擇付款方式'); return; }
 
+  // 庫存即時檢查（防止多人同時搶購超賣）
+  for (const item of cart) {
+    const pp = shopDB.productPrices[item.id];
+    if (!pp) { showToast(`❌ ${item.name} 已下架，請從購物車移除`); return; }
+    if (!item.preorder && typeof pp.stock === 'number' && pp.stock < item.qty) {
+      showToast(`❌ ${item.name} 庫存只剩 ${pp.stock} 件，請調整數量`);
+      return;
+    }
+  }
+
   const logId   = logEl.value;
   const logObj  = shopDB.logistics.find(l => l.id === logId) || {};
   const logType = logObj.type || 'delivery';
+  const shippingFee = logObj.fee || 0;
 
   // 收件地址 / 門市資訊
   let shipAddr = '';
@@ -1497,17 +1592,12 @@ function submitOrder() {
   if (needsCode && !transferCode) { showToast('❌ 請填寫匯款後五碼'); return; }
   if (needsCode && transferCode.length !== 5) { showToast('❌ 匯款後五碼需為5碼'); return; }
 
-  const disc = isMemberRole() ? getTierDiscount(currentUser) : 0;
-  let subtotal = 0;
   const items = cart.map(c => {
     const eff = getEffectivePrice(c.id, c.qty);
-    subtotal += eff * c.qty;
     return { id: c.id, name: c.name, qty: c.qty, price: eff, preorder: c.preorder };
   });
-  const discAmt = isMemberRole() ? Math.round(subtotal * disc / 100) : 0;
-  const couponDiscAmt = calcCouponDiscount(subtotal - discAmt);
-  const final   = subtotal - discAmt - couponDiscAmt;
-  const hasPreorder = cart.some(c => c.preorder);
+  const t = getCartTotals(shippingFee);
+  const { subtotal, discAmt, couponDiscAmt, finalTotal: final, hasPreorder, deposit } = t;
   const order = {
     id: genOrderId(),
     userId:    currentUser ? currentUser.id : 0,
@@ -1516,6 +1606,7 @@ function submitOrder() {
     items, subtotal, discount: discAmt,
     couponCode: appliedCoupon ? appliedCoupon.code : '',
     couponDiscount: couponDiscAmt,
+    shippingFee,
     finalTotal: final,
     status:    'pending',
     logistics: logId,
@@ -1529,7 +1620,7 @@ function submitOrder() {
     transferCode: needsCode ? transferCode : '',
     note: '', createdAt: new Date().toISOString().split('T')[0],
     isPreorder: hasPreorder,
-    deposit:    hasPreorder ? Math.round(final * 0.5) : 0,
+    deposit:    deposit,
     address:    shipAddr
   };
   shopDB.orders.push(order);
@@ -1800,6 +1891,12 @@ function calcCouponDiscount(subtotal) {
   return Math.min(appliedCoupon.value, subtotal);
 }
 
+function removeCoupon() {
+  appliedCoupon = null;
+  renderCartModal();
+  showToast('已移除優惠券');
+}
+
 // ═══════════════════════════════════════
 // 數量限制驗證
 // ═══════════════════════════════════════
@@ -1824,10 +1921,12 @@ function showOrderSuccess(order) {
     (ci.phone  && ci.phone.enabled)
   );
 
+  const shippingNote = order.shippingFee > 0
+    ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">（含運費 ${fmt(order.shippingFee)}）</div>` : '';
   const amountLine = order.isPreorder
     ? `<div style="font-size:13px;color:var(--text2);margin-bottom:4px">今日應付訂金：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.deposit)}</strong></div>
-       <div style="font-size:11px;color:var(--text3)">餘款 ${fmt(order.finalTotal - order.deposit)} 待出貨前聯繫付清</div>`
-    : `<div style="font-size:13px;color:var(--text2)">訂單金額：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.finalTotal)}</strong></div>`;
+       <div style="font-size:11px;color:var(--text3)">餘款 ${fmt(order.finalTotal - order.deposit)} 待出貨前聯繫付清</div>${shippingNote}`
+    : `<div style="font-size:13px;color:var(--text2)">訂單金額：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.finalTotal)}</strong></div>${shippingNote}`;
 
   let contactHtml = '';
   if (hasContact) {
