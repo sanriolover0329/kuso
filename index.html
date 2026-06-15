@@ -718,13 +718,23 @@ function getWsPrice(pid, qty) {
 
   if (tiers.length === 0) return retail;
 
-  // 全域階梯是「折扣率%」或「固定價」兩種格式
-  // 判斷：有 price 欄位 → 固定價；有 discount 欄位 → 折扣率
+  // 全域階梯支援三種格式：
+  // - 商品自訂固定價：t.price > 0
+  // - 全域折扣率：t.mode==='percent'（或無mode但有discount）
+  // - 全域折抵金額：t.mode==='amount'（每件直接減固定金額）
   let price = retail;
   [...tiers].filter(t => t.qty > 0).sort((a, b) => a.qty - b.qty).forEach(t => {
     if (qty >= t.qty) {
-      if (t.price > 0) price = t.price;                           // 商品自訂固定價
-      else if (t.discount > 0) price = Math.round(retail * (1 - t.discount / 100)); // 全域折扣率
+      if (t.price > 0) {
+        price = t.price; // 商品自訂固定價
+      } else {
+        const mode = t.mode || (t.amount > 0 ? 'amount' : 'percent');
+        if (mode === 'amount' && t.amount > 0) {
+          price = Math.max(0, retail - t.amount);
+        } else if (t.discount > 0) {
+          price = Math.round(retail * (1 - t.discount / 100));
+        }
+      }
     }
   });
   return price;
@@ -1009,9 +1019,15 @@ function renderGalleryPage() {
           : (pp.wsTiers || []);
         const sortedTiers = tiers.filter(t => t.qty > 0).sort((a,b) => a.qty - b.qty);
         const tiersHtml = sortedTiers.map(t => {
-          const label = t.price > 0
-            ? fmt(t.price)
-            : (t.discount > 0 ? `${t.discount}%折` : '—');
+          let label;
+          if (t.price > 0) {
+            label = fmt(t.price);
+          } else {
+            const mode = t.mode || (t.amount > 0 ? 'amount' : 'percent');
+            if (mode === 'amount' && t.amount > 0) label = `折${t.amount}/件`;
+            else if (t.discount > 0) label = `${t.discount}%折`;
+            else label = '—';
+          }
           return `<span class="ws-tier-chip">≥${t.qty}件 ${label}</span>`;
         }).join('');
         priceHtml = `<div class="card-price-row">
@@ -1108,8 +1124,23 @@ function updateLightbox() {
       const sortedTiers = tiers.filter(t => t.qty > 0).sort((a,b) => a.qty - b.qty);
       const tiersHtml = sortedTiers.length > 0
         ? `<div class="lb-ws-tiers">${sortedTiers.map(t => {
-            const priceLabel = t.price > 0 ? fmt(t.price) : (t.discount > 0 ? fmt(Math.round(pp.retail*(1-t.discount/100))) : '—');
-            const subLabel   = t.discount > 0 ? `${t.discount}% 折扣` : '';
+            let priceLabel, subLabel;
+            if (t.price > 0) {
+              priceLabel = fmt(t.price);
+              subLabel = '';
+            } else {
+              const mode = t.mode || (t.amount > 0 ? 'amount' : 'percent');
+              if (mode === 'amount' && t.amount > 0) {
+                priceLabel = fmt(Math.max(0, pp.retail - t.amount));
+                subLabel = `折抵 NT$${t.amount}/件`;
+              } else if (t.discount > 0) {
+                priceLabel = fmt(Math.round(pp.retail * (1 - t.discount / 100)));
+                subLabel = `${t.discount}% 折扣`;
+              } else {
+                priceLabel = '—';
+                subLabel = '';
+              }
+            }
             return `<div class="lb-ws-chip">
               <div class="lb-ws-chip-qty">≥ ${t.qty} 件</div>
               <div class="lb-ws-chip-price">${priceLabel}</div>
