@@ -698,75 +698,136 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 
 <!-- Contact Config Panel -->
 <div class="panel" id="panel-contactconfig">
-  <div class="card">
-    <div class="card-header"><div class="card-title">📱 前台浮動聯絡按鈕設定</div><button class="btn btn-success btn-sm" onclick="syncToGitHub(false)">☁ 儲存並同步</button></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-header">
+      <div class="card-title">📱 前台浮動聯絡按鈕</div>
+      <button class="btn btn-success btn-sm" onclick="syncToGitHub(false)">☁ 儲存並同步</button>
+    </div>
     <div class="card-body">
-      <div style="background:var(--accent-light);border:1px solid #e8c4a0;border-radius:8px;padding:12px;font-size:12px;color:var(--accent-dark);margin-bottom:16px">這裡設定前台右下角浮動聯絡按鈕（LINE/FB/IG/WhatsApp/Email），儲存後同步到 GitHub，前台自動讀取。</div>
+      <div class="info-box" style="margin-bottom:16px">設定前台右下角浮動按鈕（LINE/FB/IG/WhatsApp/Email）。勾選「啟用」後填入資訊，同步後前台自動顯示。</div>
+
       <!-- LINE -->
-      <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">💚</span><strong style="flex:1;font-size:14px">LINE</strong><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" id="cf-line-enabled" onchange="toggleContactGhPlatform('line',this.checked)"> 啟用</label></div>
-        <div id="cf-line-fields">
-          <div class="form-group"><label>顯示標題</label><input type="text" id="cf-line-title" placeholder="加入 LINE 群組"></div>
-          <div class="form-group"><label>LINE 連結（不顯示於前台）</label><input type="text" id="cf-line-url" placeholder="https://line.me/R/ti/g/xxxxxxx"></div>
-          <div class="form-group"><label>說明文字</label><input type="text" id="cf-line-desc" placeholder="掃描 QR Code 或點擊按鈕加入"></div>
-          <div class="form-group"><label>QR Code 圖片路徑</label><input type="text" id="cf-line-qrImage" placeholder="line-qr.jpg"></div>
-          <div class="form-group"><label>提示文字</label><input type="text" id="cf-line-hint" placeholder="手機用戶點擊可直接開啟 LINE"></div>
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2)">
+          <span style="font-size:20px">💚</span>
+          <strong style="flex:1;font-size:14px">LINE</strong>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap">
+            <input type="checkbox" id="cf-line-enabled" onchange="document.getElementById('cf-line-body').style.display=this.checked?'block':'none'">
+            啟用
+          </label>
+        </div>
+        <div id="cf-line-body" style="display:none;padding:14px 16px;border-top:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group"><label>顯示標題</label><input type="text" id="cf-line-title" placeholder="加入 LINE 群組"></div>
+            <div class="form-group"><label>QR Code 圖片路徑</label><input type="text" id="cf-line-qrImage" placeholder="line-qr.jpg" value="line-qr.jpg"></div>
+            <div class="form-group" style="grid-column:1/-1"><label>LINE 連結（不顯示於前台）</label><input type="text" id="cf-line-url" placeholder="https://line.me/R/ti/g/xxxxxxx"></div>
+            <div class="form-group"><label>說明文字</label><input type="text" id="cf-line-desc" placeholder="掃描 QR Code 或點擊加入"></div>
+            <div class="form-group"><label>提示文字</label><input type="text" id="cf-line-hint" placeholder="手機點擊可直接開啟 LINE"></div>
+          </div>
         </div>
       </div>
+
       <!-- FB -->
-      <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">💙</span><strong style="flex:1;font-size:14px">Facebook</strong><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" id="cf-fb-enabled" onchange="toggleContactGhPlatform('fb',this.checked)"> 啟用</label></div>
-        <div id="cf-fb-fields">
-          <div class="form-group"><label>Messenger / 粉專連結</label><input type="text" id="cf-fb-url" placeholder="https://m.me/粉專名稱"></div>
-          <div class="form-group"><label>說明文字</label><input type="text" id="cf-fb-desc" placeholder="點擊前往 Facebook 私訊"></div>
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2)">
+          <span style="font-size:20px">💙</span>
+          <strong style="flex:1;font-size:14px">Facebook</strong>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap">
+            <input type="checkbox" id="cf-fb-enabled" onchange="document.getElementById('cf-fb-body').style.display=this.checked?'block':'none'">
+            啟用
+          </label>
+        </div>
+        <div id="cf-fb-body" style="display:none;padding:14px 16px;border-top:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group" style="grid-column:1/-1"><label>Messenger / 粉專連結</label><input type="text" id="cf-fb-url" placeholder="https://m.me/粉專名稱"></div>
+            <div class="form-group"><label>說明文字</label><input type="text" id="cf-fb-desc" placeholder="點擊前往 Facebook 私訊"></div>
+          </div>
         </div>
       </div>
+
       <!-- IG -->
-      <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">🩷</span><strong style="flex:1;font-size:14px">Instagram</strong><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" id="cf-ig-enabled" onchange="toggleContactGhPlatform('ig',this.checked)"> 啟用</label></div>
-        <div id="cf-ig-fields">
-          <div class="form-group"><label>IG 帳號（不含 @）</label><input type="text" id="cf-ig-username" placeholder="your_ig_account"></div>
-          <div class="form-group"><label>說明文字</label><input type="text" id="cf-ig-desc" placeholder="點擊前往 Instagram 私訊"></div>
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2)">
+          <span style="font-size:20px">🩷</span>
+          <strong style="flex:1;font-size:14px">Instagram</strong>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap">
+            <input type="checkbox" id="cf-ig-enabled" onchange="document.getElementById('cf-ig-body').style.display=this.checked?'block':'none'">
+            啟用
+          </label>
+        </div>
+        <div id="cf-ig-body" style="display:none;padding:14px 16px;border-top:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group"><label>IG 帳號（不含 @）</label><input type="text" id="cf-ig-username" placeholder="your_ig_account"></div>
+            <div class="form-group"><label>說明文字</label><input type="text" id="cf-ig-desc" placeholder="點擊前往 Instagram 私訊"></div>
+          </div>
         </div>
       </div>
+
       <!-- WA -->
-      <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">💬</span><strong style="flex:1;font-size:14px">WhatsApp</strong><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" id="cf-wa-enabled" onchange="toggleContactGhPlatform('wa',this.checked)"> 啟用</label></div>
-        <div id="cf-wa-fields">
-          <div class="form-group"><label>手機號碼（含國碼，例如 886912345678）</label><input type="text" id="cf-wa-phone" placeholder="886912345678"></div>
-          <div class="form-group"><label>說明文字</label><input type="text" id="cf-wa-desc" placeholder="點擊開啟 WhatsApp 對話"></div>
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2)">
+          <span style="font-size:20px">💬</span>
+          <strong style="flex:1;font-size:14px">WhatsApp</strong>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap">
+            <input type="checkbox" id="cf-wa-enabled" onchange="document.getElementById('cf-wa-body').style.display=this.checked?'block':'none'">
+            啟用
+          </label>
+        </div>
+        <div id="cf-wa-body" style="display:none;padding:14px 16px;border-top:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group" style="grid-column:1/-1"><label>手機號碼（含國碼）</label><input type="text" id="cf-wa-phone" placeholder="886912345678"></div>
+            <div class="form-group"><label>說明文字</label><input type="text" id="cf-wa-desc" placeholder="點擊開啟 WhatsApp 對話"></div>
+          </div>
         </div>
       </div>
+
       <!-- Email -->
-      <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:18px">📧</span><strong style="flex:1;font-size:14px">Email</strong><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" id="cf-email-enabled" onchange="toggleContactGhPlatform('email',this.checked)"> 啟用</label></div>
-        <div id="cf-email-fields">
-          <div class="form-group"><label>Email 信箱</label><input type="email" id="cf-email-email" placeholder="shop@example.com"></div>
-          <div class="form-group"><label>說明文字</label><input type="text" id="cf-email-desc" placeholder="點擊寄送 Email 給我們"></div>
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:16px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface2)">
+          <span style="font-size:20px">📧</span>
+          <strong style="flex:1;font-size:14px">Email</strong>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap">
+            <input type="checkbox" id="cf-email-enabled" onchange="document.getElementById('cf-email-body').style.display=this.checked?'block':'none'">
+            啟用
+          </label>
+        </div>
+        <div id="cf-email-body" style="display:none;padding:14px 16px;border-top:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group"><label>Email 信箱</label><input type="email" id="cf-email-email" placeholder="shop@example.com"></div>
+            <div class="form-group"><label>說明文字</label><input type="text" id="cf-email-desc" placeholder="點擊寄送 Email 給我們"></div>
+          </div>
         </div>
       </div>
+
+      <button class="btn btn-primary" onclick="saveContactsAndSync()">☁ 儲存聯絡設定並同步</button>
     </div>
   </div>
+
   <!-- AI 小幫手 -->
   <div class="card">
-    <div class="card-header"><div class="card-title">🤖 AI 小幫手（前台聊天機器人）</div><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" id="cf-ai-enabled"> 啟用</label></div>
+    <div class="card-header">
+      <div class="card-title">🤖 AI 小幫手（前台聊天視窗）</div>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cf-ai-enabled"> 啟用前台 AI 小幫手
+      </label>
+    </div>
     <div class="card-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-        <div class="form-group"><label>小幫手名稱</label><input type="text" id="cf-ai-name" placeholder="例如：小三麗 / 糰子助理"></div>
-        <div class="form-group"><label>頭像 Emoji</label><input type="text" id="cf-ai-avatar" placeholder="🤖" maxlength="4"></div>
+        <div class="form-group"><label>小幫手名稱</label><input type="text" id="cf-ai-name" placeholder="小三麗 / 糰子助理"></div>
+        <div class="form-group"><label>頭像 Emoji</label><input type="text" id="cf-ai-avatar" placeholder="🤖" maxlength="4" value="🤖"></div>
       </div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px">常見問答（最多 10 題）</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">常見問答（最多 10 題）</div>
       <div id="cf-qa-list" style="margin-bottom:10px"></div>
       <button class="btn btn-ghost btn-sm" onclick="addQaGh()">＋ 新增問題</button>
-      <div style="background:var(--accent-light);border:1px solid #e8c4a0;border-radius:8px;padding:12px;font-size:12px;color:var(--accent-dark);margin-top:14px;line-height:1.7">💡 問題欄填客戶常問的話（如「怎麼買」「有現貨嗎」），關鍵字欄幫助 AI 比對，回答可加 emoji 增加溫度！</div>
+      <div class="info-box" style="margin-top:14px">💡 問題欄填客戶常問的話，關鍵字輔助 AI 比對，回答可加 emoji 增加溫度！</div>
       <div style="margin-top:14px;text-align:right">
-        <button class="btn btn-primary" onclick="syncToGitHub(false)">☁ 儲存並同步到 GitHub</button>
+        <button class="btn btn-primary" onclick="saveContactsAndSync()">☁ 儲存 AI 設定並同步</button>
       </div>
     </div>
   </div>
 </div>
 
-  </div><!-- /content -->
+</div><!-- /content -->
 </main>
 </div><!-- /shell -->
 
@@ -1584,28 +1645,41 @@ let editingPriceId=null;
 function renderPrices(){
   const q=(document.getElementById('priceSearch')?.value||'').toLowerCase();
   const flt=document.getElementById('priceFilter')?.value||'';
+  const grid=document.getElementById('pricesGrid');
+  if(!q&&!flt){
+    const tradedIds=new Set();
+    (shopDB.orders||[]).forEach(o=>(o.items||[]).forEach(i=>tradedIds.add(i.id)));
+    if(tradedIds.size===0){
+      grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--text3)"><div style="font-size:2.5rem;margin-bottom:12px">🔍</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">請搜尋商品或切換篩選條件</div><div style="font-size:12px">尚無交易記錄，輸入商品編號/名稱開始設定價格</div></div>';
+      return;
+    }
+    grid.innerHTML='';
+    const hdr=document.createElement('div');
+    hdr.style.cssText='grid-column:1/-1;padding:0 0 10px;display:flex;align-items:center;gap:8px';
+    hdr.innerHTML=`<span style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">最近交易商品（${tradedIds.size} 件）</span><span style="font-size:11px;color:var(--text3)">— 搜尋可查看所有商品</span>`;
+    grid.appendChild(hdr);
+    state.products.filter(p=>tradedIds.has(p.id)).forEach(p=>grid.appendChild(makePriceCard(p)));
+    return;
+  }
   const prods=state.products.filter(p=>{
     const matchQ=!q||p.id.toLowerCase().includes(q)||(p.name||'').toLowerCase().includes(q);
     const pp=shopDB.productPrices[p.id];
-    const hasPrc=pp&&pp.retail;
-    return matchQ&&(!flt||(flt==='priced'?hasPrc:!hasPrc));
+    return matchQ&&(!flt||(flt==='priced'?(pp&&pp.retail):!(pp&&pp.retail)));
   });
-  const grid=document.getElementById('pricesGrid');
   if(prods.length===0){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">沒有符合的商品</div>';return;}
-  grid.innerHTML=prods.map(p=>{
-    const pp=shopDB.productPrices[p.id];
-    const imgUrl=buildThumbUrl(p);
-    const hasPrc=pp&&pp.retail;
-    const stockTag=pp?(pp.stock===0&&pp.preorder?'<span class="tag tag-info" style="font-size:9px">預購</span>':pp.stock===0?'<span class="tag" style="background:var(--danger-light);color:var(--danger);font-size:9px">缺貨</span>':`<span style="font-size:9px;color:var(--text3)">庫存${pp.stock}</span>`):'';
-    return`<div class="prod-card" onclick="openPriceModal('${p.id}')">
-      <div class="prod-img">${imgUrl?`<img src="${imgUrl}" alt="${p.id}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img>🧸<br><span style=font-size:10px>${p.id}</span></div>'">`:'<div class="no-img">🧸<br><span style="font-size:10px">'+p.id+'</span></div>'}</div>
-      <div class="prod-foot">
-        <div class="prod-id">${p.id}</div>
-        <div class="prod-name">${p.name||p.id}</div>
-        ${hasPrc?`<div class="prod-price">${fmt(pp.retail)}</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${stockTag}</div>`:'<div style="font-size:10px;color:var(--text3);margin-top:3px">⚠ 未設定價格</div>'}
-      </div>
-    </div>`;
-  }).join('');
+  grid.innerHTML='';
+  prods.forEach(p=>grid.appendChild(makePriceCard(p)));
+}
+function makePriceCard(p){
+  const pp=shopDB.productPrices[p.id];
+  const imgUrl=buildThumbUrl(p);
+  const hasPrc=pp&&pp.retail;
+  let marginHtml='';
+  if(hasPrc&&pp.cost>0){const mg=Math.round((pp.retail-pp.cost)/pp.retail*100);const mc=mg>=50?'var(--success)':mg>=30?'var(--warning)':'var(--danger)';marginHtml=`<div style="font-size:10px;font-weight:600;color:${mc}">毛利 ${mg}%</div>`;}
+  const stockTag=pp?(pp.stock===0&&pp.preorder?'<span class="tag tag-info" style="font-size:9px">預購</span>':pp.stock===0?'<span class="tag" style="background:var(--danger-light);color:var(--danger);font-size:9px">缺貨</span>':`<span style="font-size:9px;color:var(--text3)">庫存${pp.stock}</span>`):'';
+  const d=document.createElement('div');d.className='prod-card';d.onclick=()=>openPriceModal(p.id);
+  d.innerHTML=`<div class="prod-img">${imgUrl?`<img src="${imgUrl}" alt="${p.id}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img>🧸<br><span style=font-size:10px>${p.id}</span></div>'">`:'<div class="no-img">🧸<br><span style="font-size:10px">'+p.id+'</span></div>'}</div><div class="prod-foot"><div class="prod-id">${p.id}</div><div class="prod-name">${p.name||p.id}</div>${hasPrc?`<div class="prod-price">${fmt(pp.retail)}</div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">${stockTag}${marginHtml}</div>`:'<div style="font-size:10px;color:var(--text3);margin-top:3px">⚠ 未設定價格</div>'}</div>`;
+  return d;
 }
 
 function openPriceModal(pid){
@@ -2689,11 +2763,46 @@ function collectSlogansGh(){
 }
 function addSloganGh(){const wrap=document.getElementById('ghSloganList');if(!wrap)return;const rows=wrap.querySelectorAll('[data-slogan-gh]');if(rows.length>=5){showToast('最多 5 句');return;}const d=document.createElement('div');d.style.cssText='display:flex;gap:6px;margin-bottom:6px';d.innerHTML=`<input type="text" data-slogan-gh="${rows.length}" placeholder="第 ${rows.length+1} 句標語" oninput="updateSloganPreview()" style="flex:1"><button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">✕</button>`;wrap.appendChild(d);setTimeout(()=>d.querySelector('input')?.focus(),50);}
 
-// Contact helpers
+// Contact helpers - match new HTML structure
 const CONTACT_PLATFORMS=['line','fb','ig','wa','email'];
-function collectContactsGh(){const contacts={};CONTACT_PLATFORMS.forEach(k=>{const en=document.getElementById(`cf-${k}-enabled`);if(!en||!en.checked){contacts[k]={enabled:false};return;}const obj={enabled:true};['url','title','desc','hint','qrImage','username','phone','email'].forEach(f=>{const el=document.getElementById(`cf-${k}-${f}`);if(el)obj[f]=el.value.trim();});contacts[k]=obj;});return contacts;}
-function renderContactsGh(){CONTACT_PLATFORMS.forEach(k=>{const c=_ghState.contacts[k]||{};const en=document.getElementById(`cf-${k}-enabled`);if(en)en.checked=!!c.enabled;const fields=document.getElementById(`cf-${k}-fields`);if(fields)fields.style.display=c.enabled?'block':'none';['url','title','desc','hint','qrImage','username','phone','email'].forEach(f=>{const el=document.getElementById(`cf-${k}-${f}`);if(el&&c[f])el.value=c[f];});});}
-function toggleContactGhPlatform(k,checked){const fields=document.getElementById(`cf-${k}-fields`);if(fields)fields.style.display=checked?'block':'none';}
+function collectContactsGh(){
+  const contacts={};
+  CONTACT_PLATFORMS.forEach(k=>{
+    const en=document.getElementById(`cf-${k}-enabled`);
+    const enabled=en?en.checked:false;
+    const obj={enabled};
+    ['url','title','desc','hint','qrImage','username','phone','email'].forEach(f=>{
+      const el=document.getElementById(`cf-${k}-${f}`);
+      if(el)obj[f]=el.value.trim();
+    });
+    contacts[k]=obj;
+  });
+  return contacts;
+}
+function renderContactsGh(){
+  CONTACT_PLATFORMS.forEach(k=>{
+    const c=_ghState.contacts[k]||{};
+    const en=document.getElementById(`cf-${k}-enabled`);
+    if(en){
+      en.checked=!!c.enabled;
+      const body=document.getElementById(`cf-${k}-body`);
+      if(body)body.style.display=c.enabled?'block':'none';
+    }
+    ['url','title','desc','hint','qrImage','username','phone','email'].forEach(f=>{
+      const el=document.getElementById(`cf-${k}-${f}`);
+      if(el&&c[f])el.value=c[f];
+    });
+  });
+}
+function toggleContactGhPlatform(k,checked){
+  const body=document.getElementById(`cf-${k}-body`);
+  if(body)body.style.display=checked?'block':'none';
+}
+async function saveContactsAndSync(){
+  _ghState.contacts=collectContactsGh();
+  _ghState.aiAssistant=collectAiGh();
+  await syncToGitHub(false);
+}
 
 // AI helpers
 function collectAiGh(){const ai={..._ghState.aiAssistant};ai.enabled=document.getElementById('cf-ai-enabled')?.checked||false;ai.name=document.getElementById('cf-ai-name')?.value.trim()||'AI 小幫手';ai.avatar=document.getElementById('cf-ai-avatar')?.value.trim()||'🤖';const qa=[];document.querySelectorAll('[data-qa-gh]').forEach(el=>{const i=parseInt(el.dataset.qaGh),f=el.dataset.qaField;if(!qa[i])qa[i]={q:'',a:'',keywords:[]};if(f==='keywords')qa[i].keywords=el.value.split(',').map(s=>s.trim()).filter(Boolean);else qa[i][f]=el.value;});ai.qa=qa.filter(q=>q.q||q.a);return ai;}
