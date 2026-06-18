@@ -2,8 +2,79 @@
   "cloudName": "dkwviksvr",
   "displayPageSize": 50,
   "displayCardSize": 130,
+  "slogans": [
+    "錢錢沒有不見，只是變成妳愛的樣子 ♡",
+    "每天都被三麗鷗治癒中 🌸",
+    "精選正版三麗鷗娃娃，持續更新中！"
+  ],
+  "sloganFontSize": 14,
+  "sloganStyle": "C",
+  "sloganColor": "#c0325c",
   "categories": [],
+  "contacts": {
+    "line": {
+      "enabled": false,
+      "title": "加入 LINE",
+      "url": "",
+      "qrImage": "line-qr.jpg",
+      "desc": "掃描 QR Code 或點擊按鈕加入",
+      "hint": "手機用戶點擊可直接開啟 LINE"
+    },
+    "fb": {
+      "enabled": false,
+      "url": "",
+      "desc": "點擊前往 Facebook 私訊"
+    },
+    "ig": {
+      "enabled": false,
+      "username": "",
+      "desc": "點擊前往 Instagram 私訊"
+    },
+    "wa": {
+      "enabled": false,
+      "phone": "",
+      "desc": "點擊開啟 WhatsApp 對話"
+    },
+    "email": {
+      "enabled": false,
+      "email": "",
+      "desc": "點擊寄送 Email 給我們"
+    }
+  },
+  "aiAssistant": {
+    "enabled": true,
+    "name": "小三麗",
+    "avatar": "🧸",
+    "qa": [
+      {
+        "q": "怎麼購買？",
+        "a": "直接將喜歡的商品加入購物車，填好資料就可以下單囉！有問題也可以透過右下角 LINE 聯絡我們 ♡",
+        "keywords": ["購買", "買", "訂購", "怎麼買"]
+      },
+      {
+        "q": "有現貨嗎？",
+        "a": "有標示「缺貨」的商品目前無庫存，可選擇「預購」；其餘商品均為現貨，下單後 3-5 個工作天出貨 🌸",
+        "keywords": ["現貨", "庫存", "有沒有", "還有"]
+      },
+      {
+        "q": "可以面交嗎？",
+        "a": "可以！結帳時選擇「面交」，下單後我們會聯絡您約定時間地點（以中壢地區為主）🤝",
+        "keywords": ["面交", "見面", "自取"]
+      },
+      {
+        "q": "會員有什麼優惠？",
+        "a": "會員分銅銀金三級：銀級消費滿 $3,000 享 95 折，金級滿 $10,000 享 9 折！累積消費自動升等 🥇",
+        "keywords": ["會員", "折扣", "優惠", "升等", "等級"]
+      },
+      {
+        "q": "如何退換貨？",
+        "a": "收到商品 7 天內如有問題，請拍照透過 LINE 聯絡我們，我們會協助處理 💚",
+        "keywords": ["退貨", "換貨", "退換", "有問題", "瑕疵"]
+      }
+    ]
+  },
   "productCategories": [],
   "productNames": {},
+  "adminPwdHash": "",
   "exportedAt": ""
 }

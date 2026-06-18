@@ -461,6 +461,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
         </select>
         <button class="btn btn-ghost btn-sm" onclick="selectAll()">全選</button>
         <button class="btn btn-ghost btn-sm" onclick="clearSelection()">取消選取</button>
+        <button class="btn btn-ghost btn-sm" onclick="openBatchNameEditor()" title="批量編輯商品名稱">✏️ 批量改名</button>
       </div>
       <div class="products-grid" id="productsGrid"></div>
       <div class="batch-bar" id="batchBar">
@@ -831,7 +832,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 </main>
 </div><!-- /shell -->
 
-<!-- 分類 Modal -->
+<!-- 批量商品名稱編輯 Modal -->
+<div class="modal-bg" id="batchNameModal">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-title">✏️ 批量編輯商品名稱</div>
+      <button class="modal-close" onclick="document.getElementById('batchNameModal').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body" id="batchNameBody"></div>
+  </div>
+</div>
 <div class="modal-bg" id="catModal">
   <div class="modal">
     <div class="modal-header"><div class="modal-title" id="modalTitle">新增分類</div><button class="modal-close" onclick="closeModal('catModal')">×</button></div>
@@ -1180,7 +1190,10 @@ function renderOrders(){
       </td>
       <td><select onchange="updateOrderStatus('${o.id}',this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;background:var(--surface2)">${selOpts}</select></td>
       <td style="font-size:12px">${logMap[o.logistics]||o.logistics}<br><input type="text" placeholder="輸入單號" value="${o.logisticsNum||''}" onchange="updateTrack('${o.id}',this.value)" style="width:100px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px;margin-top:4px"></td>
-      <td><button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}')">取消</button></td>
+      <td style="display:flex;flex-direction:column;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="copyLineNotice('${o.id}')" title="複製 LINE 通知訊息">📋 LINE</button>
+        <button class="btn btn-danger btn-sm" onclick="cancelOrder('${o.id}')">取消</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -1194,6 +1207,95 @@ function restockOrder(o) {
     }
   });
   o.stockRestored = true;
+}
+
+// ── LINE 通知複製 ──
+function copyLineNotice(oid){
+  const o=shopDB.orders.find(x=>x.id===oid);if(!o)return;
+  const logMap={blackcat:'黑貓宅急便',hsinchu:'新竹物流','711':'7-11超商',family:'全家超商',hilife:'萊爾富',ok:'OK超商',face:'面交'};
+  const payMap={cod:'貨到付款',prepay:'先付款後出貨',transfer_face:'先轉帳後面交',face_pay:'面交取貨付款'};
+  const statusMap={pending:'待確認',confirmed:'已確認',packing:'備貨中',shipping:'運送中',delivered:'已到貨',cancelled:'已取消'};
+  const itemLines=o.items.map(i=>`  • ${i.name} ×${i.qty}  ${fmt(i.price*i.qty)}`).join('\n');
+  let msg=`【三麗鷗中毒日記】訂單通知 🌸\n`;
+  msg+=`${'─'.repeat(20)}\n`;
+  msg+=`訂單編號：${o.id}\n`;
+  msg+=`下單日期：${o.createdAt}\n`;
+  msg+=`${'─'.repeat(20)}\n`;
+  msg+=`📦 訂購商品：\n${itemLines}\n`;
+  msg+=`${'─'.repeat(20)}\n`;
+  if(o.isPreorder){
+    msg+=`💰 訂單金額：${fmt(o.finalTotal)}\n`;
+    msg+=`   今日訂金：${fmt(o.deposit)}\n`;
+    msg+=`   待付尾款：${fmt(o.finalTotal-o.deposit)}\n`;
+  }else{
+    msg+=`💰 訂單金額：${fmt(o.finalTotal)}\n`;
+  }
+  if(o.discount>0) msg+=`   會員折扣：-${fmt(o.discount)}\n`;
+  if(o.couponDiscount>0) msg+=`   優惠券：-${fmt(o.couponDiscount)}\n`;
+  msg+=`${'─'.repeat(20)}\n`;
+  msg+=`🚚 配送方式：${logMap[o.logistics]||o.logistics}\n`;
+  if(o.address) msg+=`📍 收件地址：${o.address}\n`;
+  if(o.logisticsNum) msg+=`📬 物流單號：${o.logisticsNum}\n`;
+  msg+=`💳 付款方式：${payMap[o.payment]||o.payment}\n`;
+  msg+=`📋 訂單狀態：${statusMap[o.status]||o.status}\n`;
+  msg+=`${'─'.repeat(20)}\n`;
+  msg+=`感謝您的訂購！有任何問題請隨時聯繫 ♡`;
+  navigator.clipboard.writeText(msg).then(()=>{
+    showToast('✅ LINE 通知訊息已複製！直接貼到 LINE 發送');
+  }).catch(()=>{
+    // 備用：建立 textarea 複製
+    const ta=document.createElement('textarea');ta.value=msg;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    showToast('✅ LINE 通知訊息已複製！');
+  });
+}
+
+// ── 批量商品名稱編輯 ──
+function openBatchNameEditor(){
+  const modal=document.getElementById('batchNameModal');
+  if(!modal)return;
+  const body=document.getElementById('batchNameBody');
+  const prods=state.products;
+  body.innerHTML=`
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+      <input type="text" id="batchNameSearch" placeholder="搜尋商品編號或名稱…" oninput="filterBatchNames()" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px">
+      <button class="btn btn-ghost btn-sm" onclick="saveBatchNames()">💾 全部儲存</button>
+    </div>
+    <div id="batchNameList" style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto"></div>`;
+  renderBatchNameList(prods);
+  modal.classList.add('open');
+}
+
+function renderBatchNameList(prods){
+  const list=document.getElementById('batchNameList');if(!list)return;
+  list.innerHTML=prods.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:8px">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);min-width:52px">${p.id}</div>
+      <input type="text" value="${(p.name||p.id).replace(/"/g,'&quot;')}" data-prod-id="${p.id}"
+        style="flex:1;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px"
+        placeholder="${p.id}">
+    </div>`).join('');
+}
+
+function filterBatchNames(){
+  const q=(document.getElementById('batchNameSearch')?.value||'').toLowerCase();
+  const filtered=state.products.filter(p=>!q||p.id.toLowerCase().includes(q)||(p.name||'').toLowerCase().includes(q));
+  renderBatchNameList(filtered);
+}
+
+function saveBatchNames(){
+  let count=0;
+  document.querySelectorAll('#batchNameList [data-prod-id]').forEach(input=>{
+    const id=input.dataset.prodId;
+    const name=input.value.trim();
+    if(!name||!id)return;
+    const p=state.products.find(x=>x.id===id);
+    if(p&&p.name!==name){p.name=name;count++;}
+    if(!shopDB.productPrices[id])shopDB.productPrices[id]={};
+    shopDB.productPrices[id].name=name;
+  });
+  saveShopDB();saveState();
+  showToast(`✅ 已更新 ${count} 件商品名稱`);
+  document.getElementById('batchNameModal')?.classList.remove('open');
 }
 
 function updateOrderStatus(oid,status){
