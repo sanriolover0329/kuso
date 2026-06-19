@@ -699,6 +699,38 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 
 <!-- Contact Config Panel -->
 <div class="panel" id="panel-contactconfig">
+  <!-- Tab Nav -->
+  <div style="display:flex;gap:4px;margin-bottom:16px;background:var(--surface2);border-radius:10px;padding:4px">
+    <button onclick="switchCcTab('ai',this)" id="ccTabAi" style="flex:1;padding:9px;border:none;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;transition:all .15s">🤖 AI 小幫手</button>
+    <button onclick="switchCcTab('contact',this)" id="ccTabContact" style="flex:1;padding:9px;border:none;border-radius:8px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s">📱 聯絡按鈕</button>
+  </div>
+  <!-- AI Tab -->
+  <div id="ccPanelAi">
+  <!-- AI 小幫手 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">🤖 AI 小幫手（前台聊天視窗）</div>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+        <input type="checkbox" id="cf-ai-enabled"> 啟用前台 AI 小幫手
+      </label>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="form-group"><label>小幫手名稱</label><input type="text" id="cf-ai-name" placeholder="小三麗 / 糰子助理"></div>
+        <div class="form-group"><label>頭像 Emoji</label><input type="text" id="cf-ai-avatar" placeholder="🤖" maxlength="4" value="🤖"></div>
+      </div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">常見問答（最多 10 題）</div>
+      <div id="cf-qa-list" style="margin-bottom:10px"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addQaGh()">＋ 新增問題</button>
+      <div class="info-box" style="margin-top:14px">💡 問題欄填客戶常問的話，關鍵字輔助 AI 比對，回答可加 emoji 增加溫度！</div>
+      <div style="margin-top:14px;text-align:right">
+        <button class="btn btn-primary" onclick="saveContactsAndSync()">☁ 儲存 AI 設定並同步</button>
+      </div>
+    </div>
+  </div>
+  </div>
+  <!-- Contacts Tab -->
+  <div id="ccPanelContact" style="display:none">
   <div class="card" style="margin-bottom:14px">
     <div class="card-header">
       <div class="card-title">📱 前台浮動聯絡按鈕</div>
@@ -803,30 +835,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       <button class="btn btn-primary" onclick="saveContactsAndSync()">☁ 儲存聯絡設定並同步</button>
     </div>
   </div>
-
-  <!-- AI 小幫手 -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title">🤖 AI 小幫手（前台聊天視窗）</div>
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-        <input type="checkbox" id="cf-ai-enabled"> 啟用前台 AI 小幫手
-      </label>
-    </div>
-    <div class="card-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-        <div class="form-group"><label>小幫手名稱</label><input type="text" id="cf-ai-name" placeholder="小三麗 / 糰子助理"></div>
-        <div class="form-group"><label>頭像 Emoji</label><input type="text" id="cf-ai-avatar" placeholder="🤖" maxlength="4" value="🤖"></div>
-      </div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:10px">常見問答（最多 10 題）</div>
-      <div id="cf-qa-list" style="margin-bottom:10px"></div>
-      <button class="btn btn-ghost btn-sm" onclick="addQaGh()">＋ 新增問題</button>
-      <div class="info-box" style="margin-top:14px">💡 問題欄填客戶常問的話，關鍵字輔助 AI 比對，回答可加 emoji 增加溫度！</div>
-      <div style="margin-top:14px;text-align:right">
-        <button class="btn btn-primary" onclick="saveContactsAndSync()">☁ 儲存 AI 設定並同步</button>
-      </div>
-    </div>
   </div>
 </div>
+
 
 </div><!-- /content -->
 </main>
@@ -2866,6 +2877,14 @@ function collectSlogansGh(){
 function addSloganGh(){const wrap=document.getElementById('ghSloganList');if(!wrap)return;const rows=wrap.querySelectorAll('[data-slogan-gh]');if(rows.length>=5){showToast('最多 5 句');return;}const d=document.createElement('div');d.style.cssText='display:flex;gap:6px;margin-bottom:6px';d.innerHTML=`<input type="text" data-slogan-gh="${rows.length}" placeholder="第 ${rows.length+1} 句標語" oninput="updateSloganPreview()" style="flex:1"><button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()">✕</button>`;wrap.appendChild(d);setTimeout(()=>d.querySelector('input')?.focus(),50);}
 
 // Contact helpers - match new HTML structure
+function switchCcTab(tab,btn){
+  document.getElementById('ccPanelAi').style.display=tab==='ai'?'block':'none';
+  document.getElementById('ccPanelContact').style.display=tab==='contact'?'block':'none';
+  document.getElementById('ccTabAi').style.background=tab==='ai'?'var(--accent)':'transparent';
+  document.getElementById('ccTabAi').style.color=tab==='ai'?'#fff':'var(--text2)';
+  document.getElementById('ccTabContact').style.background=tab==='contact'?'var(--accent)':'transparent';
+  document.getElementById('ccTabContact').style.color=tab==='contact'?'#fff':'var(--text2)';
+}
 const CONTACT_PLATFORMS=['line','fb','ig','wa','email'];
 function collectContactsGh(){
   const contacts={};
@@ -3039,19 +3058,27 @@ function updateSloganPreview(){
     const sz=parseInt(document.getElementById('sloganFontSizeSlider')?.value)||14;
     const s=_sloganStyleSel, c=_sloganColorSel;
     let html='';
-    if(s==='A') html=`<span style="font-size:${sz}px;font-weight:700;font-style:italic;background:linear-gradient(90deg,#ff6b9d,#ff9a3c,#ffd93d,#6bcb77,#4d96ff,#c77dff);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:rainbow-flow 3s linear infinite">${text}</span>`;
-    else if(s==='B') html=`<div style="background:#1a0a0a;border-radius:5px;padding:5px 10px;width:100%;overflow:hidden"><span style="font-size:${sz}px;font-family:monospace;font-weight:700;color:${c};text-shadow:0 0 6px ${c}">▶ ${text}</span></div>`;
-    else if(s==='C') html=`<span style="font-size:${sz}px;font-weight:600;font-style:italic;color:${c};border-right:2.5px solid ${c};padding-right:2px;white-space:nowrap;overflow:hidden;display:inline-block;animation:typing-cursor .7s step-end infinite">${text}</span>`;
-    else if(s==='D') html=[...text].map((ch,i)=>`<span style="display:inline-block;font-size:${sz}px;font-weight:700;color:${SLOGAN_CHAR_COLORS[i%SLOGAN_CHAR_COLORS.length]};animation:char-bounce 1.2s ${(i*.07).toFixed(2)}s ease-in-out infinite">${ch===' '?'&nbsp;':ch}</span>`).join('');
-    else if(s==='E') html=`<span style="font-size:${sz}px;font-weight:700;color:${c};text-shadow:0 0 10px ${c}88;animation:neon-pulse 2.5s ease-in-out infinite">🌸 ${text} 🌸</span>`;
-    else if(s==='F') html=[...text].map((ch,i)=>`<span style="display:inline-block;font-size:${sz}px;font-weight:700;color:${SLOGAN_CHAR_COLORS[i%SLOGAN_CHAR_COLORS.length]};animation:wave-dance 2s ${(i*.1).toFixed(2)}s ease-in-out infinite">${ch===' '?'&nbsp;':ch}</span>`).join('');
-    el.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;overflow:visible;white-space:nowrap">${html}</div>`;
+    if(s==='A') html=`<span style="font-size:${sz}px;font-weight:700;font-style:italic;background:linear-gradient(90deg,#ff6b9d,#ff9a3c,#ffd93d,#6bcb77,#4d96ff,#c77dff);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:rainbow-flow 3s linear infinite;white-space:nowrap">${text}</span>`;
+    else if(s==='B') html=`<div style="background:#1a0a0a;border-radius:5px;padding:5px 0;width:100%;overflow:hidden"><div style="display:flex;white-space:nowrap;animation:marquee-scroll 8s linear infinite"><span style="font-size:${sz}px;font-family:monospace;font-weight:700;color:${c};text-shadow:0 0 6px ${c};padding-right:48px">🧸 ${text}</span><span style="font-size:${sz}px;font-family:monospace;font-weight:700;color:${c};text-shadow:0 0 6px ${c};padding-right:48px">🧸 ${text}</span></div></div>`;
+    else if(s==='C') html=`<span style="font-size:${sz}px;font-weight:600;font-style:italic;color:${c};border-right:2.5px solid ${c};padding-right:3px;white-space:nowrap;animation:typing-cursor .7s step-end infinite">${text}</span>`;
+    else if(s==='D') html=`<span style="display:inline-flex;white-space:nowrap">${[...text].map((ch,i)=>`<span style="display:inline-block;font-size:${sz}px;font-weight:700;color:${SLOGAN_CHAR_COLORS[i%SLOGAN_CHAR_COLORS.length]};animation:char-bounce 1.2s ${(i*.07).toFixed(2)}s ease-in-out infinite">${ch===' '?'&nbsp;':ch}</span>`).join('')}</span>`;
+    else if(s==='E') html=`<span style="font-size:${sz}px;font-weight:700;color:${c};text-shadow:0 0 10px ${c}88;animation:neon-pulse 2.5s ease-in-out infinite;white-space:nowrap"><span style="animation:icon-spin 3s linear infinite;display:inline-block">🌸</span> ${text} <span style="animation:icon-spin 3s linear infinite;display:inline-block">🌸</span></span>`;
+    else if(s==='F') html=`<span style="display:inline-flex;white-space:nowrap">${[...text].map((ch,i)=>`<span style="display:inline-block;font-size:${sz}px;font-weight:700;color:${SLOGAN_CHAR_COLORS[i%SLOGAN_CHAR_COLORS.length]};animation:wave-dance 2s ${(i*.1).toFixed(2)}s ease-in-out infinite">${ch===' '?'&nbsp;':ch}</span>`).join('')}</span>`;
+    el.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;overflow:${s==='B'?'hidden':'visible'};width:100%;padding:4px 0">${html}</div>`;
   },200);
 }
 
 // Animations for preview
 const previewStyle=document.createElement('style');
-previewStyle.textContent=`@keyframes rainbow-flow{0%{background-position:0%}100%{background-position:300%}}@keyframes typing-cursor{0%,100%{border-color:currentColor}50%{border-color:transparent}}@keyframes char-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}@keyframes neon-pulse{0%,100%{opacity:1;filter:brightness(1)}50%{opacity:.85;filter:brightness(1.4)}}@keyframes wave-dance{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}`;
+previewStyle.textContent=`
+@keyframes rainbow-flow{0%{background-position:0%}100%{background-position:300%}}
+@keyframes typing-cursor{0%,100%{border-color:currentColor}50%{border-color:transparent}}
+@keyframes char-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes neon-pulse{0%,100%{opacity:1;filter:brightness(1)}50%{opacity:.85;filter:brightness(1.4)}}
+@keyframes wave-dance{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes marquee-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes icon-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+`;
 document.head.appendChild(previewStyle);
 
 async function saveAndSyncSlogans(){

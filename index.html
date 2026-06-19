@@ -722,9 +722,36 @@ function initContactFloat(){
   const hasAI=_aiCfg?.enabled;
   const ak=plats.filter(k=>contacts[k]);
   window._mc=contacts;
-  if(ak.length===0&&!hasAI){if(float)float.style.display='none';return;}
+
+  const totalCount=ak.length+(hasAI?1:0);
+  if(totalCount===0){if(float)float.style.display='none';return;}
   if(float)float.style.display='flex';
-  items.innerHTML=ak.map((k,i)=>{const c=contacts[k],m=SM[k]||{label:k,icon:'📱',hint:''};return`<div class="social-item" id="si_${i}" style="transition-delay:${i*.05}s"><span class="social-float-label">${c.title||m.label}</span><button class="social-item-btn" style="background:${SC[k]||'#888'}" onclick="openContactModalPlatform('${k}')">${SI[k]||'📱'}</button></div>`;}).join('')+(hasAI?`<div class="social-item" id="si_ai" style="transition-delay:${ak.length*.05}s"><span class="social-float-label">${_aiCfg.name||'AI 小幫手'}</span><button class="social-item-btn" style="background:${SC.ai}" onclick="openAiModal()">${SI.ai}</button></div>`:'');
+
+  // 組合所有按鈕資料
+  const allBtns=[];
+  ak.forEach(k=>{
+    const c=contacts[k],m=SM[k]||{label:k,icon:'📱',hint:''};
+    allBtns.push({key:k,label:c.title||m.label,bg:SC[k]||'#888',icon:SI[k]||'📱',onclick:`openContactModalPlatform('${k}')`});
+  });
+  if(hasAI)allBtns.push({key:'ai',label:_aiCfg.name||'AI 小幫手',bg:SC.ai,icon:SI.ai,onclick:`openAiModal()`});
+
+  const toggleBtn=document.getElementById('socialToggleBtn');
+
+  if(totalCount<=3){
+    // ≤3 個：直接全部顯示，不需要展開按鈕
+    if(toggleBtn)toggleBtn.style.display='none';
+    items.innerHTML=allBtns.map((b,i)=>`<div class="social-item visible" style="transition-delay:0s">
+      <span class="social-float-label">${b.label}</span>
+      <button class="social-item-btn" style="background:${b.bg}" onclick="${b.onclick}">${b.icon}</button>
+    </div>`).join('');
+  }else{
+    // >3 個：用 + 展開
+    if(toggleBtn)toggleBtn.style.display='flex';
+    items.innerHTML=allBtns.map((b,i)=>`<div class="social-item" id="si_${i}" style="transition-delay:${i*.05}s">
+      <span class="social-float-label">${b.label}</span>
+      <button class="social-item-btn" style="background:${b.bg}" onclick="${b.onclick}">${b.icon}</button>
+    </div>`).join('');
+  }
 }
 function openContactModalPlatform(platform){
   const contacts=window._mc||_contacts||{};
