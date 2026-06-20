@@ -453,7 +453,37 @@ var appliedCoupon=null;
 function calcCouponDiscount(sub){if(!appliedCoupon)return 0;return appliedCoupon.type==='percent'?Math.round(sub*appliedCoupon.value/100):Math.min(appliedCoupon.value,sub);}
 // Cloudinary + Config
 async function fetchFromCloudinary(){const url=`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${encodeURIComponent(SHOP_TAG)}.json`;const resp=await fetch(url);if(!resp.ok)throw new Error(`Cloudinary 回應 ${resp.status}，請確認 Tag 名稱和 Resource list 設定`);const data=await resp.json();return data.resources||[];}
-async function fetchConfig(){if(EMBEDDED_CONFIG)return EMBEDDED_CONFIG;let cfg=null;try{const r=await fetch(CONFIG_URL+'?t='+Date.now());if(r.ok)cfg=await r.json();}catch(e){}let local=null;try{const raw=localStorage.getItem('doll_shop_frontend');if(raw)local=JSON.parse(raw);}catch(e){}return{displayPageSize:cfg?.displayPageSize||local?.displayPageSize||50,displayCardSize:cfg?.displayCardSize||local?.displayCardSize||130,slogans:cfg?.slogans?.length?cfg.slogans:(local?.slogans||[]),sloganFontSize:cfg?.sloganFontSize||local?.sloganFontSize||14,sloganStyle:cfg?.sloganStyle||local?.sloganStyle||'C',sloganColor:cfg?.sloganColor||local?.sloganColor||'#c0325c',categories:cfg?.categories?.length?cfg.categories:(local?.categories||[]),productCategories:cfg?.productCategories||local?.productCategories||[],productNames:cfg?.productNames||local?.productNames||{},contacts:cfg?.contacts||local?.contacts||{},aiAssistant:cfg?.aiAssistant||local?.aiAssistant||{}};}
+async function fetchConfig(){
+  if(EMBEDDED_CONFIG)return EMBEDDED_CONFIG;
+  let cfg=null;try{const r=await fetch(CONFIG_URL+'?t='+Date.now());if(r.ok)cfg=await r.json();}catch(e){}
+  let local=null;try{const raw=localStorage.getItem('doll_shop_frontend');if(raw)local=JSON.parse(raw);}catch(e){}
+  return{
+    displayPageSize:cfg?.displayPageSize||local?.displayPageSize||50,
+    displayCardSize:cfg?.displayCardSize||local?.displayCardSize||130,
+    slogans:cfg?.slogans?.length?cfg.slogans:(local?.slogans||[]),
+    sloganFontSize:cfg?.sloganFontSize||local?.sloganFontSize||14,
+    sloganStyle:cfg?.sloganStyle||local?.sloganStyle||'C',
+    sloganColor:cfg?.sloganColor||local?.sloganColor||'#c0325c',
+    categories:cfg?.categories?.length?cfg.categories:(local?.categories||[]),
+    productCategories:cfg?.productCategories||local?.productCategories||[],
+    productNames:cfg?.productNames||local?.productNames||{},
+    contacts:cfg?.contacts||local?.contacts||{},
+    aiAssistant:cfg?.aiAssistant||local?.aiAssistant||{},
+    // ── 購物車欄位：優先讀 config.json（跨裝置共用），其次本機快取 ──
+    productPrices:cfg?.productPrices||local?.productPrices||null,
+    tierSettings:cfg?.tierSettings?.length?cfg.tierSettings:(local?.tierSettings||null),
+    gifts:cfg?.gifts||local?.gifts||null,
+    logistics:cfg?.logistics?.length?cfg.logistics:(local?.logistics||null),
+    payments:cfg?.payments?.length?cfg.payments:(local?.payments||null),
+    cvs_stores:cfg?.cvs_stores||local?.cvs_stores||null,
+    contactInfo:cfg?.contactInfo||local?.contactInfo||null,
+    bankInfo:cfg?.bankInfo||local?.bankInfo||null,
+    faceNote:cfg?.faceNote||local?.faceNote||null,
+    settings:cfg?.settings||local?.settings||null,
+    announcement:cfg?.announcement||local?.announcement||null,
+    coupons:cfg?.coupons||local?.coupons||null
+  };
+}
 function extractId(pid){const fn=pid.includes('/')?pid.split('/').pop():pid;let d=fn;try{d=decodeURIComponent(fn);}catch(e){}const m=d.match(/^([A-Za-z]+\d+)/);return m?m[1].toUpperCase():null;}
 function buildUrl(p){if(!p.url)return'';const sz=CARD_MIN>150?600:400;return p.url.replace('/image/upload/',`/image/upload/w_${sz},h_${sz},c_fill,q_auto,f_auto/`);}
 function buildFullUrl(p){if(!p.url)return'';return p.url.replace('/image/upload/','/image/upload/w_1400,h_1400,c_fill,q_auto,f_auto/');}
@@ -511,6 +541,19 @@ async function init(){
     PAGE_SIZE=cfg.displayPageSize||50;CARD_MIN=cfg.displayCardSize||130;
     document.documentElement.style.setProperty('--card-min',CARD_MIN+'px');
     _contacts=cfg.contacts||{};_aiCfg=cfg.aiAssistant||{};
+    // ── 合併購物車欄位：config.json（GitHub 同步）優先於 localStorage demo 預設值 ──
+    if(cfg.productPrices) shopDB.productPrices=cfg.productPrices;
+    if(cfg.tierSettings)  shopDB.tierSettings=cfg.tierSettings;
+    if(cfg.gifts)         shopDB.gifts=cfg.gifts;
+    if(cfg.logistics)     shopDB.logistics=cfg.logistics;
+    if(cfg.payments)      shopDB.payments=cfg.payments;
+    if(cfg.cvs_stores)    shopDB.cvs_stores=cfg.cvs_stores;
+    if(cfg.contactInfo)   shopDB.contactInfo=cfg.contactInfo;
+    if(cfg.bankInfo)      shopDB.bankInfo=cfg.bankInfo;
+    if(cfg.faceNote)      shopDB.faceNote=cfg.faceNote;
+    if(cfg.settings)      shopDB.settings={...shopDB.settings,...cfg.settings};
+    if(cfg.announcement)  shopDB.announcement=cfg.announcement;
+    if(cfg.coupons)       shopDB.coupons=cfg.coupons;
     const catAssign={};(cfg.productCategories||[]).forEach(pc=>{catAssign[pc.id]=pc.category;});
     const productMap={};
     resources.forEach(r=>{const id=extractId(r.public_id);if(!id)return;if(!productMap[id]||(r.created_at||'')>(productMap[id].created_at||'')){productMap[id]={id,name:(cfg.productNames||{})[id]||id,url:r.secure_url||`https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${r.version}/${r.public_id}.${r.format}`,format:r.format||'jpg',category:catAssign[id]||'',visible:true,created_at:r.created_at||''};}});
