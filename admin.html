@@ -2661,9 +2661,13 @@ function buildPreviewHTML(text, style, color, sz) {
       background-clip:text;animation:rainbow-flow 3s linear infinite;">${text}</span>`;
   }
   if (style === 'B') {
-    return `<div style="background:#1a0a0a;border-radius:5px;padding:5px 10px;width:100%;overflow:hidden;">
-      <span style="font-size:${sz}px;font-family:monospace;font-weight:700;color:${color};
-        text-shadow:0 0 6px ${color};letter-spacing:.08em;">▶ ${text}</span></div>`;
+    return `<div style="background:#1a0a0a;border-radius:5px;padding:5px 0;width:100%;overflow:hidden;">
+      <div style="display:flex;white-space:nowrap;animation:marquee-scroll 8s linear infinite;">
+        <span style="font-size:${sz}px;font-family:monospace;font-weight:700;color:${color};
+          text-shadow:0 0 6px ${color};letter-spacing:.08em;padding-right:48px;">🧸 ${text}</span>
+        <span style="font-size:${sz}px;font-family:monospace;font-weight:700;color:${color};
+          text-shadow:0 0 6px ${color};letter-spacing:.08em;padding-right:48px;">🧸 ${text}</span>
+      </div></div>`;
   }
   if (style === 'C') {
     return `<span class="slogan-c" style="font-size:${sz}px;color:${color};">${text}</span>`;
