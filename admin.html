@@ -783,6 +783,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
             </div>
           </div>
 
+          <!-- ── 動畫速度（跑馬燈/打字機）── -->
+          <div class="form-group" id="sloganSpeedRow">
+            <label>⏱️ 動畫速度（跑馬燈滾動 / 打字機輸入速度）</label>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:11px;color:var(--text3);">慢</span>
+              <input type="range" id="sloganSpeed" min="0.5" max="2.5" step="0.1" value="1"
+                oninput="document.getElementById('sloganSpeedVal').textContent=this.value+'x';refreshLivePreview()"
+                style="flex:1;">
+              <span style="font-size:11px;color:var(--text3);">快</span>
+              <span id="sloganSpeedVal" style="font-family:var(--mono);font-size:12px;min-width:32px;">1x</span>
+            </div>
+            <span class="hint">只影響「跑馬燈」與「打字機」樣式，其他樣式速度固定</span>
+          </div>
+
           <!-- ── 即時預覽 ── -->
           <div class="form-group full">
             <label>即時預覽</label>
@@ -1506,7 +1520,7 @@ function mergeConfigToState(cfg) {
   // 只合併非敏感的設定（不覆蓋 Token）
   const safe = ['cloudName','baseFolder','thumbSize','adminPwdHash',
     'displayPageSize','displayCardSize','slogans','sloganFontSize',
-    'sloganStyle','sloganColor','categories','contacts','aiAssistant',
+    'sloganStyle','sloganColor','sloganSpeed','categories','contacts','aiAssistant',
     'productPrices','tierSettings','gifts','logistics','payments','cvs_stores',
     'contactInfo','bankInfo','faceNote','settings','announcement','coupons'];
   safe.forEach(k => {
@@ -1544,7 +1558,7 @@ function saveState(){
   localStorage.setItem('doll_shop_frontend',JSON.stringify({
     cloudName:state.cloudName,baseFolder:state.baseFolder,
     thumbSize:state.thumbSize,categories:state.categories,products:state.products,displayPageSize:state.displayPageSize||50,displayCardSize:state.displayCardSize||130,
-    slogans:state.slogans||[],sloganFontSize:state.sloganFontSize||14,sloganStyle:state.sloganStyle||'C',sloganColor:state.sloganColor||'#c0325c',
+    slogans:state.slogans||[],sloganFontSize:state.sloganFontSize||14,sloganStyle:state.sloganStyle||'C',sloganColor:state.sloganColor||'#c0325c',sloganSpeed:state.sloganSpeed||1,
     contacts:state.contacts||{},aiAssistant:state.aiAssistant||{},
     productCategories:(state.products||[]).filter(p=>p.category).map(p=>({id:p.id,category:p.category})),
     // 購物車欄位（同瀏覽器即時可見，跨裝置需等 GitHub 同步）
@@ -1984,7 +1998,7 @@ function exportBackup() {
     adminPwdHash: state.adminPwdHash||'',
     displayPageSize: state.displayPageSize||50, displayCardSize: state.displayCardSize||130,
     slogans: state.slogans||[], sloganFontSize: state.sloganFontSize||14,
-    sloganStyle: state.sloganStyle||'C', sloganColor: state.sloganColor||'#c0325c',
+    sloganStyle: state.sloganStyle||'C', sloganColor: state.sloganColor||'#c0325c', sloganSpeed: state.sloganSpeed||1,
     categories: state.categories||[], contacts: state.contacts||{}, aiAssistant: state.aiAssistant||{},
     productCategories: (state.products||[]).filter(p=>p.category).map(p=>({id:p.id,category:p.category})),
     productNames: Object.fromEntries((state.products||[]).filter(p=>p.name&&p.name!==p.id&&p.name!==('娃娃 '+p.id)).map(p=>[p.id,p.name])),
@@ -2008,7 +2022,7 @@ function importBackup(input) {
       const b = JSON.parse(e.target.result);
       if (!b._v) { toast('❌ 不是有效的備份檔'); return; }
       ['cloudName','baseFolder','thumbSize','ghUser','ghRepo','ghToken','adminPwdHash',
-       'displayPageSize','displayCardSize','slogans','sloganFontSize','sloganStyle','sloganColor',
+       'displayPageSize','displayCardSize','slogans','sloganFontSize','sloganStyle','sloganColor','sloganSpeed',
        'categories','contacts','aiAssistant'].forEach(f=>{ if(b[f]!==undefined) state[f]=b[f]; });
       if (b.productCategories&&state.products.length>0) {
         const cm={};
@@ -2049,6 +2063,7 @@ function exportConfig() {
     sloganFontSize:  state.sloganFontSize || 14,
     sloganStyle:     state.sloganStyle || 'C',
     sloganColor:     state.sloganColor || '#c0325c',
+    sloganSpeed:     state.sloganSpeed || 1,
     categories: state.categories,
     contacts:        state.contacts || {},
     aiAssistant:     state.aiAssistant || {},
@@ -2417,6 +2432,7 @@ async function syncToGitHub(silent = false) {
     sloganFontSize:  state.sloganFontSize || 14,
     sloganStyle:     state.sloganStyle || 'C',
     sloganColor:     state.sloganColor || '#c0325c',
+    sloganSpeed:     state.sloganSpeed || 1,
     categories:      state.categories,
     contacts:        state.contacts || {},
     aiAssistant:     state.aiAssistant || {},
@@ -2590,32 +2606,52 @@ const CHAR_COLORS_ADM = ['#ff6b9d','#ff9a3c','#ffd93d','#6bcb77','#4d96ff','#c77
 let currentSloganStyle = 'C';
 let currentSloganColor = '#c0325c';
 let previewTimer = null;
+const SLOGAN_MAX_LEN = 40; // 標語字數上限（含emoji/符號），避免跑馬燈以外樣式溢出版面
 
 function renderSloganInputs() {
   const container = document.getElementById('sloganInputs');
   if (!container) return;
   const slogans = (state.slogans && state.slogans.length > 0) ? state.slogans : DEFAULT_SLOGANS;
   container.innerHTML = slogans.map((s, i) => `
-    <div style="display:flex;gap:6px;align-items:center;">
-      <input type="text" value="${s.replace(/"/g,'&quot;')}" placeholder="輸入標語第 ${i+1} 句"
-        oninput="refreshLivePreview()" style="flex:1;" data-slogan-idx="${i}">
-      <button class="btn btn-danger btn-sm" onclick="removeSloganInput(${i})"
-        ${slogans.length<=1?'disabled':''}>✕</button>
+    <div style="display:flex;flex-direction:column;gap:3px;">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="text" value="${s.replace(/"/g,'&quot;')}" placeholder="輸入標語第 ${i+1} 句"
+          maxlength="${SLOGAN_MAX_LEN}"
+          oninput="refreshLivePreview();updateSloganCharCount(this)" style="flex:1;" data-slogan-idx="${i}">
+        <button class="btn btn-danger btn-sm" onclick="removeSloganInput(${i})"
+          ${slogans.length<=1?'disabled':''}>✕</button>
+      </div>
+      <div style="font-size:10px;color:var(--text3);text-align:right;padding-right:4px;" data-slogan-counter="${i}">${s.length} / ${SLOGAN_MAX_LEN} 字</div>
     </div>`).join('');
 
   // 還原設定值
   currentSloganStyle = state.sloganStyle || 'C';
   currentSloganColor = state.sloganColor || '#c0325c';
   const fs = state.sloganFontSize || 14;
+  const spd = state.sloganSpeed || 1;
   document.querySelectorAll('#stylePickerBtns .style-pick-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.style === currentSloganStyle));
   const fsEl = document.getElementById('sloganFontSize');
   const fsValEl = document.getElementById('sloganFontSizeVal');
   if (fsEl) fsEl.value = fs;
   if (fsValEl) fsValEl.textContent = fs;
+  const spdEl = document.getElementById('sloganSpeed');
+  const spdValEl = document.getElementById('sloganSpeedVal');
+  if (spdEl) spdEl.value = spd;
+  if (spdValEl) spdValEl.textContent = spd + 'x';
   renderColorSwatches();
   updateColorPickerVisibility();
   refreshLivePreview();
+}
+
+function updateSloganCharCount(input) {
+  const idx = input.dataset.sloganIdx;
+  const counter = document.querySelector(`[data-slogan-counter="${idx}"]`);
+  if (counter) {
+    const len = input.value.length;
+    counter.textContent = `${len} / ${SLOGAN_MAX_LEN} 字`;
+    counter.style.color = len >= SLOGAN_MAX_LEN ? 'var(--danger)' : 'var(--text3)';
+  }
 }
 
 function renderColorSwatches() {
@@ -2673,6 +2709,7 @@ function refreshLivePreview() {
 }
 
 function buildPreviewHTML(text, style, color, sz) {
+  const speed = parseFloat(document.getElementById('sloganSpeed')?.value) || 1;
   if (style === 'A') {
     return `<span style="font-size:${sz}px;font-weight:700;font-style:italic;
       background:linear-gradient(90deg,#ff6b9d,#ff9a3c,#ffd93d,#6bcb77,#4d96ff,#c77dff);
@@ -2680,8 +2717,9 @@ function buildPreviewHTML(text, style, color, sz) {
       background-clip:text;animation:rainbow-flow 3s linear infinite;">${text}</span>`;
   }
   if (style === 'B') {
+    const dur = (8 / speed).toFixed(1);
     return `<div style="background:#1a0a0a;border-radius:5px;padding:5px 0;width:100%;overflow:hidden;">
-      <div style="display:flex;white-space:nowrap;animation:marquee-scroll 8s linear infinite;">
+      <div style="display:flex;white-space:nowrap;animation:marquee-scroll ${dur}s linear infinite;">
         <span style="font-size:${sz}px;font-family:monospace;font-weight:700;color:${color};
           text-shadow:0 0 6px ${color};letter-spacing:.08em;padding-right:48px;">🧸 ${text}</span>
         <span style="font-size:${sz}px;font-family:monospace;font-weight:700;color:${color};
@@ -2689,7 +2727,8 @@ function buildPreviewHTML(text, style, color, sz) {
       </div></div>`;
   }
   if (style === 'C') {
-    return `<span class="slogan-c" style="font-size:${sz}px;color:${color};">${text}</span>`;
+    const dur = (3.5 / speed).toFixed(2);
+    return `<span class="slogan-c" style="font-size:${sz}px;color:${color};animation-duration:${dur}s;">${text}</span>`;
   }
   if (style === 'D') {
     return [...text].map((ch,i)=>`<span style="display:inline-block;font-size:${sz}px;font-weight:700;
@@ -2786,10 +2825,13 @@ function updateDisplayPreview() {
 function saveDisplaySettings() {
   state.displayPageSize  = selectedPageSize;
   state.displayCardSize  = selectedCardSize;
-  state.slogans        = collectSlogans().length > 0 ? collectSlogans() : DEFAULT_SLOGANS;
+  const rawSlogans     = collectSlogans();
+  state.slogans        = (rawSlogans.length > 0 ? rawSlogans : DEFAULT_SLOGANS)
+                            .map(s => s.slice(0, SLOGAN_MAX_LEN));
   state.sloganFontSize = parseInt(document.getElementById('sloganFontSize')?.value) || 14;
   state.sloganStyle    = currentSloganStyle;
   state.sloganColor    = currentSloganColor;
+  state.sloganSpeed    = parseFloat(document.getElementById('sloganSpeed')?.value) || 1;
   saveState();
   toast(`✓ 已儲存！每頁 ${selectedPageSize} 張，格局 ${selectedCardSize}px，${state.slogans.length} 句標語`);
   autoSync('展示設定');

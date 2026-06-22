@@ -47,21 +47,22 @@ button img,a img{pointer-events:auto}
 #searchInput:focus{border-color:var(--accent);background:#fff}
 #searchInput::placeholder{color:var(--text3)}
 /* Slogan */
-.shop-slogan-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;overflow:visible}
+.shop-slogan-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-width:0;max-width:100%;overflow:hidden}
 @media(max-width:540px){.shop-slogan-wrap{display:none}}
-.slogan-style-a{font-weight:700;font-style:italic;background:linear-gradient(90deg,#ff6b9d,#ff9a3c,#ffd93d,#6bcb77,#4d96ff,#c77dff);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:rainbow-flow 3s linear infinite;white-space:nowrap;display:inline-block}
+#shopSlogan{width:100%;max-width:100%;overflow-x:hidden;overflow-y:visible;display:flex;justify-content:center}
+.slogan-style-a{font-weight:700;font-style:italic;background:linear-gradient(90deg,#ff6b9d,#ff9a3c,#ffd93d,#6bcb77,#4d96ff,#c77dff);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:rainbow-flow 3s linear infinite;white-space:nowrap;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 @keyframes rainbow-flow{0%{background-position:0%}100%{background-position:300%}}
 .slogan-style-b-wrap{width:100%;overflow:hidden;background:#1a0a0a;border-radius:5px;padding:5px 0}
 .slogan-style-b-track{display:flex;white-space:nowrap;animation:marquee-scroll 14s linear infinite}
 .slogan-style-b-text{font-family:'Courier New',monospace;font-weight:700;padding-right:60px;letter-spacing:.08em;flex-shrink:0}
 @keyframes marquee-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.slogan-style-c{font-weight:600;font-style:italic;white-space:nowrap;display:inline-block;border-right:2.5px solid currentColor;animation:typing-cursor .7s step-end infinite;overflow:hidden}
+.slogan-style-c{font-weight:600;font-style:italic;white-space:nowrap;display:inline-block;border-right:2.5px solid currentColor;animation:typing-cursor .7s step-end infinite;overflow:hidden;max-width:100%;text-overflow:clip}
 @keyframes typing-cursor{0%,100%{border-color:currentColor}50%{border-color:transparent}}
 .slogan-style-c-wrap{display:inline-block;overflow:hidden;white-space:nowrap}
 .slogan-style-d,.slogan-style-f{display:inline-flex;align-items:center;white-space:nowrap;overflow:visible}
 .slogan-style-d span{display:inline-block;font-weight:700;animation:char-bounce 1.2s ease-in-out infinite}
 @keyframes char-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.slogan-style-e{font-weight:700;letter-spacing:.06em;animation:neon-pulse 2.5s ease-in-out infinite;white-space:nowrap;display:inline-block}
+.slogan-style-e{font-weight:700;letter-spacing:.06em;animation:neon-pulse 2.5s ease-in-out infinite;white-space:nowrap;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .slogan-style-e .spin-icon{animation:icon-spin 3s linear infinite;display:inline-block}
 @keyframes neon-pulse{0%,100%{opacity:1;filter:brightness(1)}50%{opacity:.85;filter:brightness(1.4)}}
 @keyframes icon-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -394,7 +395,7 @@ button img,a img{pointer-events:auto}
 const CLOUD_NAME='dkwviksvr',SHOP_TAG='shop',CONFIG_URL='config.json';
 const EMBEDDED_CONFIG=null; // admin-replace-marker
 let PAGE_SIZE=50,CARD_MIN=130,config={categories:[],products:[]},filtered=[],currentPage=0,lbIndex=0,activeCategory='all',searchQuery='';
-let _sloganList=[],_sloganIdx=0,_sloganStyle='C',_sloganColor='#c0325c',_sloganSize=14,_sloganTimer=null;
+let _sloganList=[],_sloganIdx=0,_sloganStyle='C',_sloganColor='#c0325c',_sloganSize=14,_sloganSpeed=1,_sloganTimer=null;
 let _contacts={},_aiCfg={},aiQA=[];
 
 function loadShopDB(){
@@ -464,6 +465,7 @@ async function fetchConfig(){
     sloganFontSize:cfg?.sloganFontSize||local?.sloganFontSize||14,
     sloganStyle:cfg?.sloganStyle||local?.sloganStyle||'C',
     sloganColor:cfg?.sloganColor||local?.sloganColor||'#c0325c',
+    sloganSpeed:cfg?.sloganSpeed||local?.sloganSpeed||1,
     categories:cfg?.categories?.length?cfg.categories:(local?.categories||[]),
     productCategories:cfg?.productCategories||local?.productCategories||[],
     productNames:cfg?.productNames||local?.productNames||{},
@@ -495,10 +497,17 @@ function startHeaderObserver(){const h=document.getElementById('fixed-header');i
 
 // Slogan System A-F
 const CC=['#ff6b9d','#ff9a3c','#ffd93d','#6bcb77','#4d96ff','#c77dff'];
-function initSlogans(cfg){_sloganList=(cfg.slogans&&cfg.slogans.length>0)?cfg.slogans:['錢錢沒有不見，只是變成妳愛的樣子 ♡'];_sloganStyle=cfg.sloganStyle||'C';_sloganColor=cfg.sloganColor||'#c0325c';_sloganSize=cfg.sloganFontSize||14;_sloganIdx=Math.floor(Math.random()*_sloganList.length);rotateSlogans();}
+function initSlogans(cfg){_sloganList=(cfg.slogans&&cfg.slogans.length>0)?cfg.slogans:['錢錢沒有不見，只是變成妳愛的樣子 ♡'];_sloganStyle=cfg.sloganStyle||'C';_sloganColor=cfg.sloganColor||'#c0325c';_sloganSize=cfg.sloganFontSize||14;_sloganSpeed=cfg.sloganSpeed||1;_sloganIdx=Math.floor(Math.random()*_sloganList.length);rotateSlogans();}
 function buildSloganEl(text){const el=document.getElementById('shopSlogan');if(!el)return;el.innerHTML='';const s=_sloganStyle,c=_sloganColor,sz=_sloganSize;
   if(s==='A'){const sp=document.createElement('span');sp.className='slogan-style-a';sp.style.fontSize=sz+'px';sp.textContent=text;el.appendChild(sp);}
-  else if(s==='B'){const w=document.createElement('div');w.className='slogan-style-b-wrap';w.style.width='100%';const tr=document.createElement('div');tr.className='slogan-style-b-track';for(let i=0;i<2;i++){const sp=document.createElement('span');sp.className='slogan-style-b-text';sp.style.color=c;sp.style.textShadow=`0 0 6px ${c},0 0 14px ${c}`;sp.style.fontSize=sz+'px';sp.textContent='🧸 '+text+'   ';tr.appendChild(sp);}w.appendChild(tr);el.appendChild(w);}
+  else if(s==='B'){
+    const dur=(14/_sloganSpeed).toFixed(1)+'s';
+    const w=document.createElement('div');w.className='slogan-style-b-wrap';w.style.width='100%';
+    const tr=document.createElement('div');tr.className='slogan-style-b-track';
+    tr.style.animationDuration=dur;
+    for(let i=0;i<2;i++){const sp=document.createElement('span');sp.className='slogan-style-b-text';sp.style.color=c;sp.style.textShadow=`0 0 6px ${c},0 0 14px ${c}`;sp.style.fontSize=sz+'px';sp.textContent='🧸 '+text+'   ';tr.appendChild(sp);}
+    w.appendChild(tr);el.appendChild(w);
+  }
   else if(s==='C'){
     const w=document.createElement('span');w.className='slogan-style-c-wrap';
     const sp=document.createElement('span');sp.className='slogan-style-c';sp.style.color=c;sp.style.fontSize=sz+'px';
@@ -509,13 +518,13 @@ function buildSloganEl(text){const el=document.getElementById('shopSlogan');if(!
       if(!erasing){
         sp.textContent=text.slice(0,idx);
         idx++;
-        if(idx>text.length){clearTimeout(timer);timer=setTimeout(()=>{erasing=true;typeStep();},2000);return;}
-        timer=setTimeout(typeStep,60);
+        if(idx>text.length){clearTimeout(timer);timer=setTimeout(()=>{erasing=true;typeStep();},Math.round(2000/_sloganSpeed));return;}
+        timer=setTimeout(typeStep,Math.round(60/_sloganSpeed));
       }else{
         sp.textContent=text.slice(0,idx);
         idx--;
-        if(idx<0){clearTimeout(timer);erasing=false;idx=0;timer=setTimeout(typeStep,600);return;}
-        timer=setTimeout(typeStep,30);
+        if(idx<0){clearTimeout(timer);erasing=false;idx=0;timer=setTimeout(typeStep,Math.round(600/_sloganSpeed));return;}
+        timer=setTimeout(typeStep,Math.round(30/_sloganSpeed));
       }
     }
     // Clean up previous timer if element is replaced
