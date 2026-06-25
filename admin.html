@@ -194,18 +194,41 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
   <div class="login-box">
     <div class="login-logo">🧸</div>
     <div class="login-title">娃娃商城後台</div>
-    <div class="login-sub">請輸入管理員密碼登入</div>
-    <div class="login-field">
-      <label>密碼</label>
-      <input type="password" id="loginPwd" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin();" autofocus>
+    <!-- Tab 切換：本地密碼 / Firebase 帳號 -->
+    <div style="display:flex;background:#f0ede8;border-radius:8px;padding:3px;margin-bottom:18px;gap:3px">
+      <button id="loginTabLocal" onclick="switchLoginTab('local')"
+        style="flex:1;padding:7px;border:none;border-radius:6px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;transition:all .15s">
+        🔑 本地密碼
+      </button>
+      <button id="loginTabFb" onclick="switchLoginTab('fb')"
+        style="flex:1;padding:7px;border:none;border-radius:6px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s">
+        ☁ Firebase 帳號
+      </button>
+    </div>
+    <!-- 本地密碼登入 -->
+    <div id="loginFormLocal">
+      <div class="login-field">
+        <label>後台密碼</label>
+        <input type="password" id="loginPwd" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin();" autofocus>
+      </div>
+      <div class="login-hint">預設密碼：<strong>admin888</strong></div>
+    </div>
+    <!-- Firebase 帳號登入 -->
+    <div id="loginFormFb" style="display:none">
+      <div class="login-field">
+        <label>管理員 Email</label>
+        <input type="email" id="loginEmail" placeholder="admin@example.com" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-field">
+        <label>Firebase 密碼</label>
+        <input type="password" id="loginPwdFb" placeholder="Firebase 帳號密碼" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-hint" style="background:var(--info-light);border:1px solid #c0d4f8;border-radius:6px;padding:8px 12px;font-size:11px;color:var(--info);margin-bottom:4px">
+        ☁ 使用 Firebase Console 建立的帳號<br>Authentication → Users → 新增使用者
+      </div>
     </div>
     <button class="login-btn" onclick="doLogin()">登入後台</button>
     <div class="login-err" id="loginErr"></div>
-    <div class="login-hint">
-      預設密碼：<strong>admin888</strong><br>
-      修改密碼後自動同步到 GitHub<br>
-      <span style="color:rgba(255,255,255,0.4);font-size:10px;">任何電腦都能使用同一組密碼</span>
-    </div>
   </div>
 </div>
 
@@ -243,6 +266,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
     </button>
     <button class="nav-btn" onclick="showPanel('orders',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>訂單管理
+      <span id="pendingOrderBadge" style="display:none;margin-left:auto;background:#c04040;color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center"></span>
     </button>
     <button class="nav-btn" onclick="showPanel('members',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>會員管理
@@ -1953,6 +1977,20 @@ function batchClear(){
 
 // ── Overview ──
 function renderOverview(){
+  // 檢查是否有前台傳來的待處理訂單，並在導覽列顯示角標
+  try{
+    const pending=JSON.parse(localStorage.getItem('sanrio_pending_orders')||'[]');
+    const newOrders=pending.filter(o=>!state.orders.find(x=>x.id===o.id));
+    const badge=document.getElementById('pendingOrderBadge');
+    if(badge){
+      if(newOrders.length>0){
+        badge.textContent=newOrders.length;
+        badge.style.display='inline-block';
+      }else{
+        badge.style.display='none';
+      }
+    }
+  }catch(e){}
   updateStats();
   const el=document.getElementById('overview-cats');
   if(state.categories.length===0){el.innerHTML='';return;}
@@ -2859,57 +2897,89 @@ async function getStoredHash() {
   }
 }
 
+// ── 登入 Tab 切換 ──
+function switchLoginTab(tab){
+  const isLocal=tab==='local';
+  document.getElementById('loginFormLocal').style.display=isLocal?'block':'none';
+  document.getElementById('loginFormFb').style.display=isLocal?'none':'block';
+  const tl=document.getElementById('loginTabLocal'),tf=document.getElementById('loginTabFb');
+  if(tl){tl.style.background=isLocal?'var(--accent)':'transparent';tl.style.color=isLocal?'#fff':'var(--text2)';}
+  if(tf){tf.style.background=isLocal?'transparent':'var(--accent)';tf.style.color=isLocal?'var(--text2)':'#fff';}
+  setTimeout(()=>{
+    const active=isLocal?document.getElementById('loginPwd'):document.getElementById('loginEmail');
+    if(active)active.focus();
+  },50);
+}
+
+// ── 登入成功後的共用後續邏輯 ──
+function onLoginSuccess(pwd){
+  sessionStorage.setItem('admin_authed',Date.now().toString());
+  if(pwd)sessionStorage.setItem('admin_session_pwd',pwd);
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('loginErr').textContent='';
+  setTimeout(async()=>{
+    if(pwd){await loadEncryptedStateFromGitHub(pwd);}
+    loadStateFromGitHub();
+    resetIdleTimer();
+    // 啟動 Firebase 即時訂單監聽
+    if(typeof startOrderListener==='function')startOrderListener();
+    // 載入 Firebase 會員資料
+    if(typeof fbLoadAllMembers==='function')fbLoadAllMembers();
+  },300);
+}
+
 async function doLogin(){
-  const pwd   = document.getElementById('loginPwd').value;
-  const errEl = document.getElementById('loginErr');
-  if (!pwd) { errEl.textContent = '請輸入密碼'; return; }
+  const errEl=document.getElementById('loginErr');
+  const loginBtn=document.querySelector('.login-btn');
+  if(loginBtn){loginBtn.textContent='驗證中…';loginBtn.disabled=true;}
+  errEl.textContent='';
 
-  const loginBtn = document.querySelector('.login-btn');
-  if (loginBtn) { loginBtn.textContent = '驗證中…'; loginBtn.disabled = true; }
+  // 判斷目前是哪個 Tab
+  const isFbTab=document.getElementById('loginFormFb')?.style.display!=='none';
 
-  try {
-    // 從 GitHub 載入密碼（最多等 2 秒，超時就略過）
-    if (!state.adminPwdHash) {
-      await Promise.race([
-        loadPwdFromGitHub(),
-        new Promise(resolve => setTimeout(resolve, 2000))
-      ]);
+  try{
+    if(isFbTab){
+      // ── Firebase Auth 登入 ──
+      const email=document.getElementById('loginEmail')?.value.trim();
+      const pwd=document.getElementById('loginPwdFb')?.value;
+      if(!email||!pwd){errEl.textContent='請填寫 Email 與密碼';return;}
+      const ok=await fbAdminLogin(email,pwd);
+      if(ok){
+        onLoginSuccess(null);
+        toast('✅ Firebase 帳號登入成功！即時訂單監聽已啟動');
+      }else{
+        errEl.textContent='Firebase 帳號或密碼錯誤';
+        document.getElementById('loginPwdFb').value='';
+      }
+    }else{
+      // ── 本地密碼登入（原有邏輯）──
+      const pwd=document.getElementById('loginPwd')?.value;
+      if(!pwd){errEl.textContent='請輸入密碼';return;}
+      if(!state.adminPwdHash){
+        await Promise.race([loadPwdFromGitHub(),new Promise(r=>setTimeout(r,2000))]);
+      }
+      const hash=await hashPassword(pwd);
+      const stored=await getStoredHash();
+      if(hash===stored){
+        onLoginSuccess(pwd);
+      }else{
+        errEl.textContent='密碼錯誤，請重試';
+        document.getElementById('loginPwd').value='';
+        document.getElementById('loginPwd').focus();
+      }
     }
-
-    const hash    = await hashPassword(pwd);
-    const stored  = await getStoredHash();
-    const correct = (hash === stored);
-
-    if (correct) {
-      // 儲存密碼到 session（用於解密加密設定）
-      sessionStorage.setItem('admin_authed', Date.now().toString());
-      sessionStorage.setItem('admin_session_pwd', pwd); // 只存在 sessionStorage，關掉瀏覽器就清除
-      document.getElementById('loginOverlay').classList.add('hidden');
-      errEl.textContent = '';
-      // 登入成功：用密碼解密並載入 GitHub 上的加密設定
-      setTimeout(async () => {
-        await loadEncryptedStateFromGitHub(pwd);
-        loadStateFromGitHub();
-        resetIdleTimer(); // 啟動閒置計時
-      }, 300);
-    } else {
-      errEl.textContent = '密碼錯誤，請重試';
-      document.getElementById('loginPwd').value = '';
-      document.getElementById('loginPwd').focus();
+  }catch(e){
+    // 本地密碼備用
+    const pwd=document.getElementById('loginPwd')?.value||'';
+    const hash=await hashPassword(pwd).catch(()=>'');
+    const stored=await getStoredHash().catch(()=>'');
+    if(hash&&hash===stored){
+      onLoginSuccess(pwd);
+    }else{
+      errEl.textContent='登入失敗：'+e.message;
     }
-  } catch(e) {
-    // 任何錯誤都不卡住，用本地密碼驗證
-    const hash    = await hashPassword(pwd).catch(() => '');
-    const stored  = await getStoredHash().catch(() => '');
-    if (hash && hash === stored) {
-      sessionStorage.setItem('admin_authed', Date.now().toString());
-      document.getElementById('loginOverlay').classList.add('hidden');
-    } else {
-      errEl.textContent = '密碼錯誤，請重試';
-      document.getElementById('loginPwd').value = '';
-    }
-  } finally {
-    if (loginBtn) { loginBtn.textContent = '登入後台'; loginBtn.disabled = false; }
+  }finally{
+    if(loginBtn){loginBtn.textContent='登入後台';loginBtn.disabled=false;}
   }
 }
 
@@ -2967,6 +3037,9 @@ async function checkAuth(){
       if (pwd) await loadEncryptedStateFromGitHub(pwd);
       loadStateFromGitHub();
       resetIdleTimer();
+      // 啟動 Firebase 即時監聽
+      if(typeof startOrderListener==='function') startOrderListener();
+      if(typeof fbLoadAllMembers==='function') fbLoadAllMembers();
     }, 500);
     return;
   }
@@ -3003,9 +3076,35 @@ async function changePassword(){
 }
 
 function logout(){
-  if (!confirm('確定要登出嗎？')) return;
+  if(!confirm('確定要登出嗎？'))return;
+  stopOrderListener&&stopOrderListener();
+  if(typeof fbAuth!=='undefined'&&fbAuth)fbAuth.signOut().catch(()=>{});
   sessionStorage.removeItem('admin_authed');
+  sessionStorage.removeItem('admin_session_pwd');
   location.reload();
+}
+
+// ── 供 Firebase 即時監聽器呼叫的訂單渲染（避免循環依賴）──
+function renderOrdersFromState(){
+  if(document.getElementById('panel-orders')?.classList.contains('active'))
+    renderOrders();
+  updateStats();
+}
+
+// ── 載入 Firebase 會員資料（補充本地沒有的帳號）──
+async function fbLoadAllMembers(){
+  if(typeof fbLoadMembers!=='function')return;
+  try{
+    const members=await fbLoadMembers();
+    let added=0;
+    members.forEach(m=>{
+      if(!state.users.find(u=>u.email===m.email)){
+        state.users.push({...m,status:m.status||'active'});
+        added++;
+      }
+    });
+    if(added>0){saveState();toast(`☁ 從 Firebase 載入 ${added} 位新會員`);}
+  }catch(e){}
 }
 
 // ── Init ──
@@ -3025,6 +3124,30 @@ document.addEventListener('input',function(e){
 // 購物車系統功能（訂單/會員/商品價格/商店設定）
 // ══════════════════════════════════════════
 function renderOrders(){
+  // ── 合併前台客人下單的「待處理訂單」──
+  // 前台下單後寫入 sanrio_pending_orders，後台在這裡讀取並合併
+  try{
+    const SHARED_KEY='sanrio_pending_orders';
+    const pending=JSON.parse(localStorage.getItem(SHARED_KEY)||'[]');
+    if(pending.length>0){
+      let newCount=0;
+      pending.forEach(o=>{
+        if(!state.orders.find(x=>x.id===o.id)){
+          // 新訂單：合併進 state.orders
+          state.orders.push(o);
+          newCount++;
+        }
+      });
+      if(newCount>0){
+        // 清空佇列並儲存
+        localStorage.removeItem(SHARED_KEY);
+        saveState();
+        toast(`✅ 已匯入 ${newCount} 筆新訂單！`);
+        updateStats();
+      }
+    }
+  }catch(e){}
+
   const q=(document.getElementById('orderSearch')?.value||'').toLowerCase();
   const sSt=document.getElementById('orderStatusFilter')?.value||'';
   const sPay=document.getElementById('orderPayFilter')?.value||'';
@@ -3104,8 +3227,11 @@ function updateOrderStatus(oid,status){
       return;
     }
     saveState();
+    // 同步到 Firebase
+    if(typeof fbUpdateOrderStatus==='function')
+      fbUpdateOrderStatus(oid, {status:o.status, stockRestored:!!o.stockRestored});
     // 若目前停留在商品價格頁，刷新庫存顯示
-    if (document.getElementById('panel-prices')?.classList.contains('active')) renderPrices();
+    if(document.getElementById('panel-prices')?.classList.contains('active'))renderPrices();
   }
 }
 
@@ -3676,9 +3802,12 @@ function savePrice(){
     wsTiers: newTiers
   };
   saveState();
+  // ── 同步到 Firebase（前台即時讀取最新價格/庫存）──
+  if(typeof fbSyncProductPrice==='function')
+    fbSyncProductPrice(editingPriceId, state.productPrices[editingPriceId]);
   closeModal('priceModal');
   renderPrices();
-  toast('✓ 價格已儲存：' + editingPriceId);
+  toast('✓ 價格已儲存：' + editingPriceId + '（已同步到 Firebase）');
 }
 
 // ══════════════════════════════════════════
@@ -4139,6 +4268,111 @@ function renderQtyLimits() {
 // ══════════════════════════════════════════
 // ══════════════════════════════════════════
 
+</script>
+
+<!-- ════ Firebase SDK ════ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ══ Firebase 初始化 ══
+let db=null, fbAuth=null, _fbReady=false, _orderListener=null;
+
+(function initFb(){
+  try{
+    firebase.initializeApp({
+  apiKey: "AIzaSyA3kgOzXmctLLIqkQUfIQMsfRHo0z3Q8zY",
+  authDomain: "shop-a1f71.firebaseapp.com",
+  projectId: "shop-a1f71",
+  storageBucket: "shop-a1f71.firebasestorage.app",
+  messagingSenderId: "553604129740",
+  appId: "1:553604129740:web:7e0ee771e1030235feb369"});
+    db=firebase.firestore();
+    fbAuth=firebase.auth();
+    _fbReady=true;
+  }catch(e){console.warn('Firebase init failed:',e);}
+})();
+
+// ── Firebase Auth 登入（後台管理員）──
+async function fbAdminLogin(email,pwd){
+  if(!_fbReady)return false;
+  try{
+    await fbAuth.signInWithEmailAndPassword(email,pwd);
+    return true;
+  }catch(e){
+    console.warn('FB login failed:',e.code);
+    return false;
+  }
+}
+
+// ── 即時監聽 Firestore 訂單（後台開啟後持續更新）──
+function startOrderListener(){
+  if(!_fbReady||_orderListener)return;
+  try{
+    _orderListener=db.collection('orders')
+      .orderBy('_serverTime','desc')
+      .limit(500)
+      .onSnapshot(snapshot=>{
+        let newCount=0;
+        snapshot.docChanges().forEach(change=>{
+          const order={...change.doc.data(),id:change.doc.id};
+          // 清理 Firestore 時間戳欄位
+          delete order._serverTime;
+          if(change.type==='added'){
+            if(!state.orders.find(o=>o.id===order.id)){
+              state.orders.unshift(order);
+              newCount++;
+            }
+          }else if(change.type==='modified'){
+            const idx=state.orders.findIndex(o=>o.id===change.doc.id);
+            if(idx>=0)state.orders[idx]=order;
+          }else if(change.type==='removed'){
+            state.orders=state.orders.filter(o=>o.id!==change.doc.id);
+          }
+        });
+        if(newCount>0){
+          saveState();updateStats();
+          // 更新待處理角標
+          const badge=document.getElementById('pendingOrderBadge');
+          if(badge){badge.textContent=newCount;badge.style.display='inline-block';}
+          toast(`🔔 ${newCount} 筆新訂單！`);
+        }
+        // 如果訂單面板目前打開，自動重新渲染
+        if(document.getElementById('panel-orders')?.classList.contains('active'))
+          renderOrdersFromState();
+      },err=>{console.warn('Order listener error:',err);}
+    );
+    console.log('✅ 訂單即時監聽已啟動');
+  }catch(e){console.warn('startOrderListener failed:',e);}
+}
+
+// ── 停止監聽（登出時）──
+function stopOrderListener(){
+  if(_orderListener){_orderListener();_orderListener=null;}
+}
+
+// ── 把訂單狀態更新同步到 Firestore ──
+async function fbUpdateOrderStatus(orderId, fields){
+  if(!_fbReady)return;
+  try{await db.collection('orders').doc(orderId).update(fields);}
+  catch(e){console.warn('fbUpdateOrderStatus failed:',e);}
+}
+
+// ── 把商品價格同步到 Firestore（讓前台讀最新庫存/價格）──
+async function fbSyncProductPrice(productId, priceData){
+  if(!_fbReady)return;
+  try{await db.collection('products').doc(productId).set(priceData,{merge:true});}
+  catch(e){console.warn('fbSyncProductPrice failed:',e);}
+}
+
+// ── 讀取 Firestore 全部會員 ──
+async function fbLoadMembers(){
+  if(!_fbReady)return [];
+  try{
+    const snap=await db.collection('members').get();
+    return snap.docs.map(d=>({...d.data(),id:d.id}));
+  }catch(e){return [];}
+}
 </script>
 </body>
 </html>

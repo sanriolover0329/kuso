@@ -571,6 +571,8 @@ async function init(){
     renderApp();progressDone();
     setTimeout(()=>initSlogans(cfg),100);
     initContactFloat();renderAnnounceBar();
+    // 從 Firebase 讀取最新商品價格（非阻塞）
+    setTimeout(()=>loadFbProductPrices&&loadFbProductPrices(),500);
   }catch(err){
     document.getElementById('fixed-header').innerHTML='';
     document.getElementById('gallery-section').innerHTML=`<div style="max-width:480px;margin:60px auto;text-align:center;padding:40px 24px;background:var(--surface);border:1px solid var(--border);border-radius:16px"><div style="font-size:3rem;margin-bottom:12px">😢</div><div style="font-size:15px;font-weight:600;margin-bottom:8px">圖片載入失敗</div><div style="font-size:13px;color:var(--text2);margin-bottom:20px">${err.message}</div><button onclick="init()" style="padding:10px 28px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">重試</button></div>`;
@@ -705,21 +707,209 @@ function submitOrder(){
   items.forEach(it=>{const pp=shopDB.productPrices[it.id];if(pp&&!it.preorder&&typeof pp.stock==='number')pp.stock=Math.max(0,pp.stock-it.qty);});
   if(currentUser){const u=shopDB.users.find(x=>x.id===currentUser.id);if(u&&(order.payStatus==='pending_verify'||order.payStatus==='paid'))u.totalSpent+=fin;}
   if(appliedCoupon){const c=(shopDB.coupons||[]).find(c=>c.code===appliedCoupon.code);if(c)c.usedCount=(c.usedCount||0)+1;}
-  saveShopDB();cart=[];saveCart();appliedCoupon=null;closeModal('cartModal');renderApp();showOrderSuccess(order);
+  saveShopDB();cart=[];saveCart();appliedCoupon=null;
+
+  // ── 寫入 Firebase Firestore（跨裝置即時同步到後台）──
+  fbWriteOrder(order);
+
+  // ── 共用佇列（同裝置備用）──
+  try{
+    const SHARED_KEY='sanrio_pending_orders';
+    const pending=JSON.parse(localStorage.getItem(SHARED_KEY)||'[]');
+    pending.push({...order,_fromFrontend:true,_receivedAt:new Date().toISOString()});
+    if(pending.length>200)pending.splice(0,pending.length-200);
+    localStorage.setItem(SHARED_KEY,JSON.stringify(pending));
+  }catch(e){}
+
+  closeModal('cartModal');renderApp();showOrderSuccess(order);
 }
 function showOrderSuccess(order){
-  const ci=shopDB.contactInfo||{};const hc=ci.showAfterOrder!==false&&((ci.line&&ci.line.enabled)||(ci.lineat&&ci.lineat.enabled)||(ci.fb&&ci.fb.enabled)||(ci.phone&&ci.phone.enabled));
-  const al=order.isPreorder?`<div style="font-size:13px;color:var(--text2);margin-bottom:4px">今日應付訂金：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.deposit)}</strong></div><div style="font-size:11px;color:var(--text3)">餘款 ${fmt(order.finalTotal-order.deposit)} 待出貨前聯繫付清</div>`:`<div style="font-size:13px;color:var(--text2)">訂單金額：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.finalTotal)}</strong></div>`;
-  let ch='';if(hc){ch='<div style="margin-top:16px;padding-top:16px;border-top:1.5px dashed var(--border)"><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px">📬 請透過以下方式聯繫確認</div>';if(ci.line&&ci.line.enabled&&ci.line.id)ch+=`<a href="https://line.me/ti/p/~${ci.line.id}" target="_blank" class="contact-btn line-btn"><span class="btn-icon">💚</span><div><div>LINE 私訊</div><div class="btn-label">@${ci.line.id}</div></div></a>`;if(ci.lineat&&ci.lineat.enabled&&ci.lineat.url)ch+=`<a href="${ci.lineat.url}" target="_blank" class="contact-btn line-btn"><span class="btn-icon">💚</span><div><div>LINE@ 官方帳號</div></div></a>`;if(ci.fb&&ci.fb.enabled&&ci.fb.url)ch+=`<a href="${ci.fb.url}" target="_blank" class="contact-btn fb-btn"><span class="btn-icon">📘</span><div><div>Facebook 粉專私訊</div></div></a>`;if(ci.phone&&ci.phone.enabled&&ci.phone.number)ch+=`<a href="tel:${ci.phone.number}" class="contact-btn phone-btn"><span class="btn-icon">📞</span><div><div>撥打電話</div><div class="btn-label">${ci.phone.number}</div></div></a>`;if(ci.note)ch+=`<div style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center">${ci.note}</div>`;ch+='</div>';}
-  const body=document.getElementById('orderSuccessBody');body.innerHTML=`<div style="text-align:center;margin-bottom:12px"><div style="font-size:40px;margin-bottom:8px">🌸</div><div style="font-size:13px;color:var(--text2)">訂單已送出，感謝您的購買！</div><div class="order-success-id">${order.id}</div>${al}</div>${ch}<button class="btn-full" style="margin-top:16px;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border)" onclick="closeModal('orderSuccessModal')">關閉</button>`;openModal('orderSuccessModal');
+  // 建立聯絡按鈕：合併兩種資料來源
+  // 來源1: shopDB.contactInfo（商店設定 → 聯絡通知設定）
+  // 來源2: _contacts（聯絡&AI設定 → 同步自 config.json contacts）
+  const ci=shopDB.contactInfo||{};
+  const cc=_contacts||{};
+
+  // 統一格式化聯絡管道
+  const channels=[];
+  // LINE（contactInfo 優先，其次 contacts）
+  if(ci.line?.enabled&&(ci.line.id||ci.line.url)){
+    const url=ci.line.url||(ci.line.id?`https://line.me/ti/p/~${ci.line.id}`:'');
+    if(url) channels.push({type:'line',url,label:'LINE 私訊',sub:ci.line.id?`@${ci.line.id}`:'',cls:'line-btn',icon:'💚'});
+  } else if(cc.line?.enabled&&cc.line.url){
+    channels.push({type:'line',url:cc.line.url,label:cc.line.title||'加入 LINE',sub:'',cls:'line-btn',icon:'💚'});
+  }
+  if(ci.lineat?.enabled&&ci.lineat.url)
+    channels.push({type:'lineat',url:ci.lineat.url,label:'LINE@ 官方帳號',sub:'',cls:'line-btn',icon:'💚'});
+  // Facebook
+  if(ci.fb?.enabled&&ci.fb.url)
+    channels.push({type:'fb',url:ci.fb.url,label:'Facebook 私訊',sub:'',cls:'fb-btn',icon:'📘'});
+  else if(cc.fb?.enabled&&cc.fb.url)
+    channels.push({type:'fb',url:cc.fb.url,label:'Facebook 私訊',sub:'',cls:'fb-btn',icon:'📘'});
+  // 電話
+  if(ci.phone?.enabled&&ci.phone.number)
+    channels.push({type:'phone',url:`tel:${ci.phone.number}`,label:'撥打電話',sub:ci.phone.number,cls:'phone-btn',icon:'📞'});
+  // IG / WA / Email (from contacts only)
+  if(cc.ig?.enabled&&cc.ig.username)
+    channels.push({type:'ig',url:`https://ig.me/m/${cc.ig.username}`,label:'Instagram 私訊',sub:`@${cc.ig.username}`,cls:'phone-btn',icon:'🩷'});
+  if(cc.wa?.enabled&&cc.wa.phone)
+    channels.push({type:'wa',url:`https://wa.me/${cc.wa.phone.replace(/\D/g,'')}`,label:'WhatsApp',sub:cc.wa.phone,cls:'phone-btn',icon:'💬'});
+  if(cc.email?.enabled&&cc.email.email)
+    channels.push({type:'email',url:`mailto:${cc.email.email}`,label:'寄送 Email',sub:cc.email.email,cls:'phone-btn',icon:'📧'});
+
+  // 訂單摘要文字（供一鍵傳給賣家）
+  const itemLines=order.items.map(i=>`• ${i.name} ×${i.qty} ${fmt(i.price*i.qty)}`).join('\n');
+  const logMap={blackcat:'黑貓宅急便',hsinchu:'新竹物流','711':'7-11超商',family:'全家超商',face:'面交',hilife:'萊爾富',ok:'OK超商'};
+  let orderMsg=`【新訂單通知】\n`;
+  orderMsg+=`訂單：${order.id}\n`;
+  orderMsg+=`品項：\n${itemLines}\n`;
+  orderMsg+=`金額：${fmt(order.finalTotal)}`;
+  if(order.isPreorder) orderMsg+=`（訂金 ${fmt(order.deposit)}）`;
+  orderMsg+=`\n配送：${logMap[order.logistics]||order.logistics}`;
+  if(order.address) orderMsg+=`\n地址：${order.address}`;
+  orderMsg+=`\n付款：${order.payment}\n姓名：${order.userName}\n電話：${order.userPhone}`;
+  const encodedMsg=encodeURIComponent(orderMsg);
+
+  // 一鍵通知賣家按鈕
+  let notifyBtns='';
+  if(channels.find(c=>c.type==='line')){
+    const lineUrl=channels.find(c=>c.type==='line').url;
+    notifyBtns+=`<a href="${lineUrl}" target="_blank" rel="noopener" class="contact-btn line-btn" style="margin-bottom:8px">
+      <span class="btn-icon">💚</span>
+      <div><div>LINE 通知賣家</div><div class="btn-label">點擊後請貼上以下訂單資訊</div></div>
+    </a>`;
+  }
+  if(channels.find(c=>c.type==='fb')){
+    const fbUrl=channels.find(c=>c.type==='fb').url;
+    notifyBtns+=`<a href="${fbUrl}" target="_blank" rel="noopener" class="contact-btn fb-btn" style="margin-bottom:8px">
+      <span class="btn-icon">📘</span>
+      <div><div>Facebook 通知賣家</div><div class="btn-label">點擊後請貼上以下訂單資訊</div></div>
+    </a>`;
+  }
+  if(channels.find(c=>c.type==='phone')){
+    const ph=channels.find(c=>c.type==='phone');
+    notifyBtns+=`<a href="${ph.url}" class="contact-btn phone-btn" style="margin-bottom:8px">
+      <span class="btn-icon">📞</span>
+      <div><div>電話聯繫賣家</div><div class="btn-label">${ph.sub}</div></div>
+    </a>`;
+  }
+
+  const amtHtml=order.isPreorder
+    ?`<div style="font-size:13px;color:var(--text2);margin-bottom:4px">今日應付訂金：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.deposit)}</strong></div>
+      <div style="font-size:11px;color:var(--text3)">餘款 ${fmt(order.finalTotal-order.deposit)} 待出貨前聯繫付清</div>`
+    :`<div style="font-size:13px;color:var(--text2)">訂單金額：<strong style="color:var(--accent-dark);font-size:16px">${fmt(order.finalTotal)}</strong></div>`;
+
+  const hasChannels=channels.length>0||notifyBtns;
+  const contactSection=hasChannels?`
+    <div style="margin-top:16px;padding-top:16px;border-top:1.5px dashed var(--border)">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">📬 請聯繫賣家確認訂單</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">複製下方訂單資訊後，點擊聯絡方式傳送給賣家</div>
+      <!-- 可複製的訂單摘要 -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;position:relative">
+        <pre id="orderMsgBox" style="font-size:12px;font-family:var(--mono);color:var(--text2);white-space:pre-wrap;margin:0;line-height:1.6">${orderMsg}</pre>
+        <button onclick="copyOrderMsg()" style="position:absolute;top:8px;right:8px;padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--sans)">📋 複製</button>
+      </div>
+      ${notifyBtns}
+      ${ci.note?`<div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">${ci.note}</div>`:''}
+    </div>`:'';
+
+  const body=document.getElementById('orderSuccessBody');
+  body.innerHTML=`
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:40px;margin-bottom:8px">🌸</div>
+      <div style="font-size:13px;color:var(--text2)">訂單已送出，感謝您的購買！</div>
+      <div class="order-success-id">${order.id}</div>
+      ${amtHtml}
+    </div>
+    ${contactSection}
+    <button class="btn-full" style="margin-top:16px;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border)" onclick="closeModal('orderSuccessModal')">關閉</button>`;
+  openModal('orderSuccessModal');
+}
+
+function copyOrderMsg(){
+  const txt=document.getElementById('orderMsgBox')?.textContent||'';
+  navigator.clipboard.writeText(txt).then(()=>showToast('✅ 訂單資訊已複製！')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('✅ 訂單資訊已複製！');
+  });
 }
 
 // Auth
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function switchAuthTab(tab,btn){document.querySelectorAll('.auth-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('loginForm').style.display=tab==='login'?'block':'none';document.getElementById('registerForm').style.display=tab==='register'?'block':'none';}
-function doLogin(){const input=document.getElementById('loginEmail').value.trim(),pwd=document.getElementById('loginPwd').value;if(!input||!pwd){showToast('❌ 請填寫帳號與密碼');return;}const ci=input.replace(/[-\s]/g,'');const user=shopDB.users.find(u=>(u.email===input||(u.phone||'').replace(/[-\s]/g,'')===ci)&&u.pwd===pwd);if(!user){showToast('❌ 帳號或密碼錯誤');return;}if(user.status==='pending'){showToast('⏳ 帳號尚未審核');return;}if(user.status==='disabled'){showToast('❌ 帳號已停用');return;}currentUser=user;closeModal('authModal');showToast('✅ 歡迎回來，'+user.name+'！');renderApp();}
-function doRegister(){const name=document.getElementById('regName').value.trim(),email=document.getElementById('regEmail').value.trim(),phone=document.getElementById('regPhone').value.trim(),invite=document.getElementById('regInvite').value.trim(),pwd=document.getElementById('regPwd').value;if(!name||!email||!phone||!pwd){showToast('❌ 請填寫必填欄位');return;}if(shopDB.users.find(u=>u.email===email)){showToast('❌ 此 Email 已被使用');return;}shopDB.users.push({id:shopDB.users.length+1,name,email,pwd,phone,role:'member',status:'pending',tier:'bronze',totalSpent:0,createdAt:new Date().toISOString().split('T')[0],invite});saveShopDB();showToast('✅ 申請已送出！等待管理員審核♡',4000);}
+async function doLogin(){
+  const input=document.getElementById('loginEmail').value.trim();
+  const pwd=document.getElementById('loginPwd').value;
+  if(!input||!pwd){showToast('❌ 請填寫帳號與密碼');return;}
+
+  // 先嘗試 Firebase Auth（雲端會員）
+  if(_fbReady){
+    const email=input.includes('@')?input:(shopDB.users.find(u=>(u.phone||'').replace(/[-\s]/g,'')===input.replace(/[-\s]/g,''))?.email||null);
+    if(email){
+      try{
+        const cred=await fbSignIn(email,pwd);
+        if(cred){
+          // 從 Firestore 讀取會員資料
+          let user=shopDB.users.find(u=>u.email===email);
+          if(!user){
+            try{
+              const doc=await db.collection('members').doc(cred.user.uid).get();
+              if(doc.exists){
+                user={...doc.data(),id:doc.id};
+                shopDB.users.push(user);
+                saveShopDB();
+              }
+            }catch(e){}
+          }
+          if(user){
+            if(user.status==='pending'){showToast('⏳ 帳號尚未審核');return;}
+            if(user.status==='disabled'){showToast('❌ 帳號已停用');return;}
+            currentUser=user;closeModal('authModal');
+            showToast('✅ 歡迎回來，'+user.name+'！');renderApp();return;
+          }
+        }
+      }catch(e){showToast('❌ '+e.message);return;}
+    }
+  }
+
+  // 備用：本地 localStorage 帳號（管理者demo帳號）
+  const ci=input.replace(/[-\s]/g,'');
+  const user=shopDB.users.find(u=>(u.email===input||(u.phone||'').replace(/[-\s]/g,'')===ci)&&u.pwd===pwd);
+  if(!user){showToast('❌ 帳號或密碼錯誤');return;}
+  if(user.status==='pending'){showToast('⏳ 帳號尚未審核');return;}
+  if(user.status==='disabled'){showToast('❌ 帳號已停用');return;}
+  currentUser=user;closeModal('authModal');showToast('✅ 歡迎回來，'+user.name+'！');renderApp();
+}
+async function doRegister(){
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim();
+  const phone=document.getElementById('regPhone').value.trim();
+  const invite=document.getElementById('regInvite').value.trim();
+  const pwd=document.getElementById('regPwd').value;
+  if(!name||!email||!phone||!pwd){showToast('❌ 請填寫必填欄位');return;}
+  if(pwd.length<6){showToast('❌ 密碼至少需要6碼');return;}
+
+  const userData={name,email,phone,invite,role:'member',status:'active',
+    tier:'bronze',totalSpent:0,createdAt:new Date().toISOString().split('T')[0]};
+
+  if(_fbReady){
+    try{
+      const cred=await fbSignUp(email,pwd,userData);
+      if(cred){
+        const user={...userData,id:cred.user.uid,uid:cred.user.uid};
+        shopDB.users.push(user);saveShopDB();
+        showToast('✅ 申請成功！帳號已啟用，請登入 ♡',4000);
+        switchAuthTab('login',document.querySelector('.auth-tab'));
+        return;
+      }
+    }catch(e){showToast('❌ '+e.message);return;}
+  }
+
+  // 備用：本地儲存
+  if(shopDB.users.find(u=>u.email===email)){showToast('❌ 此 Email 已被使用');return;}
+  shopDB.users.push({id:shopDB.users.length+1,...userData,pwd,status:'pending'});
+  saveShopDB();showToast('✅ 申請已送出！等待管理員審核♡',4000);
+}
 
 // Member
 function openMemberModal(){renderMemberModal();openModal('memberModal');}
@@ -836,6 +1026,89 @@ window.addEventListener('storage',e=>{if(e.key==='sanrio_shop_db'){shopDB=loadSh
 (function(){document.addEventListener('contextmenu',e=>{const t=e.target.tagName.toLowerCase();if(t==='input'||t==='textarea')return;e.preventDefault();return false;});document.addEventListener('dragstart',e=>{if(e.target.tagName==='IMG'){e.preventDefault();return false;}});document.addEventListener('touchstart',e=>{if(e.target.tagName==='IMG')e.preventDefault();},{passive:false});document.addEventListener('keydown',e=>{if(e.key==='F12'){e.preventDefault();return false;}if(e.ctrlKey&&e.key==='u'){e.preventDefault();return false;}if(e.ctrlKey&&e.shiftKey&&['i','I','j','J','c','C'].includes(e.key)){e.preventDefault();return false;}if(e.ctrlKey&&e.key==='s'){e.preventDefault();return false;}});setInterval(()=>{console.clear();},5000);})();
 
 init();
+</script>
+
+<!-- ════ Firebase SDK ════ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ══ Firebase 初始化 ══
+let db=null, fbAuth=null, _fbReady=false;
+(function initFirebase(){
+  try{
+    firebase.initializeApp({
+  apiKey: "AIzaSyA3kgOzXmctLLIqkQUfIQMsfRHo0z3Q8zY",
+  authDomain: "shop-a1f71.firebaseapp.com",
+  projectId: "shop-a1f71",
+  storageBucket: "shop-a1f71.firebasestorage.app",
+  messagingSenderId: "553604129740",
+  appId: "1:553604129740:web:7e0ee771e1030235feb369"});
+    db=firebase.firestore();
+    fbAuth=firebase.auth();
+    _fbReady=true;
+    // 監聽 Auth 狀態：讓會員登入狀態在重整後恢復
+    fbAuth.onAuthStateChanged(user=>{
+      if(user){
+        const u=shopDB.users.find(x=>x.email===user.email);
+        if(u&&!currentUser){currentUser=u;renderApp();}
+      }
+    });
+  }catch(e){console.warn('Firebase init failed:',e);}
+})();
+
+// ── Firebase 讀取商品價格（覆蓋本地預設值）──
+async function loadFbProductPrices(){
+  if(!_fbReady)return;
+  try{
+    const snap=await db.collection('products').get();
+    snap.forEach(doc=>{
+      if(!shopDB.productPrices[doc.id])shopDB.productPrices[doc.id]={...doc.data()};
+      else shopDB.productPrices[doc.id]={...doc.data(),...shopDB.productPrices[doc.id]};
+    });
+  }catch(e){}
+}
+
+// ── Firebase 寫入訂單 ──
+async function fbWriteOrder(order){
+  if(!_fbReady)return;
+  try{
+    await db.collection('orders').doc(order.id).set({
+      ...order,
+      _source:'frontend',
+      _serverTime:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){console.warn('Order write failed:',e);}
+}
+
+// ── Firebase 會員登入 ──
+async function fbSignIn(email,pwd){
+  if(!_fbReady)return null;
+  try{return await fbAuth.signInWithEmailAndPassword(email,pwd);}
+  catch(e){return null;}
+}
+
+// ── Firebase 會員註冊 ──
+async function fbSignUp(email,pwd,userData){
+  if(!_fbReady)return null;
+  try{
+    const cred=await fbAuth.createUserWithEmailAndPassword(email,pwd);
+    // 把會員資料寫進 Firestore
+    await db.collection('members').doc(cred.user.uid).set({
+      ...userData,
+      uid:cred.user.uid,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return cred;
+  }catch(e){
+    if(e.code==='auth/email-already-in-use')throw new Error('此 Email 已被使用');
+    if(e.code==='auth/weak-password')throw new Error('密碼強度不足（至少6位）');
+    throw e;
+  }
+}
+
+// ── Firebase 會員登出 ──
+function fbSignOut(){if(_fbReady&&fbAuth)fbAuth.signOut().catch(()=>{});}
 </script>
 </body>
 </html>
