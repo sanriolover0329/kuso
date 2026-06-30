@@ -483,7 +483,8 @@ async function fetchConfig(){
     faceNote:cfg?.faceNote||local?.faceNote||null,
     settings:cfg?.settings||local?.settings||null,
     announcement:cfg?.announcement||local?.announcement||null,
-    coupons:cfg?.coupons||local?.coupons||null
+    coupons:cfg?.coupons||local?.coupons||null,
+    legalPages:cfg?.legalPages||local?.legalPages||null
   };
 }
 function extractId(pid){const fn=pid.includes('/')?pid.split('/').pop():pid;let d=fn;try{d=decodeURIComponent(fn);}catch(e){}const m=d.match(/^([A-Za-z]+\d+)/);return m?m[1].toUpperCase():null;}
@@ -563,6 +564,7 @@ async function init(){
     if(cfg.settings)      shopDB.settings={...shopDB.settings,...cfg.settings};
     if(cfg.announcement)  shopDB.announcement=cfg.announcement;
     if(cfg.coupons)       shopDB.coupons=cfg.coupons;
+    if(cfg.legalPages)    shopDB.legalPages=cfg.legalPages;
     const catAssign={};(cfg.productCategories||[]).forEach(pc=>{catAssign[pc.id]=pc.category;});
     const productMap={};
     resources.forEach(r=>{const id=extractId(r.public_id);if(!id)return;if(!productMap[id]||(r.created_at||'')>(productMap[id].created_at||'')){productMap[id]={id,name:(cfg.productNames||{})[id]||id,url:r.secure_url||`https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${r.version}/${r.public_id}.${r.format}`,format:r.format||'jpg',category:catAssign[id]||'',visible:true,created_at:r.created_at||''};}});
@@ -1026,6 +1028,70 @@ window.addEventListener('storage',e=>{if(e.key==='sanrio_shop_db'){shopDB=loadSh
 (function(){document.addEventListener('contextmenu',e=>{const t=e.target.tagName.toLowerCase();if(t==='input'||t==='textarea')return;e.preventDefault();return false;});document.addEventListener('dragstart',e=>{if(e.target.tagName==='IMG'){e.preventDefault();return false;}});document.addEventListener('touchstart',e=>{if(e.target.tagName==='IMG')e.preventDefault();},{passive:false});document.addEventListener('keydown',e=>{if(e.key==='F12'){e.preventDefault();return false;}if(e.ctrlKey&&e.key==='u'){e.preventDefault();return false;}if(e.ctrlKey&&e.shiftKey&&['i','I','j','J','c','C'].includes(e.key)){e.preventDefault();return false;}if(e.ctrlKey&&e.key==='s'){e.preventDefault();return false;}});setInterval(()=>{console.clear();},5000);})();
 
 init();
+</script>
+
+<!-- ════ 頁尾 ════ -->
+<footer id="siteFooter" style="background:#2a1420;color:rgba(255,255,255,.55);padding:28px 20px 20px;margin-top:40px;font-size:12px">
+  <div style="max-width:1200px;margin:0 auto">
+    <div style="display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:16px;justify-content:center">
+      <button onclick="openLegalModal('productDesc')" class="footer-link">商品說明</button>
+      <button onclick="openLegalModal('pricingModel')" class="footer-link">收費模式</button>
+      <button onclick="openLegalModal('shippingPolicy')" class="footer-link">出貨天期</button>
+      <button onclick="openLegalModal('refundPolicy')" class="footer-link">退換貨政策</button>
+      <button onclick="openLegalModal('consumerRights')" class="footer-link">消費者權益</button>
+      <button onclick="openLegalModal('termsOfService')" class="footer-link">服務條款</button>
+      <button onclick="openLegalModal('privacyPolicy')" class="footer-link">隱私權政策</button>
+      <button onclick="scrollToContact()" class="footer-link">聯絡我們</button>
+    </div>
+    <div style="text-align:center;color:rgba(255,255,255,.3);font-size:11px">
+      © 三麗鷗中毒日記 · 本站商品均為正版授權
+    </div>
+  </div>
+</footer>
+
+<!-- 法規 Modal -->
+<div class="modal-bg" id="legalModal" onclick="if(event.target===this)closeModal('legalModal')">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-head"><h2 id="legalModalTitle">說明</h2><button class="modal-close-btn" onclick="closeModal('legalModal')">×</button></div>
+    <div class="modal-body" id="legalModalBody" style="white-space:pre-wrap;line-height:1.8;font-size:14px;color:var(--text2)"></div>
+  </div>
+</div>
+
+<style>
+.footer-link{background:none;border:none;color:rgba(255,255,255,.55);cursor:pointer;font-size:12px;padding:4px 0;text-decoration:underline;text-underline-offset:3px;font-family:var(--sans);transition:color .15s}
+.footer-link:hover{color:#fff}
+</style>
+
+<script>
+const LEGAL_LABELS={
+  productDesc:'商品說明',pricingModel:'收費模式說明',shippingPolicy:'出貨天期與運費',
+  refundPolicy:'退換貨政策',consumerRights:'消費者權益',termsOfService:'服務條款',privacyPolicy:'隱私權政策'
+};
+const DEFAULT_LEGAL={
+  productDesc:'本店販售正版授權三麗鷗系列娃娃（Hello Kitty、美樂蒂、布丁狗、Cinnamoroll 等），商品尺寸約 20-40 公分，聚酯纖維材質，適合收藏或贈禮。',
+  pricingModel:'商品售價已標示於商品頁面。付款方式包含：貨到付款、ATM 轉帳（匯款後填入後五碼核對）、超商付款及面交取貨付款。確認付款後安排出貨。',
+  shippingPolicy:'確認付款後 3-5 個工作天出貨（不含例假日）。宅配運費 NT$100，消費滿 NT$2,000 免運費。超商取貨運費 NT$60。',
+  refundPolicy:'商品到貨後 7 天內如有瑕疵或與描述不符，請拍照聯繫客服申請退換貨，退回商品需保持原包裝完整。因個人因素退貨需自行負擔運費。',
+  consumerRights:'依消費者保護法第 19 條，網路購物享有 7 天鑑賞期（非試用期）。如有消費爭議，可向各縣市消費者服務中心或消費者保護委員會申訴。',
+  termsOfService:'使用本網站即表示您同意本服務條款。本店保留修改商品價格、庫存及服務內容的權利。如有任何問題請透過聯絡方式與我們聯繫。',
+  privacyPolicy:'本店蒐集您的個人資料（姓名、電話、收件地址）僅用於訂單處理與商品寄送，不會提供予第三方。您有權要求查詢、更正或刪除個人資料。'
+};
+function openLegalModal(key){
+  const cfg=(typeof shopDB!=='undefined'&&shopDB.legalPages)?shopDB.legalPages:{};
+  const text=cfg[key]||DEFAULT_LEGAL[key]||'（尚未設定，請聯絡客服）';
+  document.getElementById('legalModalTitle').textContent=LEGAL_LABELS[key]||key;
+  document.getElementById('legalModalBody').textContent=text;
+  openModal('legalModal');
+}
+function scrollToContact(){
+  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+  setTimeout(()=>{
+    const float=document.getElementById('socialFloat');
+    if(float&&float.style.display!=='none'&&typeof socialFloatOpen!=='undefined'&&!socialFloatOpen&&typeof toggleSocialFloat==='function'){
+      toggleSocialFloat();
+    }
+  },400);
+}
 </script>
 
 <!-- ════ Firebase SDK ════ -->

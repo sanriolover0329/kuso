@@ -944,6 +944,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
           <option value="pending">待審核</option><option value="disabled">停用</option>
         </select>
         <button class="btn btn-primary btn-sm" onclick="openMemberModal()">+ 新增人員</button>
+        <button class="btn btn-success btn-sm" onclick="loadFirebaseMembers()" title="從 Firebase 載入所有已註冊的雲端會員">☁ 載入雲端會員</button>
       </div>
       <div class="card">
         <div class="card-body" style="padding:0;overflow-x:auto">
@@ -1005,6 +1006,30 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
     <div class="panel" id="panel-prices">
       <div class="info-box" style="margin-bottom:16px">
         💡 為每件商品設定<strong>零售價、批發起價、成本</strong>（成本僅後台可見）及庫存。批發階梯：購買 N 件以上套用對應價格。
+      </div>
+      <!-- 批量定價 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">⚡ 批量統一定價</div></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:end">
+            <div class="form-group" style="margin:0">
+              <label>依分類套用</label>
+              <select id="batchPriceCat">
+                <option value="">全部商品</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>統一售價（留空=不改）</label>
+              <input type="number" id="batchRetail" placeholder="例如：299" min="0">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>統一成本（留空=不改）</label>
+              <input type="number" id="batchCost" placeholder="例如：150" min="0">
+            </div>
+            <button class="btn btn-primary" style="white-space:nowrap" onclick="applyBatchPrice()">套用</button>
+          </div>
+          <div class="hint" style="margin-top:6px">留空的欄位不會覆蓋原有設定，確認後自動同步到 GitHub 與 Firebase</div>
+        </div>
       </div>
       <div class="toolbar">
         <div class="search-box">
@@ -1178,6 +1203,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
         <div class="card">
           <div class="card-header"><div class="card-title">🤝 面交提示文字</div></div>
           <div class="card-body" id="faceNoteBody"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📄 法規資訊設定</div></div>
+          <div class="card-body" id="legalPagesBody"></div>
         </div>
       </div>
     </div>
@@ -1379,6 +1408,7 @@ let state={cloudName:'',apiKey:'',baseFolder:'',thumbSize:500,categories:[],prod
     globalWsTiers:[{qty:3,discount:10},{qty:6,discount:15},{qty:12,discount:20}]},
   announcement:{enabled:false,text:'',bgColor:'#f9b8cb',textColor:'#3d2040',style:'static'},
   coupons:[],
+  legalPages:{productDesc:'',pricingModel:'',shippingPolicy:'確認付款後 3-5 個工作天出貨。宅配運費 $100，消費滿 $2,000 免運費。',refundPolicy:'商品到貨 7 天內如有瑕疵，請聯繫客服申請退換貨，需保持商品完整包裝。',consumerRights:'依消費者保護法，網路購物享有 7 天鑑賞期。如有消費爭議，可向消費者保護委員會申訴。',termsOfService:'',privacyPolicy:'本店蒐集之個人資料（姓名、電話、地址）僅用於訂單處理，不提供予第三方。'},
   // 訂單/會員：僅存在本機瀏覽器（無後端資料庫），不同步到 GitHub
   orders:[], users:[
     {id:1,name:'管理員',email:'admin@test.com',pwd:'admin888',phone:'0900000001',role:'admin',status:'active',tier:'gold',totalSpent:99999,createdAt:'2024-01-01',invite:''},
@@ -1546,7 +1576,7 @@ function mergeConfigToState(cfg) {
     'displayPageSize','displayCardSize','slogans','sloganFontSize',
     'sloganStyle','sloganColor','sloganSpeed','categories','contacts','aiAssistant',
     'productPrices','tierSettings','gifts','logistics','payments','cvs_stores',
-    'contactInfo','bankInfo','faceNote','settings','announcement','coupons'];
+    'contactInfo','bankInfo','faceNote','settings','announcement','coupons','legalPages'];
   safe.forEach(k => {
     if (cfg[k] !== undefined && cfg[k] !== null) {
       // 只有本地沒有才覆蓋（保留本地修改）
@@ -1589,7 +1619,7 @@ function saveState(){
     productPrices:state.productPrices||{},tierSettings:state.tierSettings||[],gifts:state.gifts||[],
     logistics:state.logistics||[],payments:state.payments||[],cvs_stores:state.cvs_stores||{},
     contactInfo:state.contactInfo||{},bankInfo:state.bankInfo||{},faceNote:state.faceNote||'',
-    settings:state.settings||{},announcement:state.announcement||{},coupons:state.coupons||[]
+    settings:state.settings||{},announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{}
   }));
   updateFilterDropdowns();
 }
@@ -1848,15 +1878,54 @@ function pickColor(el,color){
   el.classList.add('sel');selectedColor=color;
 }
 
+async function loadFirebaseMembers(){
+  if(typeof _fbReady==='undefined'||!_fbReady){toast('❌ Firebase 未連線，請先用 Firebase 帳號登入');return;}
+  const btn=document.querySelector('[onclick="loadFirebaseMembers()"]');
+  if(btn){btn.textContent='載入中…';btn.disabled=true;}
+  try{
+    if(typeof fbLoadAllMembers==='function')await fbLoadAllMembers();
+    renderMembers();
+    toast('✅ 雲端會員已載入！');
+  }catch(e){toast('❌ 載入失敗：'+e.message);}
+  finally{if(btn){btn.textContent='☁ 載入雲端會員';btn.disabled=false;}}
+}
+
+// ── 分類拖曳排序 ──
+let _dragSrcIdx=null;
+function catDragStart(e,idx){_dragSrcIdx=idx;e.dataTransfer.effectAllowed='move';}
+function catDragOver(e,idx){e.preventDefault();e.dataTransfer.dropEffect='move';}
+function catDrop(e,idx){
+  e.preventDefault();
+  document.querySelectorAll('.cat-item').forEach(el=>el.style.outline='');
+  if(_dragSrcIdx===null||_dragSrcIdx===idx)return;
+  const cats=[...state.categories];
+  const [moved]=cats.splice(_dragSrcIdx,1);
+  cats.splice(idx,0,moved);
+  state.categories=cats;
+  _dragSrcIdx=null;
+  saveState();renderCategories();
+  autoSync('分類排序');
+  toast('✅ 分類順序已更新');
+}
+function catDragEnd(){_dragSrcIdx=null;document.querySelectorAll('.cat-item').forEach(el=>el.style.outline='');}
+
 function renderCategories(){
   const list=document.getElementById('catList');
   if(state.categories.length===0){
     list.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px;">尚未建立任何分類</div>';
     return;
   }
-  list.innerHTML=state.categories.map(cat=>{
+  list.innerHTML=state.categories.map((cat,idx)=>{
     const count=state.products.filter(p=>p.category===cat.id).length;
-    return`<div class="cat-item">
+    return`<div class="cat-item" draggable="true"
+      ondragstart="catDragStart(event,${idx})"
+      ondragover="catDragOver(event,${idx})"
+      ondrop="catDrop(event,${idx})"
+      ondragend="catDragEnd()"
+      ondragenter="this.style.outline='2px dashed var(--accent)'"
+      ondragleave="this.style.outline=''"
+      style="cursor:grab">
+      <span title="拖曳排序" style="color:var(--text3);font-size:16px;margin-right:4px;cursor:grab">⠿</span>
       <div class="cat-color" style="background:${cat.color||'#999'}"></div>
       <div class="cat-name">${cat.name}</div>
       <div class="cat-folder">📁 ${cat.folder||state.baseFolder||'（主資料夾）'}</div>
@@ -2129,6 +2198,7 @@ function exportConfig() {
     settings:      state.settings || {},
     announcement:  state.announcement || {},
     coupons:       state.coupons || [],
+    legalPages:    state.legalPages || {},
     exportedAt: new Date().toISOString()
   };
 
@@ -2496,6 +2566,7 @@ async function syncToGitHub(silent = false) {
     settings:      state.settings || {},
     announcement:  state.announcement || {},
     coupons:       state.coupons || [],
+    legalPages:    state.legalPages || {},
     exportedAt: new Date().toISOString()
   };
 
@@ -3699,7 +3770,39 @@ function renderAccounting(){
 // ══════════════════════════════════════════
 let editingPriceId=null;
 
+function applyBatchPrice(){
+  const catId=document.getElementById('batchPriceCat')?.value||'';
+  const retail=parseFloat(document.getElementById('batchRetail')?.value);
+  const cost=parseFloat(document.getElementById('batchCost')?.value);
+  if(isNaN(retail)&&isNaN(cost)){toast('請至少填入售價或成本');return;}
+  const targets=state.products.filter(p=>!catId||p.category===catId);
+  if(targets.length===0){toast('沒有符合條件的商品');return;}
+  if(!confirm(`確定要將 ${targets.length} 件商品${!isNaN(retail)?` 售價設為 ${fmt(retail)}`:''}${!isNaN(cost)?` 成本設為 ${fmt(cost)}`:''}？`))return;
+  targets.forEach(p=>{
+    if(!state.productPrices[p.id])state.productPrices[p.id]={};
+    if(!isNaN(retail))state.productPrices[p.id].retail=retail;
+    if(!isNaN(cost))state.productPrices[p.id].cost=cost;
+  });
+  saveState();
+  if(typeof _fbReady!=='undefined'&&_fbReady&&typeof db!=='undefined'&&db){
+    const batch=db.batch();
+    targets.forEach(p=>{
+      batch.set(db.collection('products').doc(p.id),state.productPrices[p.id],{merge:true});
+    });
+    batch.commit().catch(e=>console.warn('fbBatchPrice:',e));
+  }
+  autoSync('批量定價');
+  toast(`✅ 已更新 ${targets.length} 件商品，同步中…`);
+  renderPrices();
+}
+
 function renderPrices(){
+  const bpc=document.getElementById('batchPriceCat');
+  if(bpc){
+    const cur=bpc.value;
+    bpc.innerHTML='<option value="">全部商品</option>'+state.categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    if(cur)bpc.value=cur;
+  }
   const q=(document.getElementById('priceSearch')?.value||'').toLowerCase();
   const flt=document.getElementById('priceFilter')?.value||'';
   const prods=state.products.filter(p=>{
@@ -4033,6 +4136,37 @@ function renderShopSettings(){
         onchange="state.faceNote=this.value;saveState();toast('✓ 已儲存')">${state.faceNote||''}</textarea>
     </div>
     <div class="hint">此文字會在購物車選擇「面交」時顯示給客戶</div>`;
+
+  // ── 法規資訊設定（藍新金流審查 + 消費者保護法要求）──
+  const lp=state.legalPages||{};
+  const legalFields=[
+    {key:'productDesc',label:'📦 商品說明',placeholder:'請描述您販售的商品類型、材質、尺寸等，例如：本店販售日本授權三麗鷗正版娃娃，商品尺寸約20-40公分，聚酯纖維材質...'},
+    {key:'pricingModel',label:'💳 收費模式說明',placeholder:'請說明付款流程，例如：本店採用信用卡/ATM轉帳/超商付款等方式，消費者下單後依選擇之付款方式完成付款，確認付款後即安排出貨...'},
+    {key:'shippingPolicy',label:'🚚 出貨天期與運費',placeholder:'例如：確認付款後3-5個工作天出貨，宅配運費100元，消費滿2000元免運費...'},
+    {key:'refundPolicy',label:'↩️ 退換貨政策',placeholder:'例如：商品到貨7天內如有瑕疵，可申請退換貨，請保持商品完整包裝並聯絡客服...'},
+    {key:'consumerRights',label:'⚖️ 消費者權益',placeholder:'例如：依消費者保護法，網路購物享有7天鑑賞期（商品不影響其完整性前提下）...'},
+    {key:'termsOfService',label:'📋 服務條款',placeholder:'請填寫使用服務的相關條款、注意事項...'},
+    {key:'privacyPolicy',label:'🔒 隱私權政策',placeholder:'本店蒐集您的個人資料（姓名、電話、地址）僅用於訂單處理與寄送，不會提供給第三方...'},
+  ];
+  document.getElementById('legalPagesBody').innerHTML=`
+    <div class="info-box" style="margin-bottom:14px">藍新金流審查必要資訊，同時顯示於前台頁尾供消費者查閱。修改後 2 秒自動同步。</div>
+    ${legalFields.map(f=>`
+    <div class="form-group">
+      <label>${f.label}</label>
+      <textarea style="width:100%;min-height:90px;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:var(--sans);resize:vertical"
+        placeholder="${f.placeholder}"
+        data-legal-key="${f.key}"
+        oninput="saveLegalField(this)">${(lp[f.key]||'').replace(/</g,'&lt;')}</textarea>
+    </div>`).join('')}
+  `;
+}
+
+function saveLegalField(el){
+  if(!state.legalPages)state.legalPages={};
+  state.legalPages[el.dataset.legalKey]=el.value;
+  saveState();
+  clearTimeout(window._legalSyncTimer);
+  window._legalSyncTimer=setTimeout(()=>autoSync('法規資訊'),2000);
 }
 
 function addGift(){
@@ -4358,7 +4492,7 @@ async function fbLoadAllSettings(){
       ['slogans','sloganStyle','sloganColor','sloganFontSize','sloganSpeed',
        'categories','contacts','aiAssistant','contactInfo','bankInfo','faceNote',
        'tierSettings','gifts','logistics','payments','cvs_stores','settings',
-       'announcement','coupons','displayPageSize','displayCardSize'].forEach(k=>{
+       'announcement','coupons','legalPages','displayPageSize','displayCardSize'].forEach(k=>{
          if(s[k]!==undefined) state[k]=s[k];
        });
     }
@@ -4390,7 +4524,7 @@ async function fbSaveAllSettings(){
       tierSettings:state.tierSettings||[], gifts:state.gifts||[],
       logistics:state.logistics||[], payments:state.payments||[],
       cvs_stores:state.cvs_stores||{}, settings:state.settings||{},
-      announcement:state.announcement||{}, coupons:state.coupons||[],
+      announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{},
       displayPageSize:state.displayPageSize||50, displayCardSize:state.displayCardSize||130,
       _updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
