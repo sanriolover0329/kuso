@@ -327,7 +327,7 @@ button img,a img{pointer-events:auto}
       <div class="f-group"><label>密碼</label><input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
       <button class="btn-full" onclick="doLogin()">🌸 登入</button>
       <div style="text-align:center;margin-top:10px"><button onclick="closeModal('authModal');openModal('forgotModal')" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;text-decoration:underline">忘記密碼？</button></div>
-      <div class="auth-hint">測試帳號：<br>member@test.com / 123456<br>wholesale@test.com / 123456（🏭批發）</div>
+      
     </div>
     <div id="registerForm" style="display:none">
       <div class="f-group"><label>姓名 *</label><input type="text" id="regName"></div>
@@ -417,9 +417,7 @@ function loadShopDB(){
     if(!db.coupons)db.coupons=[];
     return db;}}catch(e){}
   return{users:[
-    {id:1,name:'管理員',email:'admin@test.com',pwd:'admin888',phone:'0900000001',role:'admin',status:'active',tier:'gold',totalSpent:99999,createdAt:'2024-01-01',invite:''},
-    {id:2,name:'金級示範',email:'member@test.com',pwd:'123456',phone:'0912345678',role:'member',status:'active',tier:'gold',totalSpent:15000,createdAt:'2024-02-01',invite:''},
-    {id:3,name:'批發示範',email:'wholesale@test.com',pwd:'123456',phone:'0922333444',role:'wholesale',status:'active',tier:'bronze',totalSpent:0,createdAt:'2024-02-01',invite:''}],
+    {id:1,name:'管理員',email:'admin@test.com',pwd:'admin888',phone:'0900000001',role:'admin',status:'active',tier:'gold',totalSpent:99999,createdAt:'2024-01-01',invite:''}],
   orders:[],productPrices:{},
   tierSettings:[{tier:'bronze',label:'銅級',minSpend:0,discount:0},{tier:'silver',label:'銀級',minSpend:3000,discount:5},{tier:'gold',label:'金級',minSpend:10000,discount:10}],
   gifts:[{name:'三麗鷗貼紙',minSpend:3000,active:true},{name:'限定購物袋',minSpend:8000,active:true},{name:'VIP禮盒',minSpend:15000,active:true}],
@@ -963,7 +961,7 @@ function initContactFloat(){
   if(!contacts.line&&ci.lineat?.enabled&&ci.lineat?.url)contacts.line={enabled:true,url:ci.lineat.url,title:'LINE@ 官方帳號',desc:'',hint:''};
   if(!contacts.fb&&ci.fb?.enabled&&ci.fb?.url)contacts.fb={enabled:true,url:ci.fb.url,desc:''};
   if(!contacts.wa&&ci.phone?.enabled&&ci.phone?.number)contacts.wa={enabled:true,phone:ci.phone.number,desc:'撥打電話'};
-  const hasAI=_aiCfg?.enabled;
+  const hasAI=_aiCfg?.enabled===true;
   const ak=plats.filter(k=>contacts[k]);
   window._mc=contacts;
 

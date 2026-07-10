@@ -211,7 +211,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
         <label>後台密碼</label>
         <input type="password" id="loginPwd" placeholder="請輸入密碼" onkeydown="if(event.key==='Enter')doLogin();" autofocus>
       </div>
-      <div class="login-hint">預設密碼：<strong>admin888</strong></div>
+      
     </div>
     <!-- Firebase 帳號登入 -->
     <div id="loginFormFb" style="display:none">
@@ -258,12 +258,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>展示設定
     </button>
     <button class="nav-btn" onclick="showPanel('products',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>商品管理
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="9" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="9" y="11" width="6" height="6" rx="1"/><rect x="16" y="11" width="6" height="6" rx="1"/></svg>商品管理 / 定價
     </button>
     <div style="margin:10px 12px 4px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.08em">購物車系統</div>
-    <button class="nav-btn" onclick="showPanel('prices',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>商品價格
-    </button>
+
     <button class="nav-btn" onclick="showPanel('orders',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>訂單管理
       <span id="pendingOrderBadge" style="display:none;margin-left:auto;background:#c04040;color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center"></span>
@@ -1009,9 +1007,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       </div>
       <!-- 批量定價 -->
       <div class="card" style="margin-bottom:16px">
-        <div class="card-header"><div class="card-title">⚡ 批量統一定價</div></div>
+        <div class="card-header"><div class="card-title">⚡ 批量統一設定</div></div>
         <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:end">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">
             <div class="form-group" style="margin:0">
               <label>依分類套用</label>
               <select id="batchPriceCat">
@@ -1026,7 +1024,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
               <label>統一成本（留空=不改）</label>
               <input type="number" id="batchCost" placeholder="例如：150" min="0">
             </div>
-            <button class="btn btn-primary" style="white-space:nowrap" onclick="applyBatchPrice()">套用</button>
+            <div class="form-group" style="margin:0">
+              <label>庫存數量（留空=不改）</label>
+              <input type="number" id="batchStock" placeholder="例如：10" min="0">
+            </div>
+            <button class="btn btn-primary" style="white-space:nowrap;height:38px" onclick="applyBatchPrice()">套用</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:10px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="batchPreorder"> 庫存為0時開放預購（批量套用）
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="batchClearPreorder"> 清除所有預購設定
+            </label>
           </div>
           <div class="hint" style="margin-top:6px">留空的欄位不會覆蓋原有設定，確認後自動同步到 GitHub 與 Firebase</div>
         </div>
@@ -1411,9 +1421,7 @@ let state={cloudName:'',apiKey:'',baseFolder:'',thumbSize:500,categories:[],prod
   legalPages:{productDesc:'',pricingModel:'',shippingPolicy:'確認付款後 3-5 個工作天出貨。宅配運費 $100，消費滿 $2,000 免運費。',refundPolicy:'商品到貨 7 天內如有瑕疵，請聯繫客服申請退換貨，需保持商品完整包裝。',consumerRights:'依消費者保護法，網路購物享有 7 天鑑賞期。如有消費爭議，可向消費者保護委員會申訴。',termsOfService:'',privacyPolicy:'本店蒐集之個人資料（姓名、電話、地址）僅用於訂單處理，不提供予第三方。'},
   // 訂單/會員：僅存在本機瀏覽器（無後端資料庫），不同步到 GitHub
   orders:[], users:[
-    {id:1,name:'管理員',email:'admin@test.com',pwd:'admin888',phone:'0900000001',role:'admin',status:'active',tier:'gold',totalSpent:99999,createdAt:'2024-01-01',invite:''},
-    {id:2,name:'金級示範',email:'member@test.com',pwd:'123456',phone:'0912345678',role:'member',status:'active',tier:'gold',totalSpent:15000,createdAt:'2024-02-01',invite:''},
-    {id:3,name:'批發示範',email:'wholesale@test.com',pwd:'123456',phone:'0922333444',role:'wholesale',status:'active',tier:'bronze',totalSpent:0,createdAt:'2024-02-01',invite:''}],
+    {id:1,name:'管理員',email:'admin@test.com',pwd:'admin888',phone:'0900000001',role:'admin',status:'active',tier:'gold',totalSpent:99999,createdAt:'2024-01-01',invite:''}],
   wsUpgradeRequests:[], pwdResetRequests:[]
 };
 
@@ -1644,7 +1652,7 @@ function showPanel(id,btn){
   if(id==='members')renderMembers();
   if(id==='requests')renderRequests();
   if(id==='accounting')renderAccounting();
-  if(id==='prices')renderPrices();
+  if(id==='prices'){document.getElementById('panel-products').classList.add('active');renderProducts();renderPrices();}
   if(id==='shopsettings')renderShopSettings();
 }
 
@@ -2005,10 +2013,17 @@ function renderProducts(){
       <div class="prod-img">
         ${imgUrl?`<img src="${imgUrl}" alt="${p.id}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img>🧸<br><span style=font-size:10px>${p.id}</span></div>'">`:`<div class="no-img">🧸<br><span style="font-size:10px">${p.id}</span></div>`}
       </div>
-      <div class="prod-foot">
+      <div class="prod-foot" onclick="event.stopPropagation()">
         <div class="prod-id">${p.id}</div>
-        <div class="prod-name">${p.name||p.id}</div>
+        <input type="text" value="${(p.name||p.id).replace(/"/g,'&quot;')}"
+          onclick="event.stopPropagation()"
+          onchange="saveProductName('${p.id}',this.value)"
+          style="width:100%;font-size:11px;font-weight:500;border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-family:var(--sans);background:var(--surface2);color:var(--text);margin:2px 0;outline:none;cursor:text"
+          onfocus="this.style.borderColor='var(--accent)';this.style.background='#fff'"
+          onblur="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'"
+          placeholder="商品名稱">
         ${cat?`<div class="prod-cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44;">${cat.name}</div>`:'<div class="prod-cat-badge" style="background:var(--surface2);color:var(--text3);">未分類</div>'}
+        <div class="prod-price" style="margin-top:2px">${state.productPrices[p.id]?.retail?fmt(state.productPrices[p.id].retail):'<span style="color:var(--text3);font-size:10px">未設售價</span>'}</div>
       </div>
     </div>`;
   }).join('');
@@ -3770,29 +3785,50 @@ function renderAccounting(){
 // ══════════════════════════════════════════
 let editingPriceId=null;
 
+// ── 商品名稱儲存（商品卡片直接編輯）──
+function saveProductName(id, name){
+  name=name.trim();
+  if(!name)return;
+  const p=state.products.find(x=>x.id===id);
+  if(p)p.name=name;
+  if(!state.productPrices[id])state.productPrices[id]={};
+  state.productPrices[id].name=name;
+  saveState();
+  clearTimeout(window._nameSyncTimer);
+  window._nameSyncTimer=setTimeout(()=>autoSync('商品名稱'),2000);
+}
+
 function applyBatchPrice(){
   const catId=document.getElementById('batchPriceCat')?.value||'';
   const retail=parseFloat(document.getElementById('batchRetail')?.value);
   const cost=parseFloat(document.getElementById('batchCost')?.value);
-  if(isNaN(retail)&&isNaN(cost)){toast('請至少填入售價或成本');return;}
+  const stock=parseInt(document.getElementById('batchStock')?.value);
+  const preorder=document.getElementById('batchPreorder')?.checked||false;
+  const clearPre=document.getElementById('batchClearPreorder')?.checked||false;
+  const hasChanges=!isNaN(retail)||!isNaN(cost)||!isNaN(stock)||preorder||clearPre;
+  if(!hasChanges){toast('請至少填入一個設定值');return;}
   const targets=state.products.filter(p=>!catId||p.category===catId);
   if(targets.length===0){toast('沒有符合條件的商品');return;}
-  if(!confirm(`確定要將 ${targets.length} 件商品${!isNaN(retail)?` 售價設為 ${fmt(retail)}`:''}${!isNaN(cost)?` 成本設為 ${fmt(cost)}`:''}？`))return;
+  const desc=[!isNaN(retail)?`售價 ${fmt(retail)}`:'',!isNaN(cost)?`成本 ${fmt(cost)}`:'',
+    !isNaN(stock)?`庫存 ${stock} 件`:'',preorder?'開放預購':'',clearPre?'清除預購':''].filter(Boolean).join('、');
+  if(!confirm(`確定要將 ${targets.length} 件商品設定：${desc}？`))return;
   targets.forEach(p=>{
     if(!state.productPrices[p.id])state.productPrices[p.id]={};
-    if(!isNaN(retail))state.productPrices[p.id].retail=retail;
-    if(!isNaN(cost))state.productPrices[p.id].cost=cost;
+    const pp=state.productPrices[p.id];
+    if(!isNaN(retail))pp.retail=retail;
+    if(!isNaN(cost))pp.cost=cost;
+    if(!isNaN(stock))pp.stock=stock;
+    if(preorder)pp.preorder=true;
+    if(clearPre)pp.preorder=false;
   });
   saveState();
-  if(typeof _fbReady!=='undefined'&&_fbReady&&typeof db!=='undefined'&&db){
+  try{if(typeof _fbReady!=='undefined'&&_fbReady&&db){
     const batch=db.batch();
-    targets.forEach(p=>{
-      batch.set(db.collection('products').doc(p.id),state.productPrices[p.id],{merge:true});
-    });
+    targets.forEach(p=>{if(state.productPrices[p.id])batch.set(db.collection('products').doc(p.id),state.productPrices[p.id],{merge:true});});
     batch.commit().catch(e=>console.warn('fbBatchPrice:',e));
-  }
-  autoSync('批量定價');
-  toast(`✅ 已更新 ${targets.length} 件商品，同步中…`);
+  }}catch(e){}
+  autoSync('批量設定');
+  toast(`✅ 已更新 ${targets.length} 件商品：${desc}`);
   renderPrices();
 }
 
