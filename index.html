@@ -956,11 +956,20 @@ function initContactFloat(){
   const items=document.getElementById('socialItems');if(!items)return;
   const float=document.getElementById('socialFloat');
   const plats=['line','fb','ig','wa','email'],contacts={};
-  plats.forEach(k=>{if(cfgC[k]?.enabled)contacts[k]=cfgC[k];});
-  if(!contacts.line&&ci.line?.enabled&&ci.line?.id)contacts.line={enabled:true,url:ci.line.url||`https://line.me/ti/p/~${ci.line.id}`,title:'加入 LINE',desc:'',hint:''};
-  if(!contacts.line&&ci.lineat?.enabled&&ci.lineat?.url)contacts.line={enabled:true,url:ci.lineat.url,title:'LINE@ 官方帳號',desc:'',hint:''};
-  if(!contacts.fb&&ci.fb?.enabled&&ci.fb?.url)contacts.fb={enabled:true,url:ci.fb.url,desc:''};
-  if(!contacts.wa&&ci.phone?.enabled&&ci.phone?.number)contacts.wa={enabled:true,phone:ci.phone.number,desc:'撥打電話'};
+
+  // 只從 config.json contacts 讀取（後台聯絡&AI設定控制）
+  plats.forEach(k=>{if(cfgC[k]?.enabled===true)contacts[k]=cfgC[k];});
+
+  // contactInfo fallback（只補充 config.json 沒有的平台）
+  if(!contacts.line&&ci.line?.enabled&&ci.line?.id)
+    contacts.line={enabled:true,url:ci.line.url||`https://line.me/ti/p/~${ci.line.id}`,title:'加入 LINE',desc:'',hint:''};
+  if(!contacts.line&&ci.lineat?.enabled&&ci.lineat?.url)
+    contacts.line={enabled:true,url:ci.lineat.url,title:'LINE@ 官方帳號',desc:'',hint:''};
+  if(!contacts.fb&&ci.fb?.enabled&&ci.fb?.url)
+    contacts.fb={enabled:true,url:ci.fb.url,desc:''};
+  // ⚠️ 修正：ci.phone 是電話號碼，不應轉換成 WhatsApp
+  // WhatsApp 只從 cfgC.wa（後台 WhatsApp 開關）讀取，已在上方處理
+
   const hasAI=_aiCfg?.enabled===true;
   const ak=plats.filter(k=>contacts[k]);
   window._mc=contacts;

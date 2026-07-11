@@ -2009,6 +2009,9 @@ function renderProducts(){
     const cat=state.categories.find(c=>c.id===p.category);
     const imgUrl=buildThumbUrl(p);
     const sel=selectedIds.has(p.id);
+    const pp=state.productPrices[p.id]||{};
+    const priceLabel=pp.retail?fmt(pp.retail):'<span style="color:var(--text3);font-size:10px">未設售價</span>';
+    const stockLabel=pp.stock!=null?`庫存:${pp.stock}`:'';
     return`<div class="prod-card${sel?' selected':''}" onclick="toggleSelect('${p.id}')" data-id="${p.id}">
       <div class="prod-img">
         ${imgUrl?`<img src="${imgUrl}" alt="${p.id}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img>🧸<br><span style=font-size:10px>${p.id}</span></div>'">`:`<div class="no-img">🧸<br><span style="font-size:10px">${p.id}</span></div>`}
@@ -2023,7 +2026,13 @@ function renderProducts(){
           onblur="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'"
           placeholder="商品名稱">
         ${cat?`<div class="prod-cat-badge" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44;">${cat.name}</div>`:'<div class="prod-cat-badge" style="background:var(--surface2);color:var(--text3);">未分類</div>'}
-        <div class="prod-price" style="margin-top:2px">${state.productPrices[p.id]?.retail?fmt(state.productPrices[p.id].retail):'<span style="color:var(--text3);font-size:10px">未設售價</span>'}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+          <div class="prod-price">${priceLabel}${stockLabel?`<span style="font-size:10px;color:var(--text3);margin-left:4px">${stockLabel}</span>`:''}</div>
+          <button onclick="event.stopPropagation();openPriceModal('${p.id}')"
+            style="padding:2px 7px;font-size:10px;background:var(--accent-light);color:var(--accent-dark);border:1px solid var(--accent);border-radius:4px;cursor:pointer;font-family:var(--sans);white-space:nowrap">
+            💰 定價
+          </button>
+        </div>
       </div>
     </div>`;
   }).join('');
