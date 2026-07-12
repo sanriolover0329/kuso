@@ -494,7 +494,8 @@ async function fetchConfig(){
     settings:cfg?.settings||local?.settings||null,
     announcement:cfg?.announcement||local?.announcement||null,
     coupons:cfg?.coupons||local?.coupons||null,
-    legalPages:cfg?.legalPages||local?.legalPages||null
+    legalPages:cfg?.legalPages||local?.legalPages||null,
+    storeInfo:cfg?.storeInfo||local?.storeInfo||null
   };
 }
 function extractId(pid){const fn=pid.includes('/')?pid.split('/').pop():pid;let d=fn;try{d=decodeURIComponent(fn);}catch(e){}const m=d.match(/^([A-Za-z]+\d+)/);return m?m[1].toUpperCase():null;}
@@ -575,6 +576,7 @@ async function init(){
     if(cfg.announcement)  shopDB.announcement=cfg.announcement;
     if(cfg.coupons)       shopDB.coupons=cfg.coupons;
     if(cfg.legalPages)    shopDB.legalPages=cfg.legalPages;
+    if(cfg.storeInfo)     shopDB.storeInfo=cfg.storeInfo;
     const catAssign={};(cfg.productCategories||[]).forEach(pc=>{catAssign[pc.id]=pc.category;});
     const productMap={};
     resources.forEach(r=>{const id=extractId(r.public_id);if(!id)return;if(!productMap[id]||(r.created_at||'')>(productMap[id].created_at||'')){productMap[id]={id,name:(cfg.productNames||{})[id]||id,url:r.secure_url||`https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${r.version}/${r.public_id}.${r.format}`,format:r.format||'jpg',category:catAssign[id]||'',visible:true,created_at:r.created_at||''};}});
@@ -583,6 +585,8 @@ async function init(){
     renderApp();progressDone();
     setTimeout(()=>initSlogans(cfg),100);
     initContactFloat();renderAnnounceBar();
+    // 頁面載入後自動展開浮動視窗
+    setTimeout(()=>{if(!socialFloatOpen)toggleSocialFloat();},800);
     // 從 Firebase 讀取最新商品價格（非阻塞）
     setTimeout(()=>loadFbProductPrices&&loadFbProductPrices(),500);
   }catch(err){
@@ -633,9 +637,7 @@ function renderGalleryPage(){
       else if(isOut)sH='<span class="stock-badge stock-out">缺貨</span>';
       else if(pp.stock>0&&pp.stock<=(shopDB.settings?.stockAlertThreshold||5))sH=`<span class="stock-badge stock-low">僅剩${pp.stock}件</span>`;
       if(!isOut)cbH=`<button class="add-cart-btn" onclick="event.stopPropagation();addToCart('${p.id}')">🛒 加入購物車</button>`;}
-    const cardPP=shopDB.productPrices[p.id]||{};
-    const priceHtml=cardPP.retail?`<div style="font-size:11px;font-weight:700;color:var(--accent-dark);margin:3px 0">NT$${Math.round(cardPP.retail).toLocaleString()}</div>`:'';
-    card.innerHTML=`<div class="img-wrap"><div class="skeleton"></div><img src="${imgUrl}" alt="${p.name||p.id}" loading="lazy"><div class="overlay"><span class="overlay-hint">點擊放大 🔍</span></div></div><div class="card-info"><div class="card-id">No. ${p.id}</div><div class="card-name">${highlightText(p.name||p.id,searchQuery)}${sH}</div>${priceHtml}${pH}${cat?`<span class="card-cat-badge" style="background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}33"><span style="width:6px;height:6px;border-radius:50%;background:${cat.color};display:inline-block;margin-right:2px"></span>${cat.name}</span>`:'<span class="card-cat-badge" style="background:var(--surface2);color:var(--text3)">未分類</span>'}${cbH}</div>`;
+    card.innerHTML=`<div class="img-wrap"><div class="skeleton"></div><img src="${imgUrl}" alt="${p.name||p.id}" loading="lazy"><div class="overlay"><span class="overlay-hint">點擊放大 🔍</span></div></div><div class="card-info"><div class="card-id">No. ${p.id}</div><div class="card-name">${highlightText(p.name||p.id,searchQuery)}${sH}</div>${pH}${cat?`<span class="card-cat-badge" style="background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}33"><span style="width:6px;height:6px;border-radius:50%;background:${cat.color};display:inline-block;margin-right:2px"></span>${cat.name}</span>`:'<span class="card-cat-badge" style="background:var(--surface2);color:var(--text3)">未分類</span>'}${cbH}</div>`;
     const img=card.querySelector('img'),wrap=card.querySelector('.img-wrap');
     const ml=()=>wrap.classList.add('img-loaded');
     if(img.complete&&img.naturalWidth>0)ml();else img.addEventListener('load',ml);
@@ -963,7 +965,7 @@ const SI={
 };
 const SC={line:'#06C755',fb:'#1877F2',ig:'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',wa:'#25D366',email:'#ea4335',ai:'linear-gradient(135deg,#667eea,#764ba2)'};
 const SM={line:{label:'加入 LINE',hint:'掃描 QR Code 或點擊按鈕加入',icon:'💚'},fb:{label:'FB 私訊',hint:'點擊前往 Facebook 粉專',icon:'💙'},ig:{label:'IG 私訊',hint:'點擊前往 Instagram',icon:'🩷'},wa:{label:'WhatsApp',hint:'點擊開啟 WhatsApp',icon:'💬'},email:{label:'Email',hint:'點擊開啟郵件程式',icon:'📧'}};
-let socialFloatOpen=false;
+let socialFloatOpen=true; // 預設展開
 // Social Float — config.contacts first, shopDB.contactInfo as fallback
 function initContactFloat(){
   const cfgC=_contacts||{},ci=shopDB.contactInfo||{};
@@ -1029,8 +1031,8 @@ function openContactModalPlatform(platform){
   openModal('contactModal');if(socialFloatOpen)toggleSocialFloat();
 }
 
-function toggleSocialFloat(){socialFloatOpen=!socialFloatOpen;const btn=document.getElementById('socialToggleBtn');if(btn)btn.classList.toggle('open',socialFloatOpen);document.querySelectorAll('.social-item').forEach((el,i)=>{setTimeout(()=>el.classList.toggle('visible',socialFloatOpen),i*50);});}
-document.addEventListener('click',e=>{const float=document.getElementById('socialFloat');if(socialFloatOpen&&float&&!float.contains(e.target)){socialFloatOpen=false;const btn=document.getElementById('socialToggleBtn');if(btn)btn.classList.remove('open');document.querySelectorAll('.social-item').forEach(el=>el.classList.remove('visible'));}});
+function toggleSocialFloat(){socialFloatOpen=!socialFloatOpen;const btn=document.getElementById('socialToggleBtn');if(btn)btn.classList.toggle('open',socialFloatOpen);document.querySelectorAll('.social-item').forEach((el,i)=>{setTimeout(()=>el.classList.toggle('visible',socialFloatOpen),socialFloatOpen?i*50:0);});}
+// 已移除點外部自動關閉浮動視窗的行為
 
 // AI
 function openAiModal(){aiQA=_aiCfg.qa||[];const ne=document.getElementById('aiName'),ae=document.getElementById('aiAvatar');if(ne)ne.textContent=_aiCfg.name||'小幫手';if(ae)ae.textContent=_aiCfg.avatar||'🤖';const msgs=document.getElementById('aiMsgs');msgs.innerHTML='';addAiBubble('bot',`嗨！我是 ${_aiCfg.name||'小幫手'} ${_aiCfg.avatar||'🤖'}<br>有任何問題都可以問我喔！`);const qb=document.getElementById('aiQuickBtns');qb.innerHTML='';aiQA.slice(0,5).forEach(q=>{const btn=document.createElement('button');btn.className='ai-quick-btn';btn.textContent=q.q;btn.addEventListener('click',()=>handleAiQuick(q.q));qb.appendChild(btn);});document.getElementById('aiInput').value='';openModal('aiModal');if(socialFloatOpen)toggleSocialFloat();}
@@ -1105,13 +1107,21 @@ function openLegalModal(key){
   openModal('legalModal');
 }
 function scrollToContact(){
+  const si=shopDB.storeInfo||{};
+  const hasInfo=si.phone||si.address||si.line||si.hours;
+  if(hasInfo){
+    let body='';
+    if(si.phone)body+=`📞 客服電話：${si.phone}\n`;
+    if(si.line)body+=`💚 LINE：${si.line}\n`;
+    if(si.hours)body+=`🕐 營業時間：${si.hours}\n`;
+    if(si.address)body+=`📍 地址：${si.address}\n`;
+    document.getElementById('legalModalTitle').textContent='聯絡我們';
+    document.getElementById('legalModalBody').textContent=body.trim();
+    openModal('legalModal');
+    return;
+  }
   window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
-  setTimeout(()=>{
-    const float=document.getElementById('socialFloat');
-    if(float&&float.style.display!=='none'&&typeof socialFloatOpen!=='undefined'&&!socialFloatOpen&&typeof toggleSocialFloat==='function'){
-      toggleSocialFloat();
-    }
-  },400);
+  if(!socialFloatOpen)toggleSocialFloat();
 }
 </script>
 
@@ -1149,10 +1159,13 @@ async function loadFbProductPrices(){
   if(!_fbReady)return;
   try{
     const snap=await db.collection('products').get();
+    let changed=false;
     snap.forEach(doc=>{
-      if(!shopDB.productPrices[doc.id])shopDB.productPrices[doc.id]={...doc.data()};
-      else shopDB.productPrices[doc.id]={...doc.data(),...shopDB.productPrices[doc.id]};
+      if(!shopDB.productPrices[doc.id]){shopDB.productPrices[doc.id]={...doc.data()};changed=true;}
+      else{shopDB.productPrices[doc.id]={...doc.data(),...shopDB.productPrices[doc.id]};changed=true;}
     });
+    // 重新渲染已顯示的商品，確保價格出現
+    if(changed){const g=document.getElementById('gallery');if(g)g.innerHTML='';currentPage=0;renderGalleryPage();}
   }catch(e){}
 }
 

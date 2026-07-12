@@ -1627,7 +1627,7 @@ function saveState(){
     productPrices:state.productPrices||{},tierSettings:state.tierSettings||[],gifts:state.gifts||[],
     logistics:state.logistics||[],payments:state.payments||[],cvs_stores:state.cvs_stores||{},
     contactInfo:state.contactInfo||{},bankInfo:state.bankInfo||{},faceNote:state.faceNote||'',
-    settings:state.settings||{},announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{}
+    settings:state.settings||{},announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{},storeInfo:state.storeInfo||{}
   }));
   updateFilterDropdowns();
 }
@@ -4180,7 +4180,37 @@ function renderShopSettings(){
         placeholder="下單後將由內部人員與您聯絡..."
         onchange="state.faceNote=this.value;saveState();toast('✓ 已儲存')">${state.faceNote||''}</textarea>
     </div>
-    <div class="hint">此文字會在購物車選擇「面交」時顯示給客戶</div>`;
+    <div class="hint">此文字會在購物車選擇「面交」時顯示給客戶</div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px">📞 門市聯絡資訊（顯示於前台浮動聯絡視窗）</div>
+    <div class="info-box" style="margin-bottom:14px">填寫後前台右下角聯絡視窗會顯示此資訊，方便客人直接撥打或導航</div>
+    <div class="setup-grid">
+      <div class="form-group">
+        <label>客服電話</label>
+        <input type="text" placeholder="例如：0912-345-678" id="storePhone"
+          value="${(state.storeInfo||{}).phone||''}"
+          oninput="saveStoreInfo()">
+      </div>
+      <div class="form-group">
+        <label>LINE ID（不含@）</label>
+        <input type="text" placeholder="例如：@sanriocrazy" id="storeLine"
+          value="${(state.storeInfo||{}).line||''}"
+          oninput="saveStoreInfo()">
+      </div>
+      <div class="form-group full">
+        <label>門市地址</label>
+        <input type="text" placeholder="例如：桃園市中壢區○○路○○號" id="storeAddress"
+          value="${(state.storeInfo||{}).address||''}"
+          oninput="saveStoreInfo()">
+      </div>
+      <div class="form-group full">
+        <label>營業時間</label>
+        <input type="text" placeholder="例如：週一至週六 13:00-21:00，週日公休" id="storeHours"
+          value="${(state.storeInfo||{}).hours||''}"
+          oninput="saveStoreInfo()">
+      </div>
+    </div>`;
 
   // ── 法規資訊設定（藍新金流審查 + 消費者保護法要求）──
   const lp=state.legalPages||{};
@@ -4204,6 +4234,17 @@ function renderShopSettings(){
         oninput="saveLegalField(this)">${(lp[f.key]||'').replace(/</g,'&lt;')}</textarea>
     </div>`).join('')}
   `;
+}
+
+function saveStoreInfo(){
+  if(!state.storeInfo)state.storeInfo={};
+  state.storeInfo.phone=document.getElementById('storePhone')?.value.trim()||'';
+  state.storeInfo.line=document.getElementById('storeLine')?.value.trim()||'';
+  state.storeInfo.address=document.getElementById('storeAddress')?.value.trim()||'';
+  state.storeInfo.hours=document.getElementById('storeHours')?.value.trim()||'';
+  saveState();
+  clearTimeout(window._storeInfoTimer);
+  window._storeInfoTimer=setTimeout(()=>autoSync('門市資訊'),2000);
 }
 
 function saveLegalField(el){
@@ -4569,7 +4610,7 @@ async function fbSaveAllSettings(){
       tierSettings:state.tierSettings||[], gifts:state.gifts||[],
       logistics:state.logistics||[], payments:state.payments||[],
       cvs_stores:state.cvs_stores||{}, settings:state.settings||{},
-      announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{},
+      announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{},storeInfo:state.storeInfo||{},
       displayPageSize:state.displayPageSize||50, displayCardSize:state.displayCardSize||130,
       _updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
