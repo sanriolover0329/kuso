@@ -456,6 +456,19 @@ async function fetchConfig(){
   if(EMBEDDED_CONFIG)return EMBEDDED_CONFIG;
   let cfg=null;try{const r=await fetch(CONFIG_URL+'?t='+Date.now());if(r.ok)cfg=await r.json();}catch(e){}
   let local=null;try{const raw=localStorage.getItem('doll_shop_frontend');if(raw)local=JSON.parse(raw);}catch(e){}
+
+  // 聯絡方式：後台啟用的資料（localStorage）優先於 GitHub 模板的預設值
+  // 這樣後台儲存後即使未同步 GitHub，前台同一裝置也能立即看到
+  const cfgContacts=cfg?.contacts||{};
+  const localContacts=local?.contacts||{};
+  const localHasEnabled=Object.values(localContacts).some(c=>c?.enabled===true);
+  const mergedContacts=localHasEnabled?localContacts:cfgContacts;
+
+  // AI 助手同邏輯：後台啟用優先
+  const cfgAI=cfg?.aiAssistant||{};
+  const localAI=local?.aiAssistant||{};
+  const mergedAI=(localAI?.enabled===true)?localAI:cfgAI;
+
   return{
     displayPageSize:cfg?.displayPageSize||local?.displayPageSize||50,
     displayCardSize:cfg?.displayCardSize||local?.displayCardSize||130,
@@ -467,9 +480,8 @@ async function fetchConfig(){
     categories:cfg?.categories?.length?cfg.categories:(local?.categories||[]),
     productCategories:cfg?.productCategories||local?.productCategories||[],
     productNames:cfg?.productNames||local?.productNames||{},
-    contacts:cfg?.contacts||local?.contacts||{},
-    aiAssistant:cfg?.aiAssistant||local?.aiAssistant||{},
-    // ── 購物車欄位：優先讀 config.json（跨裝置共用），其次本機快取 ──
+    contacts:mergedContacts,
+    aiAssistant:mergedAI,
     productPrices:cfg?.productPrices||local?.productPrices||null,
     tierSettings:cfg?.tierSettings?.length?cfg.tierSettings:(local?.tierSettings||null),
     gifts:cfg?.gifts||local?.gifts||null,
@@ -621,7 +633,9 @@ function renderGalleryPage(){
       else if(isOut)sH='<span class="stock-badge stock-out">缺貨</span>';
       else if(pp.stock>0&&pp.stock<=(shopDB.settings?.stockAlertThreshold||5))sH=`<span class="stock-badge stock-low">僅剩${pp.stock}件</span>`;
       if(!isOut)cbH=`<button class="add-cart-btn" onclick="event.stopPropagation();addToCart('${p.id}')">🛒 加入購物車</button>`;}
-    card.innerHTML=`<div class="img-wrap"><div class="skeleton"></div><img src="${imgUrl}" alt="${p.name||p.id}" loading="lazy"><div class="overlay"><span class="overlay-hint">點擊放大 🔍</span></div></div><div class="card-info"><div class="card-id">No. ${p.id}</div><div class="card-name">${highlightText(p.name||p.id,searchQuery)}${sH}</div>${pH}${cat?`<span class="card-cat-badge" style="background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}33"><span style="width:6px;height:6px;border-radius:50%;background:${cat.color};display:inline-block;margin-right:2px"></span>${cat.name}</span>`:'<span class="card-cat-badge" style="background:var(--surface2);color:var(--text3)">未分類</span>'}${cbH}</div>`;
+    const cardPP=shopDB.productPrices[p.id]||{};
+    const priceHtml=cardPP.retail?`<div style="font-size:11px;font-weight:700;color:var(--accent-dark);margin:3px 0">NT$${Math.round(cardPP.retail).toLocaleString()}</div>`:'';
+    card.innerHTML=`<div class="img-wrap"><div class="skeleton"></div><img src="${imgUrl}" alt="${p.name||p.id}" loading="lazy"><div class="overlay"><span class="overlay-hint">點擊放大 🔍</span></div></div><div class="card-info"><div class="card-id">No. ${p.id}</div><div class="card-name">${highlightText(p.name||p.id,searchQuery)}${sH}</div>${priceHtml}${pH}${cat?`<span class="card-cat-badge" style="background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}33"><span style="width:6px;height:6px;border-radius:50%;background:${cat.color};display:inline-block;margin-right:2px"></span>${cat.name}</span>`:'<span class="card-cat-badge" style="background:var(--surface2);color:var(--text3)">未分類</span>'}${cbH}</div>`;
     const img=card.querySelector('img'),wrap=card.querySelector('.img-wrap');
     const ml=()=>wrap.classList.add('img-loaded');
     if(img.complete&&img.naturalWidth>0)ml();else img.addEventListener('load',ml);
