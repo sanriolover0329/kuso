@@ -472,11 +472,11 @@ async function fetchConfig(){
   return{
     displayPageSize:cfg?.displayPageSize||local?.displayPageSize||50,
     displayCardSize:cfg?.displayCardSize||local?.displayCardSize||130,
-    slogans:cfg?.slogans?.length?cfg.slogans:(local?.slogans||[]),
-    sloganFontSize:cfg?.sloganFontSize||local?.sloganFontSize||14,
-    sloganStyle:cfg?.sloganStyle||local?.sloganStyle||'C',
+    slogans:local?.slogans?.length?local.slogans:(cfg?.slogans||[]),
+    sloganFontSize:local?.sloganFontSize||cfg?.sloganFontSize||14,
+    sloganStyle:local?.sloganStyle||cfg?.sloganStyle||'C',
     sloganColor:cfg?.sloganColor||local?.sloganColor||'#c0325c',
-    sloganSpeed:cfg?.sloganSpeed||local?.sloganSpeed||1,
+    sloganSpeed:local?.sloganSpeed||cfg?.sloganSpeed||1,
     categories:cfg?.categories?.length?cfg.categories:(local?.categories||[]),
     productCategories:cfg?.productCategories||local?.productCategories||[],
     productNames:cfg?.productNames||local?.productNames||{},
@@ -584,7 +584,12 @@ async function init(){
     config.categories=cfg.categories||[];
     renderApp();progressDone();
     setTimeout(()=>initSlogans(cfg),100);
-    initContactFloat();renderAnnounceBar();
+    initContactFloat();
+    // 最新消息：後台本機儲存優先（localStorage > GitHub config）
+    try{const _ls=JSON.parse(localStorage.getItem('doll_shop_frontend')||'{}');
+      if(_ls.announcement?.enabled&&!shopDB.announcement?.enabled)
+        shopDB.announcement={...shopDB.announcement||{},..._ls.announcement};}catch(_e){}
+    renderAnnounceBar();
     // 頁面載入後自動展開浮動視窗
     setTimeout(()=>{if(!socialFloatOpen)toggleSocialFloat();},800);
     // 從 Firebase 讀取最新商品價格（非阻塞）

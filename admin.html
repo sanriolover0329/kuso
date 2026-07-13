@@ -850,6 +850,42 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
 
     <!-- Products -->
     <div class="panel" id="panel-products">
+      <!-- 批量定價 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">⚡ 批量統一設定</div></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">
+            <div class="form-group" style="margin:0">
+              <label>依分類套用</label>
+              <select id="batchPriceCat">
+                <option value="">全部商品</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>統一售價（留空=不改）</label>
+              <input type="number" id="batchRetail" placeholder="例如：299" min="0">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>統一成本（留空=不改）</label>
+              <input type="number" id="batchCost" placeholder="例如：150" min="0">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>庫存數量（留空=不改）</label>
+              <input type="number" id="batchStock" placeholder="例如：10" min="0">
+            </div>
+            <button class="btn btn-primary" style="white-space:nowrap;height:38px" onclick="applyBatchPrice()">套用</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:10px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="batchPreorder"> 庫存為0時開放預購（批量套用）
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="batchClearPreorder"> 清除所有預購設定
+            </label>
+          </div>
+          <div class="hint" style="margin-top:6px">留空的欄位不會覆蓋原有設定，確認後自動同步到 GitHub 與 Firebase</div>
+        </div>
+      </div>
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1005,6 +1041,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       <div class="info-box" style="margin-bottom:16px">
         💡 為每件商品設定<strong>零售價、批發起價、成本</strong>（成本僅後台可見）及庫存。批發階梯：購買 N 件以上套用對應價格。
       </div>
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="priceSearch" placeholder="搜尋商品編號或名稱…" oninput="renderPrices()">
+        </div>
+        <select id="priceFilter" onchange="renderPrices()" style="width:auto">
+          <option value="">全部</option><option value="priced">已設價格</option><option value="unpriced">未設價格</option>
+        </select>
+      </div>
+      <div class="products-grid" id="pricesGrid"></div>
+    </div>
+
+    <!-- ⑦ 商品管理 -->
+    <div class="panel" id="panel-products">
       <!-- 批量定價 -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-header"><div class="card-title">⚡ 批量統一設定</div></div>
@@ -1041,20 +1091,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
           <div class="hint" style="margin-top:6px">留空的欄位不會覆蓋原有設定，確認後自動同步到 GitHub 與 Firebase</div>
         </div>
       </div>
-      <div class="toolbar">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="text" id="priceSearch" placeholder="搜尋商品編號或名稱…" oninput="renderPrices()">
-        </div>
-        <select id="priceFilter" onchange="renderPrices()" style="width:auto">
-          <option value="">全部</option><option value="priced">已設價格</option><option value="unpriced">未設價格</option>
-        </select>
-      </div>
-      <div class="products-grid" id="pricesGrid"></div>
-    </div>
-
-    <!-- ⑦ 商品管理 -->
-    <div class="panel" id="panel-products">
       <div class="toolbar">
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
