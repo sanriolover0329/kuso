@@ -164,7 +164,7 @@ button img,a img{pointer-events:auto}
 .social-item-btn{width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.2);transition:transform .15s;flex-shrink:0}
 .social-item-btn:hover{transform:scale(1.12)}
 .social-float-label{font-size:10px;font-weight:700;background:#fff;border-radius:8px;padding:2px 8px;box-shadow:0 2px 8px rgba(0,0,0,.1);color:var(--accent-dark);white-space:nowrap;margin-right:4px}
-#toTop{position:fixed;bottom:100px;right:20px;width:40px;height:40px;background:var(--accent);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:center;justify-content:center;z-index:50}
+#toTop{position:fixed;bottom:24px;left:20px;right:auto;width:40px;height:40px;background:var(--accent);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;align-items:center;justify-content:center;z-index:50}
 #toTop.show{opacity:1;pointer-events:all}
 /* Modals */
 .modal-bg{display:none;position:fixed;inset:0;z-index:300;background:rgba(58,32,48,.5);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px}
@@ -288,12 +288,88 @@ button img,a img{pointer-events:auto}
 #pageProgress{position:fixed;top:0;left:0;right:0;height:3px;z-index:99999;background:linear-gradient(90deg,var(--accent),var(--accent2));transform-origin:left;transform:scaleX(0);transition:transform .3s ease,opacity .5s ease;pointer-events:none}
 #pageProgress.done{transform:scaleX(1);opacity:0}
 @media(max-width:600px){.gallery{grid-template-columns:repeat(2,1fr);gap:8px}#lbPrev{left:8px}#lbNext{right:8px}.tier-bar{flex-direction:column}.info-grid{grid-template-columns:1fr}}
+
+/* ── 最新消息系統 ── */
+.cat-tab-news{color:var(--accent)!important;font-weight:600!important}
+.cat-news-badge{display:inline-block;background:var(--accent);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:0 5px;margin-left:4px;min-width:16px;text-align:center;vertical-align:middle}
+/* 消息 Banner */
+#newsBanner{
+  background:linear-gradient(90deg,#fce8ef,#fff5f7);
+  border-bottom:1px solid var(--border);
+  max-height:0;overflow:hidden;
+  transition:max-height .35s ease;
+}
+#newsBanner.open{max-height:48px}
+.news-banner-inner{display:flex;align-items:center;gap:8px;padding:10px 16px;max-width:1400px;margin:0 auto}
+.news-banner-badge{flex-shrink:0;background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.news-banner-date{flex-shrink:0;font-size:11px;color:var(--text3);font-family:var(--mono)}
+.news-banner-title{flex:1;font-size:13px;font-weight:500;color:var(--accent-dark);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.news-banner-title:hover{text-decoration:underline}
+.news-banner-close{background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;flex-shrink:0;line-height:1;padding:0 4px}
+/* 消息 Drawer */
+#newsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:998;display:none;backdrop-filter:blur(2px)}
+#newsOverlay.open{display:block}
+#newsDrawer{
+  position:fixed;top:0;right:-380px;width:360px;max-width:96vw;
+  height:100vh;background:var(--surface);z-index:999;
+  box-shadow:-4px 0 32px rgba(0,0,0,.15);
+  transition:right .3s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;overflow:hidden
+}
+#newsDrawer.open{right:0}
+.news-drawer-head{
+  padding:16px 18px 14px;
+  background:linear-gradient(135deg,var(--accent),#c0326a);
+  color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0
+}
+.news-drawer-title{font-size:16px;font-weight:700}
+.news-drawer-close{background:none;border:none;color:rgba(255,255,255,.8);font-size:24px;cursor:pointer;line-height:1}
+.news-drawer-body{flex:1;overflow-y:auto;padding:12px}
+.news-post-item{
+  border:1px solid var(--border);border-radius:10px;margin-bottom:10px;
+  overflow:hidden;transition:border-color .15s
+}
+.news-post-item.open{border-color:var(--accent)}
+.news-post-head{
+  display:flex;align-items:center;gap:8px;padding:12px 14px;
+  cursor:pointer;background:var(--surface);user-select:none
+}
+.news-post-head:hover{background:var(--surface2)}
+.news-date{
+  flex-shrink:0;font-family:var(--mono);font-size:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  padding:2px 6px;border-radius:4px;color:var(--text3)
+}
+.news-tag-new{background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.news-post-title{flex:1;font-size:13px;font-weight:600;color:var(--text)}
+.news-arrow{font-size:10px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+.news-post-item.open .news-arrow{transform:rotate(90deg)}
+.news-post-body{
+  max-height:0;overflow:hidden;transition:max-height .3s ease;
+  background:var(--surface2);font-size:13px;color:var(--text2);line-height:1.75
+}
+.news-post-item.open .news-post-body{max-height:400px}
+.news-post-body-inner{padding:12px 14px}
+
 </style>
 </head>
 <body>
 <div id="pageProgress"></div>
 <div id="announceBar" style="display:none"></div>
 <div id="fixed-header"></div>
+
+<!-- ── 最新消息 Overlay + Drawer ── -->
+<div id="newsOverlay" onclick="closeNewsDrawer()"></div>
+<div id="newsDrawer">
+  <div class="news-drawer-head">
+    <div class="news-drawer-title">📢 最新消息</div>
+    <button class="news-drawer-close" onclick="closeNewsDrawer()">×</button>
+  </div>
+  <div class="news-drawer-body" id="newsDrawerContent"></div>
+</div>
+<!-- ── 最新消息 Banner（插在分類列下方）── -->
+<div id="newsBanner"></div>
+
 <div id="gallery-section"></div>
 <!-- Lightbox -->
 <div id="lightbox" role="dialog" aria-modal="true">
@@ -495,7 +571,8 @@ async function fetchConfig(){
     announcement:cfg?.announcement||local?.announcement||null,
     coupons:cfg?.coupons||local?.coupons||null,
     legalPages:cfg?.legalPages||local?.legalPages||null,
-    storeInfo:cfg?.storeInfo||local?.storeInfo||null
+    storeInfo:cfg?.storeInfo||local?.storeInfo||null,
+    newsPosts:cfg?.newsPosts?.length?cfg.newsPosts:(local?.newsPosts||[])
   };
 }
 function extractId(pid){const fn=pid.includes('/')?pid.split('/').pop():pid;let d=fn;try{d=decodeURIComponent(fn);}catch(e){}const m=d.match(/^([A-Za-z]+\d+)/);return m?m[1].toUpperCase():null;}
@@ -577,6 +654,9 @@ async function init(){
     if(cfg.coupons)       shopDB.coupons=cfg.coupons;
     if(cfg.legalPages)    shopDB.legalPages=cfg.legalPages;
     if(cfg.storeInfo)     shopDB.storeInfo=cfg.storeInfo;
+    // 最新消息：GitHub config 優先，其次後台本機 localStorage
+    if(cfg.newsPosts?.length) shopDB.newsPosts=cfg.newsPosts;
+    else{try{const ls=JSON.parse(localStorage.getItem('doll_shop_frontend')||'{}');if(ls.newsPosts?.length)shopDB.newsPosts=ls.newsPosts;}catch(e){}}
     const catAssign={};(cfg.productCategories||[]).forEach(pc=>{catAssign[pc.id]=pc.category;});
     const productMap={};
     resources.forEach(r=>{const id=extractId(r.public_id);if(!id)return;if(!productMap[id]||(r.created_at||'')>(productMap[id].created_at||'')){productMap[id]={id,name:(cfg.productNames||{})[id]||id,url:r.secure_url||`https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${r.version}/${r.public_id}.${r.format}`,format:r.format||'jpg',category:catAssign[id]||'',visible:true,created_at:r.created_at||''};}});
@@ -590,6 +670,13 @@ async function init(){
       if(_ls.announcement?.enabled&&!shopDB.announcement?.enabled)
         shopDB.announcement={...shopDB.announcement||{},..._ls.announcement};}catch(_e){}
     renderAnnounceBar();
+    // 最新消息系統
+    setTimeout(function(){
+      renderNewsBanner();
+      const uc=getUnreadNewsCount();
+      const badge=document.getElementById('newsUnreadBadge');
+      if(badge){badge.textContent=uc;badge.style.display=uc>0?'inline-block':'none';}
+    },400);
     // 頁面載入後自動展開浮動視窗
     setTimeout(()=>{if(!socialFloatOpen)toggleSocialFloat();},800);
     // 從 Firebase 讀取最新商品價格（非阻塞）
@@ -613,7 +700,7 @@ function renderApp(){
   document.getElementById('fixed-header').innerHTML=`
     <div class="hero"><img class="hero-logo-img" src="LOGO.jpg" alt="三麗鷗中毒日記" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;align-items:center;justify-content:center;flex-direction:column;padding:24px;background:#fce8ef;min-height:80px"><div style="font-size:22px;font-weight:700;color:var(--accent)">三麗鷗中毒日記</div></div></div>
     <div class="sticky-bar"><div class="sticky-inner"><div class="search-wrap"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" id="searchInput" placeholder="搜尋商品編號或名稱…"></div><div class="shop-slogan-wrap"><div id="shopSlogan"></div></div><div class="header-right">${ub}</div></div></div>
-    <div class="cat-scroll"><div class="cat-inner" id="catTabs"><button class="cat-tab active" data-cat="all">全部商品 <span class="cat-count-badge">${total}</span></button>${cats.map(c=>{const cnt=config.products.filter(p=>p.category===c.id&&p.visible!==false).length;return`<button class="cat-tab" data-cat="${c.id}"><span class="cat-dot" style="background:${c.color}"></span>${c.name} <span class="cat-count-badge">${cnt}</span></button>`;}).join('')}</div></div>`;
+    <div class="cat-scroll"><div class="cat-inner" id="catTabs"><button class="cat-tab active" data-cat="all">全部商品 <span class="cat-count-badge">${total}</span></button>${cats.map(c=>{const cnt=config.products.filter(p=>p.category===c.id&&p.visible!==false).length;return`<button class="cat-tab" data-cat="${c.id}"><span class="cat-dot" style="background:${c.color}"></span>${c.name} <span class="cat-count-badge">${cnt}</span></button>`;}).join('')}<button class="cat-tab cat-tab-news" onclick="openNewsDrawer();event.stopPropagation()" style="margin-left:auto;flex-shrink:0">📢 最新消息<span id="newsUnreadBadge" style="display:none" class="cat-news-badge">0</span></button></div></div>`;
   document.getElementById('gallery-section').innerHTML=`<div class="gallery-wrap"><div class="gallery" id="gallery"></div><div class="load-more-wrap"><button id="loadMoreBtn" style="display:none">載入更多商品</button></div></div>`;
   startHeaderObserver();
   window.addEventListener('resize',updateHeaderOffset);
@@ -1214,6 +1301,75 @@ async function fbSignUp(email,pwd,userData){
 
 // ── Firebase 會員登出 ──
 function fbSignOut(){if(_fbReady&&fbAuth)fbAuth.signOut().catch(()=>{});}
+
+// ════════════════════════════════════
+// 最新消息系統
+// ════════════════════════════════════
+function openNewsDrawer(){
+  document.getElementById('newsDrawer').classList.add('open');
+  document.getElementById('newsOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  localStorage.setItem('sanrio_last_news_read',Date.now().toString());
+  renderNewsDrawer();
+  // 清除未讀角標
+  document.querySelectorAll('.cat-news-badge').forEach(b=>b.remove());
+}
+function closeNewsDrawer(){
+  document.getElementById('newsDrawer').classList.remove('open');
+  document.getElementById('newsOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function toggleNewsPost(el){
+  el.classList.toggle('open');
+}
+function getUnreadNewsCount(){
+  const posts=shopDB.newsPosts||[];
+  if(!posts.length)return 0;
+  const lastRead=parseInt(localStorage.getItem('sanrio_last_news_read')||'0');
+  return posts.filter(p=>(p.createdAt||0)>lastRead).length;
+}
+function renderNewsDrawer(){
+  const posts=shopDB.newsPosts||[];
+  const el=document.getElementById('newsDrawerContent');
+  if(!el)return;
+  if(!posts.length){
+    el.innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--text3)"><div style="font-size:2rem;margin-bottom:8px">📭</div>暫無消息</div>';
+    return;
+  }
+  const lastRead=parseInt(localStorage.getItem('sanrio_last_news_read')||'0');
+  el.innerHTML=posts.map(function(p,i){
+    const isNew=(p.createdAt||0)>lastRead;
+    return'<div class="news-post-item'+(i===0?' open':'')+'" onclick="toggleNewsPost(this)">'
+      +'<div class="news-post-head">'
+      +(isNew?'<span class="news-tag-new">NEW</span>':'')
+      +'<span class="news-date">'+p.date+'</span>'
+      +'<span class="news-post-title">'+p.title+'</span>'
+      +'<span class="news-arrow">▶</span></div>'
+      +'<div class="news-post-body"><div class="news-post-body-inner">'+(p.content||'').replace(/\n/g,'<br>')+'</div></div>'
+      +'</div>';
+  }).join('');
+}
+function renderNewsBanner(){
+  const posts=shopDB.newsPosts||[];
+  const banner=document.getElementById('newsBanner');
+  if(!banner)return;
+  if(!posts.length){banner.classList.remove('open');banner.innerHTML='';return;}
+  const latest=posts[0];
+  const dismissed=sessionStorage.getItem('sanrio_banner_dismissed');
+  if(dismissed)return;
+  banner.innerHTML='<div class="news-banner-inner">'
+    +'<span class="news-banner-badge">📢 最新</span>'
+    +'<span class="news-banner-date">'+latest.date+'</span>'
+    +'<span class="news-banner-title" onclick="openNewsDrawer()">'+latest.title+'</span>'
+    +'<button class="news-banner-close" onclick="closeNewsBanner()" title="關閉">×</button>'
+    +'</div>';
+  setTimeout(function(){banner.classList.add('open');},300);
+}
+function closeNewsBanner(){
+  document.getElementById('newsBanner').classList.remove('open');
+  sessionStorage.setItem('sanrio_banner_dismissed','1');
+}
+
 </script>
 </body>
 </html>

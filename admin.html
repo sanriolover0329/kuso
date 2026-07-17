@@ -279,6 +279,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
     <button class="nav-btn" onclick="showPanel('shopsettings',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>商店設定
     </button>
+    <button class="nav-btn" onclick="showPanel('news',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>最新消息
+    </button>
   </nav>
   <div class="sidebar-footer">v3.0 · 自動同步模式</div>
 </aside>
@@ -1257,6 +1260,22 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
       </div>
     </div>
 
+    <div class="panel" id="panel-news">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📢 最新消息管理</div>
+          <button class="btn btn-primary btn-sm" onclick="addNewsPost()">+ 新增消息</button>
+        </div>
+        <div class="card-body">
+          <div class="info-box" style="margin-bottom:14px">
+            最多 5 則消息，新消息排在最上面。前台顯示最新一則的 Banner，點「📢 最新消息」可看全部。<br>
+            儲存後點「☁ 儲存到 GitHub」讓所有裝置同步。
+          </div>
+          <div id="newsPostList"></div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /content -->
 </main>
 </div><!-- /shell -->
@@ -1663,7 +1682,7 @@ function saveState(){
     productPrices:state.productPrices||{},tierSettings:state.tierSettings||[],gifts:state.gifts||[],
     logistics:state.logistics||[],payments:state.payments||[],cvs_stores:state.cvs_stores||{},
     contactInfo:state.contactInfo||{},bankInfo:state.bankInfo||{},faceNote:state.faceNote||'',
-    settings:state.settings||{},announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{},storeInfo:state.storeInfo||{}
+    settings:state.settings||{},announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{},storeInfo:state.storeInfo||{},newsPosts:state.newsPosts||[]
   }));
   updateFilterDropdowns();
 }
@@ -1675,7 +1694,7 @@ function showPanel(id,btn){
   document.getElementById('panel-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
   const titles={overview:'總覽',cloudinary:'Cloudinary 設定',categories:'分類管理',products:'商品管理',display:'展示設定',contact:'聯絡 & AI 設定',github:'GitHub 自動同步',
-    orders:'訂單管理',members:'會員管理',requests:'待處理申請',accounting:'帳務報表',prices:'商品價格',shopsettings:'商店設定'};
+    orders:'訂單管理',members:'會員管理',requests:'待處理申請',accounting:'帳務報表',prices:'商品價格',shopsettings:'商店設定',news:'最新消息'};
   document.getElementById('pageTitle').textContent=titles[id]||id;
   if(id==='overview')renderOverview();
   if(id==='display')initDisplaySettings();
@@ -1690,6 +1709,7 @@ function showPanel(id,btn){
   if(id==='accounting')renderAccounting();
   if(id==='prices'){document.getElementById('panel-products').classList.add('active');renderProducts();renderPrices();}
   if(id==='shopsettings')renderShopSettings();
+  if(id==='news')renderNewsAdmin();
 }
 
 // ── Cloudinary Form ──
@@ -2259,6 +2279,7 @@ function exportConfig() {
     announcement:  state.announcement || {},
     coupons:       state.coupons || [],
     legalPages:    state.legalPages || {},
+    newsPosts:     state.newsPosts || [],
     exportedAt: new Date().toISOString()
   };
 
@@ -2627,6 +2648,7 @@ async function syncToGitHub(silent = false) {
     announcement:  state.announcement || {},
     coupons:       state.coupons || [],
     legalPages:    state.legalPages || {},
+    newsPosts:     state.newsPosts || [],
     exportedAt: new Date().toISOString()
   };
 
@@ -4569,6 +4591,64 @@ function renderQtyLimits() {
 // ══════════════════════════════════════════
 // ══════════════════════════════════════════
 
+
+// ════════════════════════════════════
+// 最新消息管理
+// ════════════════════════════════════
+const NEWS_MAX=5;
+
+function renderNewsAdmin(){
+  const list=document.getElementById('newsPostList');
+  if(!list)return;
+  if(!state.newsPosts)state.newsPosts=[];
+  const posts=state.newsPosts;
+  if(!posts.length){
+    list.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">尚無消息，點右上角「+ 新增消息」新增</div>';
+    return;
+  }
+  list.innerHTML=posts.map(function(p,i){
+    return'<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden">'
+      +'<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface2)">'
+      +(i===0?'<span style="background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0">最新</span>':'')
+      +'<span style="font-family:var(--mono);font-size:11px;color:var(--text3);flex-shrink:0">'+p.date+'</span>'
+      +'<span style="flex:1;font-weight:600;font-size:13px">'+p.title+'</span>'
+      +'<div style="display:flex;align-items:center;gap:4px">'+'<button class="btn btn-danger btn-sm" data-nid="'+p.id+'" onclick="deleteNewsPost(this.dataset.nid)">刪除</button></div>'
+      +'</div>'
+      +'<div style="padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">'+p.content+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function addNewsPost(){
+  const today=new Date();
+  const dateStr=today.getFullYear()+'/'+(today.getMonth()+1).toString().padStart(2,'0')+'/'+today.getDate().toString().padStart(2,'0');
+  // 使用命名函數避免 inline onclick 引號衝突
+  const existing=document.getElementById('newsAddModal');
+  if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='newsAddModal';
+  modal.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML='<div style="background:#fff;border-radius:16px;width:480px;max-width:94vw;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.3)">'
+    +'<div style="font-size:16px;font-weight:700;margin-bottom:16px">📢 新增消息</div>'
+    +'<div class="form-group" style="margin-bottom:12px"><label>日期</label>'
+    +'<input type="text" id="_newsDate" value="'+dateStr+'" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:7px;font-family:var(--mono)"></div>'
+    +'<div class="form-group" style="margin-bottom:12px"><label>標題</label>'
+    +'<input type="text" id="_newsTitle" placeholder="例如：本週新品開箱！" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:7px;font-family:var(--sans)"></div>'
+    +'<div class="form-group" style="margin-bottom:16px"><label>內文</label>'
+    +'<textarea id="_newsContent" rows="4" placeholder="消息詳細內容..." style="width:100%;padding:8px;border:1px solid var(--border);border-radius:7px;font-family:var(--sans);resize:vertical"></textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end">'
+    +'<button class="btn btn-ghost" id="_newsCancelBtn">取消</button>'
+    +'<button class="btn btn-primary" id="_newsSubmitBtn">新增並同步</button>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+  document.getElementById('_newsCancelBtn').onclick=function(){modal.remove();};
+  document.getElementById('_newsSubmitBtn').onclick=submitNewsPost;
+  setTimeout(function(){document.getElementById('_newsTitle').focus();},50);
+}
+
+function closeNewsModal(){const m=document.getElementById('newsAddModal');if(m)m.remove();}
+
+
 </script>
 
 <!-- ════ Firebase SDK ════ -->
@@ -4646,7 +4726,7 @@ async function fbSaveAllSettings(){
       tierSettings:state.tierSettings||[], gifts:state.gifts||[],
       logistics:state.logistics||[], payments:state.payments||[],
       cvs_stores:state.cvs_stores||{}, settings:state.settings||{},
-      announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{},storeInfo:state.storeInfo||{},
+      announcement:state.announcement||{},coupons:state.coupons||[],legalPages:state.legalPages||{},storeInfo:state.storeInfo||{},newsPosts:state.newsPosts||[],
       displayPageSize:state.displayPageSize||50, displayCardSize:state.displayCardSize||130,
       _updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -4777,6 +4857,34 @@ async function fbLoadAllMembers(){
     if(added>0){ saveState(); toast("☁ 從 Firebase 載入 "+added+" 位新會員"); }
   }catch(e){}
 }
+
+function submitNewsPost(){
+  const date=document.getElementById('_newsDate').value.trim();
+  const title=document.getElementById('_newsTitle').value.trim();
+  const content=document.getElementById('_newsContent').value.trim();
+  if(!title){toast('請填入標題');return;}
+  if(!state.newsPosts)state.newsPosts=[];
+  const newPost={id:'news_'+Date.now(),date:date||new Date().toLocaleDateString('zh-TW'),title,content,createdAt:Date.now()};
+  // 插到最前面
+  state.newsPosts.unshift(newPost);
+  // 超過5則自動刪最舊
+  if(state.newsPosts.length>NEWS_MAX)state.newsPosts=state.newsPosts.slice(0,NEWS_MAX);
+  saveState();
+  document.getElementById('newsAddModal').remove();
+  renderNewsAdmin();
+  autoSync('最新消息');
+  toast('✅ 消息已新增並同步（共 '+state.newsPosts.length+' 則）');
+}
+
+function deleteNewsPost(id){
+  if(!confirm('確定要刪除這則消息？'))return;
+  state.newsPosts=(state.newsPosts||[]).filter(function(p){return p.id!==id;});
+  saveState();
+  renderNewsAdmin();
+  autoSync('最新消息');
+  toast('✅ 消息已刪除');
+}
+
 </script>
 
 </body>
