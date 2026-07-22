@@ -1639,7 +1639,7 @@ function mergeConfigToState(cfg) {
     'displayPageSize','displayCardSize','slogans','sloganFontSize',
     'sloganStyle','sloganColor','sloganSpeed','categories','contacts','aiAssistant',
     'productPrices','tierSettings','gifts','logistics','payments','cvs_stores',
-    'contactInfo','bankInfo','faceNote','settings','announcement','coupons','legalPages'];
+    'contactInfo','bankInfo','faceNote','settings','announcement','coupons','legalPages','storeInfo','newsPosts'];
   safe.forEach(k => {
     if (cfg[k] !== undefined && cfg[k] !== null) {
       // 只有本地沒有才覆蓋（保留本地修改）
@@ -2279,6 +2279,7 @@ function exportConfig() {
     announcement:  state.announcement || {},
     coupons:       state.coupons || [],
     legalPages:    state.legalPages || {},
+    storeInfo:     state.storeInfo || {},
     newsPosts:     state.newsPosts || [],
     exportedAt: new Date().toISOString()
   };
@@ -2648,6 +2649,7 @@ async function syncToGitHub(silent = false) {
     announcement:  state.announcement || {},
     coupons:       state.coupons || [],
     legalPages:    state.legalPages || {},
+    storeInfo:     state.storeInfo || {},
     newsPosts:     state.newsPosts || [],
     exportedAt: new Date().toISOString()
   };
@@ -4241,8 +4243,8 @@ function renderShopSettings(){
     <div class="hint">此文字會在購物車選擇「面交」時顯示給客戶</div>
 
     <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
-    <div style="font-size:13px;font-weight:700;margin-bottom:4px">📞 門市聯絡資訊（顯示於前台浮動聯絡視窗）</div>
-    <div class="info-box" style="margin-bottom:14px">填寫後前台右下角聯絡視窗會顯示此資訊，方便客人直接撥打或導航</div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px">📞 門市聯絡資訊（顯示於前台頁尾「聯絡我們」）</div>
+    <div class="info-box" style="margin-bottom:14px">⚠️ 此區塊只影響前台<b>頁尾「聯絡我們」</b>彈窗，跟右下角浮動聯絡按鈕（LINE/FB/IG等，在上方「聯絡方式」設定）、下單完成後的聯絡資訊（在「聯絡資訊」分頁）完全是各自獨立的資料，互不影響。</div>
     <div class="setup-grid">
       <div class="form-group">
         <label>客服電話</label>
@@ -4694,7 +4696,7 @@ async function fbLoadAllSettings(){
       ['slogans','sloganStyle','sloganColor','sloganFontSize','sloganSpeed',
        'categories','contacts','aiAssistant','contactInfo','bankInfo','faceNote',
        'tierSettings','gifts','logistics','payments','cvs_stores','settings',
-       'announcement','coupons','legalPages','displayPageSize','displayCardSize'].forEach(k=>{
+       'announcement','coupons','legalPages','storeInfo','newsPosts','displayPageSize','displayCardSize'].forEach(k=>{
          if(s[k]!==undefined) state[k]=s[k];
        });
     }
