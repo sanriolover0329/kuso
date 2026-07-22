@@ -1,23 +1,32 @@
 {
   "cloudName": "dkwviksvr",
-  "displayPageSize": 50,
-  "displayCardSize": 130,
+  "displayPageSize": 100,
+  "displayCardSize": 100,
   "slogans": [
     "錢錢沒有不見，只是變成妳愛的樣子 ♡",
-    "每天都被三麗鷗治癒中 🌸",
-    "精選正版三麗鷗娃娃，持續更新中！"
+    "愛她就擁有她吧 她在等妳帶她回家~~",
+    "每一件三麗鷗商品都是一份驚喜。點擊選購，為今天的自己準備一份期待已久的小確幸。",
+    "還在煩惱送什麼？三麗鷗全明星時尚小物，是絕對不會出錯的加分禮物。",
+    "不管你是誰，心中都住著一個小孩。快來尋找那份能讓你找回夢想希望的專屬精品。"
   ],
-  "sloganFontSize": 14,
-  "sloganStyle": "C",
-  "sloganColor": "#c0325c",
+  "sloganFontSize": 19,
+  "sloganStyle": "D",
+  "sloganColor": "#1abc9c",
   "sloganSpeed": 1,
   "categories": [
     {
       "id": "cat_1780730126274",
-      "name": "娃娃",
+      "name": "Hello Kitty娃娃",
       "folder": "",
       "desc": "KT變裝秀",
       "color": "#9b6ea8"
+    },
+    {
+      "id": "pochacco_9659",
+      "name": "Pochacco",
+      "folder": "",
+      "desc": "",
+      "color": "#a87070"
     },
     {
       "id": "cat_1780730144124",
@@ -41,6 +50,78 @@
       "color": "#a87070"
     }
   ],
+  "contacts": {
+    "line": {
+      "enabled": true,
+      "title": "歡迎加入 三麗鷗狂粉",
+      "desc": "掃描QR Code即可",
+      "url": "https://lin.ee/RJEWMld",
+      "qrImage": "line-qr.jpg",
+      "hint": "手機用戶直接點即可加入中毒日記喔"
+    },
+    "fb": {
+      "enabled": true,
+      "url": "https://m.me/1090125860860982",
+      "desc": "點擊可私訊我"
+    },
+    "ig": {
+      "enabled": false,
+      "username": "",
+      "desc": ""
+    },
+    "wa": {
+      "enabled": false,
+      "phone": "",
+      "desc": ""
+    },
+    "email": {
+      "enabled": false,
+      "email": "",
+      "desc": ""
+    }
+  },
+  "aiAssistant": {
+    "enabled": true,
+    "name": "三麗鷗 狂熱AI助手",
+    "avatar": "🤖",
+    "qa": [
+      {
+        "q": "怎購買",
+        "a": "可以加入我們官方帳號 告知型號喔 每隻KT都是正版 ",
+        "keywords": [
+          "購買，買，訂購"
+        ]
+      },
+      {
+        "q": "都是正版嗎",
+        "a": "是的 目前商品都是正版 帶雷標",
+        "keywords": [
+          "正版，雷標"
+        ]
+      },
+      {
+        "q": "有現貨嗎?",
+        "a": "目前部分商品有提供現貨，歡迎加入LINE@官方帳號詢問喔",
+        "keywords": [
+          "現貨，有貨"
+        ]
+      },
+      {
+        "q": "有貨到付款嗎",
+        "a": "有 7-11賣貨便，黑貓，新竹物流，面交，未來開放其他超商",
+        "keywords": [
+          "付錢，物流，寄，面交，轉帳"
+        ]
+      },
+      {
+        "q": "預購",
+        "a": "可以點右邊的LINE@或是粉專私訊，妳要的型號，即可登記預購",
+        "keywords": [
+          "預購"
+        ]
+      }
+    ]
+  },
   "productCategories": [
     {
       "id": "A1",
@@ -611,10 +692,6 @@
       "category": "cat_1780730126274"
     },
     {
-      "id": "A154",
-      "category": "cat_1780730126274"
-    },
-    {
       "id": "A155",
       "category": "cat_1780730126274"
     },
@@ -644,10 +721,6 @@
     },
     {
       "id": "B1",
-      "category": "cat_1780730126274"
-    },
-    {
-      "id": "B2",
       "category": "cat_1780730126274"
     },
     {
@@ -1077,93 +1150,112 @@
   ],
   "productNames": {},
   "adminPwdHash": "ce571c6e118a90bd4e2b0312640a58b087417932e53305a8879ef784bfe429a2",
-  "contacts": {
-    "line": {
-      "enabled": false,
-      "title": "加入 LINE",
-      "url": "",
-      "qrImage": "line-qr.jpg",
-      "desc": "",
-      "hint": ""
+  "productPrices": {
+    "A1": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
     },
-    "fb": {
-      "enabled": false,
-      "url": "",
-      "desc": ""
+    "A2": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
     },
-    "ig": {
-      "enabled": false,
-      "username": "",
-      "desc": ""
+    "A3": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
     },
-    "wa": {
-      "enabled": false,
-      "phone": "",
-      "desc": ""
+    "A4": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
     },
-    "email": {
-      "enabled": false,
-      "email": "",
-      "desc": ""
+    "A5": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
+    },
+    "A6": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
+    },
+    "A7": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
+    },
+    "A8": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
+    },
+    "A9": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
+    },
+    "A10": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
+    },
+    "A11": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
+    },
+    "A12": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
+    },
+    "A13": {
+      "retail": 450,
+      "cost": 170,
+      "stock": 0,
+      "preorder": true,
+      "useGlobalWsTiers": true,
+      "wsTiers": []
     }
   },
-  "aiAssistant": {
-    "enabled": true,
-    "name": "小三麗",
-    "avatar": "🧸",
-    "qa": [
-      {
-        "q": "怎麼購買？",
-        "a": "直接將喜歡的商品加入購物車，填好資料就可以下單囉！有問題也可以透過右下角 LINE 聯絡我們 ♡",
-        "keywords": [
-          "購買",
-          "買",
-          "訂購",
-          "怎麼買"
-        ]
-      },
-      {
-        "q": "有現貨嗎？",
-        "a": "有標示「缺貨」的商品目前無庫存，可選擇「預購」；其餘商品均為現貨，下單後 3-5 個工作天出貨 🌸",
-        "keywords": [
-          "現貨",
-          "庫存",
-          "有沒有",
-          "還有"
-        ]
-      },
-      {
-        "q": "可以面交嗎？",
-        "a": "可以！結帳時選擇「面交」，下單後我們會聯絡您約定時間地點 🤝",
-        "keywords": [
-          "面交",
-          "見面",
-          "自取"
-        ]
-      },
-      {
-        "q": "會員有什麼優惠？",
-        "a": "會員分銅銀金三級：銀級消費滿 $3,000 享 95 折，金級滿 $10,000 享 9 折！累積消費自動升等 🥇",
-        "keywords": [
-          "會員",
-          "折扣",
-          "優惠",
-          "升等"
-        ]
-      },
-      {
-        "q": "如何退換貨？",
-        "a": "收到商品 7 天內如有問題，請拍照透過 LINE 聯絡我們，我們會協助處理 💚",
-        "keywords": [
-          "退貨",
-          "換貨",
-          "退換",
-          "瑕疵"
-        ]
-      }
-    ]
-  },
-  "productPrices": {},
   "tierSettings": [
     {
       "tier": "bronze",
@@ -1184,10 +1276,34 @@
       "discount": 10
     }
   ],
+  "gifts": [
+    {
+      "name": "三麗鷗貼紙",
+      "minSpend": 3000,
+      "active": true
+    },
+    {
+      "name": "限定購物袋",
+      "minSpend": 8000,
+      "active": true
+    },
+    {
+      "name": "VIP禮盒",
+      "minSpend": 15000,
+      "active": true
+    }
+  ],
   "logistics": [
     {
       "id": "blackcat",
       "name": "黑貓宅急便",
+      "type": "delivery",
+      "active": true,
+      "fee": 100
+    },
+    {
+      "id": "hsinchu",
+      "name": "新竹物流",
       "type": "delivery",
       "active": true,
       "fee": 100
@@ -1204,6 +1320,20 @@
       "name": "全家超商取貨",
       "type": "cvs",
       "active": true,
+      "fee": 60
+    },
+    {
+      "id": "hilife",
+      "name": "萊爾富超商取貨",
+      "type": "cvs",
+      "active": false,
+      "fee": 60
+    },
+    {
+      "id": "ok",
+      "name": "OK超商取貨",
+      "type": "cvs",
+      "active": false,
       "fee": 60
     },
     {
@@ -1226,11 +1356,22 @@
       "active": true
     },
     {
+      "id": "transfer_face",
+      "name": "先轉帳後面交",
+      "active": true
+    },
+    {
       "id": "face_pay",
       "name": "面交取貨付款",
       "active": true
     }
   ],
+  "cvs_stores": {
+    "711": [],
+    "family": [],
+    "hilife": [],
+    "ok": []
+  },
   "contactInfo": {
     "showAfterOrder": true,
     "line": {
@@ -1238,13 +1379,17 @@
       "id": "",
       "url": ""
     },
+    "lineat": {
+      "enabled": true,
+      "url": ""
+    },
     "fb": {
       "enabled": false,
       "url": ""
     },
     "phone": {
-      "enabled": false,
-      "number": ""
+      "enabled": true,
+      "number": "0982197705"
     },
     "note": ""
   },
@@ -1255,12 +1400,26 @@
     "accountNumber": "",
     "note": ""
   },
-  "faceNote": "下單後將由我們與您聯絡，約定面交時間與地點（以中壢地區為主）。",
+  "faceNote": "下單後將由內部人員與您聯絡，約定面交時間與地點。",
   "settings": {
     "allowWsUpgrade": true,
     "globalMinQty": 0,
     "globalMaxQty": 0,
-    "stockAlertThreshold": 5
+    "stockAlertThreshold": 5,
+    "globalWsTiers": [
+      {
+        "qty": 3,
+        "discount": 10
+      },
+      {
+        "qty": 6,
+        "discount": 15
+      },
+      {
+        "qty": 12,
+        "discount": 20
+      }
+    ]
   },
   "announcement": {
     "enabled": false,
@@ -1271,13 +1430,14 @@
   },
   "coupons": [],
   "legalPages": {
-    "productDesc": "本店販售正版授權三麗鷗系列商品（Hello Kitty、美樂蒂、布丁狗、大耳狗、Cinnamoroll 等），包含娃娃、吊飾、盲盒、包包等商品。",
-    "pricingModel": "商品售價標示於商品頁面。提供貨到付款、先付款後出貨及面交取貨付款等方式，確認付款後安排出貨。",
-    "shippingPolicy": "確認付款後 3-5 個工作天出貨（不含例假日）。宅配運費 NT$100，消費滿 NT$2,000 免運費。超商取貨 NT$60。",
-    "refundPolicy": "到貨 7 天內如有瑕疵或與描述不符，請拍照聯繫客服申請退換貨，需保持原包裝完整。",
-    "consumerRights": "依消費者保護法第 19 條，網路購物享有 7 天鑑賞期。如有消費爭議，可向消費者服務中心或消費者保護委員會申訴。",
-    "termsOfService": "使用本網站即表示同意本服務條款。本店保留修改商品價格及服務內容的權利。",
-    "privacyPolicy": "本店蒐集您的個人資料（姓名、電話、地址）僅用於訂單處理與商品寄送，不提供予第三方。"
+    "productDesc": "",
+    "pricingModel": "",
+    "shippingPolicy": "確認付款後 3-5 個工作天出貨。宅配運費 $100，消費滿 $2,000 免運費。",
+    "refundPolicy": "商品到貨 7 天內如有瑕疵，請聯繫客服申請退換貨，需保持商品完整包裝。",
+    "consumerRights": "依消費者保護法，網路購物享有 7 天鑑賞期。如有消費爭議，可向消費者保護委員會申訴。",
+    "termsOfService": "",
+    "privacyPolicy": "本店蒐集之個人資料（姓名、電話、地址）僅用於訂單處理，不提供予第三方。"
   },
-  "exportedAt": ""
+  "newsPosts": [],
+  "exportedAt": "2026-07-22T06:25:32.603Z"
 }
