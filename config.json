@@ -1438,6 +1438,14 @@
     "termsOfService": "",
     "privacyPolicy": "本店蒐集之個人資料（姓名、電話、地址）僅用於訂單處理，不提供予第三方。"
   },
-  "newsPosts": [],
-  "exportedAt": "2026-07-22T06:25:32.603Z"
+  "newsPosts": [
+    {
+      "id": "news_1784701572136",
+      "date": "2026/07/22",
+      "title": "123",
+      "content": "123",
+      "createdAt": 1784701572136
+    }
+  ],
+  "exportedAt": "2026-07-22T06:26:13.654Z"
 }
