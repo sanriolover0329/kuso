@@ -1152,7 +1152,7 @@
   "adminPwdHash": "ce571c6e118a90bd4e2b0312640a58b087417932e53305a8879ef784bfe429a2",
   "productPrices": {
     "A1": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1160,7 +1160,7 @@
       "wsTiers": []
     },
     "A2": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1168,7 +1168,7 @@
       "wsTiers": []
     },
     "A3": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1176,7 +1176,7 @@
       "wsTiers": []
     },
     "A4": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1184,7 +1184,7 @@
       "wsTiers": []
     },
     "A5": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1192,7 +1192,7 @@
       "wsTiers": []
     },
     "A6": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1200,7 +1200,7 @@
       "wsTiers": []
     },
     "A7": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1208,7 +1208,7 @@
       "wsTiers": []
     },
     "A8": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1216,7 +1216,7 @@
       "wsTiers": []
     },
     "A9": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1224,7 +1224,7 @@
       "wsTiers": []
     },
     "A10": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1232,7 +1232,7 @@
       "wsTiers": []
     },
     "A11": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1240,7 +1240,7 @@
       "wsTiers": []
     },
     "A12": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
@@ -1248,12 +1248,1227 @@
       "wsTiers": []
     },
     "A13": {
-      "retail": 450,
+      "retail": 490,
       "cost": 170,
       "stock": 0,
       "preorder": true,
       "useGlobalWsTiers": true,
       "wsTiers": []
+    },
+    "A14": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A16": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A17": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A18": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A19": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A20": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A22": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A23": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A24": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A25": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A26": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A27": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A28": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A29": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A30": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A31": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A32": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A33": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A34": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A35": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A36": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A37": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A38": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A39": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A40": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A41": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A43": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A45": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A46": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A47": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A48": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A49": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A50": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A51": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A52": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A53": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A54": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A55": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A56": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A57": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A58": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A59": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A60": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A61": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A62": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A63": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A64": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A65": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A66": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A67": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A68": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A69": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A70": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A71": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A72": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A73": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A74": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A76": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A77": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A78": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A79": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A80": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A81": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A82": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A85": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A87": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A88": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A89": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A90": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A91": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A92": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A93": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A94": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A95": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A96": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A97": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A98": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A99": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A100": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A101": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A102": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A103": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A104": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A105": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A106": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A107": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A108": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A109": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A110": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A111": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A112": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A113": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A114": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A115": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A118": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A119": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A120": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A121": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A122": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A123": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A124": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A125": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A126": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A127": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A128": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A129": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A130": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A131": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A132": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A133": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A134": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A135": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A136": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A137": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A138": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A139": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A140": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A141": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A142": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A143": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A144": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A145": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A147": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A148": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A149": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A150": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A151": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A152": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A153": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A155": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A156": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A157": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A158": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A159": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A160": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "A161": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B1": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B3": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B4": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B5": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B6": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B7": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B9": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B10": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B11": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B12": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B13": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B14": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B15": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B16": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B17": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B18": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B19": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B20": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B21": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B23": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B25": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B26": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B27": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B28": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B29": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B30": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B31": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B32": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B33": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B34": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B35": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B36": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B37": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B38": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B39": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B40": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B41": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B42": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B43": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B47": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B48": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B49": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B50": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B51": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B52": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B53": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B54": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B55": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B56": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B57": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B58": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B60": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B62": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B63": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B64": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B65": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B67": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B69": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B72": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B73": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B76": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B77": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B78": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B79": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B80": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B81": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B83": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B84": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B85": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B86": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B87": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B88": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B89": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B90": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B91": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B92": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B93": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B94": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B96": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B97": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B98": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B99": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B100": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B102": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B103": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B104": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B105": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B106": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B107": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B108": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B109": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B110": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B111": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B112": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B113": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B114": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B115": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B116": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B117": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B118": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B119": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B120": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B121": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B122": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B123": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B124": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
+    },
+    "B125": {
+      "retail": 490,
+      "cost": 170,
+      "preorder": true
     }
   },
   "tierSettings": [
@@ -1439,5 +2654,5 @@
     "privacyPolicy": "本店蒐集之個人資料（姓名、電話、地址）僅用於訂單處理，不提供予第三方。"
   },
   "newsPosts": [],
-  "exportedAt": "2026-07-22T06:31:46.289Z"
+  "exportedAt": "2026-07-22T06:33:02.500Z"
 }
