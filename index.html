@@ -1199,14 +1199,21 @@ function openLegalModal(key){
   openModal('legalModal');
 }
 function scrollToContact(){
-  const si=shopDB.storeInfo||{};
-  const hasInfo=si.phone||si.address||si.line||si.hours;
-  if(hasInfo){
-    let body='';
-    if(si.phone)body+=`📞 客服電話：${si.phone}\n`;
-    if(si.line)body+=`💚 LINE：${si.line}\n`;
-    if(si.hours)body+=`🕐 營業時間：${si.hours}\n`;
-    if(si.address)body+=`📍 地址：${si.address}\n`;
+  // 與右下角浮動聯絡按鈕、訂單完成頁面同一個資料來源
+  const ci=shopDB.contactInfo||{};
+  const cc=_contacts||{};
+  let body='';
+  if(ci.phone?.enabled&&ci.phone.number) body+=`📞 客服電話：${ci.phone.number}\n`;
+  if(ci.line?.enabled&&(ci.line.id||ci.line.url)) body+=`💚 LINE：${ci.line.id?('@'+ci.line.id):ci.line.url}\n`;
+  else if(cc.line?.enabled&&cc.line.url) body+=`💚 LINE：${cc.line.url}\n`;
+  if(ci.lineat?.enabled&&ci.lineat.url) body+=`💚 LINE@官方帳號：${ci.lineat.url}\n`;
+  if(ci.fb?.enabled&&ci.fb.url) body+=`📘 Facebook：${ci.fb.url}\n`;
+  else if(cc.fb?.enabled&&cc.fb.url) body+=`📘 Facebook：${cc.fb.url}\n`;
+  if(cc.ig?.enabled&&cc.ig.username) body+=`🩷 Instagram：@${cc.ig.username}\n`;
+  if(cc.wa?.enabled&&cc.wa.phone) body+=`💬 WhatsApp：${cc.wa.phone}\n`;
+  if(cc.email?.enabled&&cc.email.email) body+=`📧 Email：${cc.email.email}\n`;
+  if(ci.note) body+=`\n${ci.note}\n`;
+  if(body.trim()){
     document.getElementById('legalModalTitle').textContent='聯絡我們';
     document.getElementById('legalModalBody').textContent=body.trim();
     openModal('legalModal');
