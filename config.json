@@ -1422,7 +1422,7 @@
     ]
   },
   "announcement": {
-    "enabled": false,
+    "enabled": true,
     "text": "",
     "bgColor": "#f9b8cb",
     "textColor": "#3d2040",
@@ -1438,14 +1438,6 @@
     "termsOfService": "",
     "privacyPolicy": "本店蒐集之個人資料（姓名、電話、地址）僅用於訂單處理，不提供予第三方。"
   },
-  "newsPosts": [
-    {
-      "id": "news_1784701572136",
-      "date": "2026/07/22",
-      "title": "123",
-      "content": "123",
-      "createdAt": 1784701572136
-    }
-  ],
-  "exportedAt": "2026-07-22T06:29:14.257Z"
+  "newsPosts": [],
+  "exportedAt": "2026-07-22T06:31:46.289Z"
 }
