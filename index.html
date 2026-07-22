@@ -1058,6 +1058,7 @@ const SI={
 const SC={line:'#06C755',fb:'#1877F2',ig:'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',wa:'#25D366',email:'#ea4335',ai:'linear-gradient(135deg,#667eea,#764ba2)'};
 const SM={line:{label:'加入 LINE',hint:'掃描 QR Code 或點擊按鈕加入',icon:'💚'},fb:{label:'FB 私訊',hint:'點擊前往 Facebook 粉專',icon:'💙'},ig:{label:'IG 私訊',hint:'點擊前往 Instagram',icon:'🩷'},wa:{label:'WhatsApp',hint:'點擊開啟 WhatsApp',icon:'💬'},email:{label:'Email',hint:'點擊開啟郵件程式',icon:'📧'}};
 let socialFloatOpen=true; // 預設展開
+let _socialToggleMode=false; // 是否為「>3個項目、用+展開收合」的模式
 // Social Float — config.contacts first, shopDB.contactInfo as fallback
 function initContactFloat(){
   const cfgC=_contacts||{},ci=shopDB.contactInfo||{};
@@ -1098,6 +1099,7 @@ function initContactFloat(){
 
   if(totalCount<=3){
     // ≤3 個：直接全部顯示，不需要展開按鈕
+    _socialToggleMode=false;
     if(toggleBtn)toggleBtn.style.display='none';
     items.innerHTML=allBtns.map((b,i)=>`<div class="social-item visible" style="transition-delay:0s">
       <span class="social-float-label">${b.label}</span>
@@ -1105,6 +1107,7 @@ function initContactFloat(){
     </div>`).join('');
   }else{
     // >3 個：用 + 展開
+    _socialToggleMode=true;
     if(toggleBtn)toggleBtn.style.display='flex';
     items.innerHTML=allBtns.map((b,i)=>`<div class="social-item" id="si_${i}" style="transition-delay:${i*.05}s">
       <span class="social-float-label">${b.label}</span>
@@ -1120,14 +1123,14 @@ function openContactModalPlatform(platform){
   let qr='';if(platform==='line'&&c.qrImage)qr=`<img class="modal-qr-img" src="${c.qrImage}" alt="QR" style="color:${SC[platform]};border-color:${SC[platform]}">`;
   body.innerHTML=`<div class="modal-qr-icon">${m.icon}</div><div class="modal-qr-title" style="color:${SC[platform]}">${c.title||m.label}</div><div class="modal-qr-sub">${c.desc||''}</div>${qr}<button class="modal-cta-btn" style="background:${SC[platform]}" id="cfCtaBtn">${SI[platform]||'📱'} ${m.label}</button><div class="modal-hint">${c.hint||m.hint}</div>`;
   document.getElementById('cfCtaBtn').onclick=()=>{let url='';if(platform==='line')url=c.url||'';if(platform==='fb')url=c.url||'';if(platform==='ig')url=`https://ig.me/m/${c.username||''}`;if(platform==='wa')url=c.url||(c.phone?`https://wa.me/${c.phone.replace(/\D/g,'')}`:'');if(platform==='email')url=`mailto:${c.email||''}`;if(url)window.open(url,'_blank','noopener');};
-  openModal('contactModal');if(socialFloatOpen)toggleSocialFloat();
+  openModal('contactModal');if(_socialToggleMode&&socialFloatOpen)toggleSocialFloat();
 }
 
 function toggleSocialFloat(){socialFloatOpen=!socialFloatOpen;const btn=document.getElementById('socialToggleBtn');if(btn)btn.classList.toggle('open',socialFloatOpen);document.querySelectorAll('.social-item').forEach((el,i)=>{setTimeout(()=>el.classList.toggle('visible',socialFloatOpen),socialFloatOpen?i*50:0);});}
 // 已移除點外部自動關閉浮動視窗的行為
 
 // AI
-function openAiModal(){aiQA=_aiCfg.qa||[];const ne=document.getElementById('aiName'),ae=document.getElementById('aiAvatar');if(ne)ne.textContent=_aiCfg.name||'小幫手';if(ae)ae.textContent=_aiCfg.avatar||'🤖';const msgs=document.getElementById('aiMsgs');msgs.innerHTML='';addAiBubble('bot',`嗨！我是 ${_aiCfg.name||'小幫手'} ${_aiCfg.avatar||'🤖'}<br>有任何問題都可以問我喔！`);const qb=document.getElementById('aiQuickBtns');qb.innerHTML='';aiQA.slice(0,5).forEach(q=>{const btn=document.createElement('button');btn.className='ai-quick-btn';btn.textContent=q.q;btn.addEventListener('click',()=>handleAiQuick(q.q));qb.appendChild(btn);});document.getElementById('aiInput').value='';openModal('aiModal');if(socialFloatOpen)toggleSocialFloat();}
+function openAiModal(){aiQA=_aiCfg.qa||[];const ne=document.getElementById('aiName'),ae=document.getElementById('aiAvatar');if(ne)ne.textContent=_aiCfg.name||'小幫手';if(ae)ae.textContent=_aiCfg.avatar||'🤖';const msgs=document.getElementById('aiMsgs');msgs.innerHTML='';addAiBubble('bot',`嗨！我是 ${_aiCfg.name||'小幫手'} ${_aiCfg.avatar||'🤖'}<br>有任何問題都可以問我喔！`);const qb=document.getElementById('aiQuickBtns');qb.innerHTML='';aiQA.slice(0,5).forEach(q=>{const btn=document.createElement('button');btn.className='ai-quick-btn';btn.textContent=q.q;btn.addEventListener('click',()=>handleAiQuick(q.q));qb.appendChild(btn);});document.getElementById('aiInput').value='';openModal('aiModal');if(_socialToggleMode&&socialFloatOpen)toggleSocialFloat();}
 function addAiBubble(type,html){const msgs=document.getElementById('aiMsgs');const div=document.createElement('div');div.className='ai-bubble '+type;div.innerHTML=html;msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;return div;}
 function handleAiQuick(q){document.getElementById('aiInput').value=q;sendAiMsg();}
 function sendAiMsg(){const input=document.getElementById('aiInput');const q=input.value.trim();if(!q)return;input.value='';addAiBubble('user',q);const lower=q.toLowerCase();const match=aiQA.find(item=>lower.includes(item.q.toLowerCase())||(item.keywords||[]).some(kw=>lower.includes(kw.toLowerCase())));const td=addAiBubble('bot typing','···');setTimeout(()=>{td.classList.remove('typing');td.innerHTML=match?match.a:'這個問題我還不確定，建議直接聯絡我們喔！<br><small style="color:#aaa">（點右下角其他聯絡按鈕）</small>';document.getElementById('aiMsgs').scrollTop=9999;},800);}
