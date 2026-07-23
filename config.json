@@ -3381,7 +3381,12 @@
         "qty": 12,
         "discount": 60
       }
-    ]
+    ],
+    "emailjsPublicKey": "",
+    "emailjsServiceId": "service_wqt8kwp",
+    "emailjsTemplateId": "",
+    "emailjsBuyerTemplateId": "",
+    "notifyEmail": ""
   },
   "announcement": {
     "enabled": true,
@@ -3415,5 +3420,5 @@
       "createdAt": 1784361499019
     }
   ],
-  "exportedAt": "2026-07-23T10:43:17.236Z"
+  "exportedAt": "2026-07-23T10:52:19.789Z"
 }
