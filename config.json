@@ -3385,7 +3385,7 @@
     "emailjsPublicKey": "",
     "emailjsServiceId": "service_wqt8kwp",
     "emailjsTemplateId": "",
-    "emailjsBuyerTemplateId": "template_h7p4",
+    "emailjsBuyerTemplateId": "template_h7p4uw7",
     "notifyEmail": ""
   },
   "announcement": {
@@ -3420,5 +3420,5 @@
       "createdAt": 1784361499019
     }
   ],
-  "exportedAt": "2026-07-23T11:05:38.644Z"
+  "exportedAt": "2026-07-23T11:05:44.669Z"
 }
