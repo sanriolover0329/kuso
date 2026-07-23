@@ -1254,6 +1254,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);background:#f
           <div class="card-body" id="faceNoteBody"></div>
         </div>
         <div class="card">
+          <div class="card-header"><div class="card-title">📧 EmailJS 訂單通知設定</div></div>
+          <div class="card-body" id="emailjsBody"></div>
+        </div>
+        <div class="card">
           <div class="card-header"><div class="card-title">📄 法規資訊設定</div></div>
           <div class="card-body" id="legalPagesBody"></div>
         </div>
@@ -3369,18 +3373,27 @@ async function fbLoadAllMembers(){
   }catch(e){console.warn('fbLoadAllMembers:',e);}
 }
 
-// ── 訂單狀態更新時同步到 Firebase ──
-const _origUpdateOrderStatus=typeof updateOrderStatus==='function'?updateOrderStatus:null;
-function updateOrderStatus(oid,status){
-  if(_origUpdateOrderStatus)_origUpdateOrderStatus(oid,status);
-  else{
-    const o=state.orders.find(x=>x.id===oid);
-    if(o){o.status=status;saveState();}
-  }
-  // 同步到 Firebase
-  if(_fbReady&&db){
-    db.collection('orders').doc(oid).update({status}).catch(e=>console.warn('fbUpdateStatus:',e));
-  }
+// ── EmailJS：通知買家訂單狀態變更 ──
+async function notifyBuyerStatusChange(order,newStatus){
+  const cfg=state.settings||{};
+  if(!cfg.emailjsServiceId||!cfg.emailjsBuyerTemplateId)return;
+  if(!order.userEmail)return;
+  const statusLabel={
+    confirmed:'✅ 已確認收到您的訂單',
+    packing:'📦 商品備貨中',
+    shipping:'🚚 已出貨，請注意物流資訊',
+    delivered:'🎉 商品已到達，感謝您的購買 ♡',
+    cancelled:'❌ 訂單已取消'
+  }[newStatus]||newStatus;
+  try{
+    await emailjs.send(cfg.emailjsServiceId,cfg.emailjsBuyerTemplateId,{
+      to_email:order.userEmail,
+      buyer_name:order.userName,
+      order_id:order.id,
+      status:statusLabel
+    });
+    toast('✅ 已寄送狀態通知給買家');
+  }catch(e){console.warn('EmailJS buyer notify:',e);}
 }
 
 // ── 商品價格儲存時同步到 Firebase ──
@@ -3430,6 +3443,8 @@ function updateOrderStatus(oid,status){
     // 同步到 Firebase
     if(typeof fbUpdateOrderStatus==='function')
       fbUpdateOrderStatus(oid, {status:o.status, stockRestored:!!o.stockRestored});
+    // EmailJS 通知買家（需完成後台 EmailJS 設定才會實際發送）
+    if(typeof emailjs!=='undefined')notifyBuyerStatusChange(o,status);
     // 若目前停留在商品價格頁，刷新庫存顯示
     if(document.getElementById('panel-prices')?.classList.contains('active'))renderPrices();
   }
@@ -3642,6 +3657,8 @@ function renderMembers(){
       ${u.status==='pending'?`<button class="btn btn-success btn-sm" onclick="event.stopPropagation();approveUser(${u.id})">✓ 開通</button>`:''}
       ${u.status==='active'&&u.id!==1?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toggleUser(${u.id})">停用</button>`:''}
       ${u.status==='disabled'?`<button class="btn btn-success btn-sm" onclick="event.stopPropagation();toggleUser(${u.id})">啟用</button>`:''}
+      ${u.role==='member'?`<button class="btn btn-sm" style="background:#e8f0fe;color:#2850b0;border:1px solid #c0d4f8" onclick="event.stopPropagation();upgradeToWholesale(${u.id})">🏭 升批發</button>`:''}
+      ${u.role==='wholesale'?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();downgradeToMember(${u.id})">↩ 轉一般</button>`:''}
       <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();editMember(${u.id})">✏️ 編輯</button>
     </div></td>
   </tr>`).join('');
@@ -4272,6 +4289,28 @@ function renderShopSettings(){
       </div>
     </div>`;
 
+  // ── EmailJS 通知設定 ──
+  const ejs=state.settings||{};
+  const emailjsEl=document.getElementById('emailjsBody');
+  if(emailjsEl)emailjsEl.innerHTML=`
+    <div class="info-box" style="margin-bottom:14px">
+      申請免費帳號 → <strong>emailjs.com</strong>（每月200封免費）→ 建立 Email Service + 2個Template → 填入下方<br>
+      <strong>賣家通知模板變數：</strong>{{order_id}} {{buyer_name}} {{buyer_phone}} {{items}} {{total}} {{logistics}} {{payment}} {{address}}<br>
+      <strong>買家狀態通知模板變數：</strong>{{buyer_name}} {{order_id}} {{status}}
+    </div>
+    <div class="setup-grid">
+      <div class="form-group"><label>Public Key</label>
+        <input type="text" id="ejsPublicKey" placeholder="user_xxxxxxxxxx" value="${ejs.emailjsPublicKey||''}" oninput="saveEmailJSSettings()"></div>
+      <div class="form-group"><label>Service ID</label>
+        <input type="text" id="ejsServiceId" placeholder="service_xxxxxxxx" value="${ejs.emailjsServiceId||''}" oninput="saveEmailJSSettings()"></div>
+      <div class="form-group"><label>賣家通知 Template ID</label>
+        <input type="text" id="ejsTemplateId" placeholder="template_xxxxxxxx" value="${ejs.emailjsTemplateId||''}" oninput="saveEmailJSSettings()"></div>
+      <div class="form-group"><label>買家狀態通知 Template ID</label>
+        <input type="text" id="ejsBuyerTemplateId" placeholder="template_xxxxxxxx" value="${ejs.emailjsBuyerTemplateId||''}" oninput="saveEmailJSSettings()"></div>
+      <div class="form-group full"><label>賣家通知信箱（收到新訂單時寄到這裡）</label>
+        <input type="email" id="ejsNotifyEmail" placeholder="your@email.com" value="${ejs.notifyEmail||''}" oninput="saveEmailJSSettings()"></div>
+    </div>`;
+
   // ── 法規資訊設定（藍新金流審查 + 消費者保護法要求）──
   const lp=state.legalPages||{};
   const legalFields=[
@@ -4296,6 +4335,19 @@ function renderShopSettings(){
   `;
 }
 
+function saveEmailJSSettings(){
+  if(!state.settings)state.settings={};
+  const s=state.settings;
+  s.emailjsPublicKey   =document.getElementById('ejsPublicKey')?.value.trim()||'';
+  s.emailjsServiceId   =document.getElementById('ejsServiceId')?.value.trim()||'';
+  s.emailjsTemplateId  =document.getElementById('ejsTemplateId')?.value.trim()||'';
+  s.emailjsBuyerTemplateId=document.getElementById('ejsBuyerTemplateId')?.value.trim()||'';
+  s.notifyEmail        =document.getElementById('ejsNotifyEmail')?.value.trim()||'';
+  saveState();
+  clearTimeout(window._ejsTimer);
+  window._ejsTimer=setTimeout(()=>autoSync('EmailJS設定'),2000);
+}
+
 function saveStoreInfo(){
   if(!state.storeInfo)state.storeInfo={};
   state.storeInfo.phone=document.getElementById('storePhone')?.value.trim()||'';
@@ -4305,6 +4357,28 @@ function saveStoreInfo(){
   saveState();
   clearTimeout(window._storeInfoTimer);
   window._storeInfoTimer=setTimeout(()=>autoSync('門市資訊'),2000);
+}
+
+// ── 後台升批發/降一般會員 ──
+async function upgradeToWholesale(uid){
+  const u=state.users.find(x=>x.id===uid);
+  if(!u)return;
+  if(!confirm(`確定要將「${u.name}」升等為批發會員？`))return;
+  u.role='wholesale';saveState();
+  if(typeof _fbReady!=='undefined'&&_fbReady&&db&&u.uid)
+    db.collection('members').doc(u.uid).update({role:'wholesale'}).catch(e=>console.warn(e));
+  renderMembers();autoSync('會員升等');
+  toast(`✅ ${u.name} 已升等為批發會員`);
+}
+async function downgradeToMember(uid){
+  const u=state.users.find(x=>x.id===uid);
+  if(!u)return;
+  if(!confirm(`確定要將「${u.name}」降回一般會員？`))return;
+  u.role='member';saveState();
+  if(typeof _fbReady!=='undefined'&&_fbReady&&db&&u.uid)
+    db.collection('members').doc(u.uid).update({role:'member'}).catch(e=>console.warn(e));
+  renderMembers();autoSync('會員降等');
+  toast(`✅ ${u.name} 已轉回一般會員`);
 }
 
 function saveLegalField(el){
@@ -4654,6 +4728,16 @@ function closeNewsModal(){const m=document.getElementById('newsAddModal');if(m)m
 </script>
 
 <!-- ════ Firebase SDK ════ -->
+<!-- ════ EmailJS SDK（訂單狀態通知）════ -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+(function initEmailJSAdmin(){
+  try{
+    const key=state?.settings?.emailjsPublicKey;
+    if(key&&typeof emailjs!=='undefined')emailjs.init(key);
+  }catch(e){}
+})();
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -4885,6 +4969,37 @@ function deleteNewsPost(id){
   renderNewsAdmin();
   autoSync('最新消息');
   toast('✅ 消息已刪除');
+}
+
+
+// ── 後台升批發/降一般會員 ──
+async function upgradeToWholesale(uid){
+  const u=state.users.find(x=>x.id===uid);
+  if(!u)return;
+  if(!confirm(`確定要將「${u.name}」升等為批發會員？`))return;
+  u.role='wholesale';
+  saveState();
+  // 同步到 Firebase
+  if(_fbReady&&db&&u.uid){
+    db.collection('members').doc(u.uid).update({role:'wholesale'}).catch(e=>console.warn(e));
+  }
+  renderMembers();
+  autoSync('會員升等');
+  toast(`✅ ${u.name} 已升等為批發會員`);
+}
+
+async function downgradeToMember(uid){
+  const u=state.users.find(x=>x.id===uid);
+  if(!u)return;
+  if(!confirm(`確定要將「${u.name}」降回一般會員？`))return;
+  u.role='member';
+  saveState();
+  if(_fbReady&&db&&u.uid){
+    db.collection('members').doc(u.uid).update({role:'member'}).catch(e=>console.warn(e));
+  }
+  renderMembers();
+  autoSync('會員降等');
+  toast(`✅ ${u.name} 已轉回一般會員`);
 }
 
 </script>

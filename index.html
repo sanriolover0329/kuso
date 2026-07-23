@@ -447,12 +447,6 @@ button img,a img{pointer-events:auto}
   </div>
 </div>
 <!-- WS Upgrade -->
-<div class="modal-bg" id="wsUpgradeModal">
-  <div class="modal-box" style="max-width:420px">
-    <div class="modal-head"><h2>申請批發升等 🏭</h2><button class="modal-close-btn" onclick="closeModal('wsUpgradeModal')">×</button></div>
-    <div class="modal-body"><div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--text2)">申請成為批發會員後，可看到批發價格並依數量享有階梯折扣。管理員審核後開通。</div><div class="f-group"><label>申請原因（選填）</label><textarea id="wsReason" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--sans);resize:vertical"></textarea></div><button class="btn-full" onclick="doWsUpgradeRequest()">📨 送出申請</button></div>
-  </div>
-</div>
 <!-- Contact QR Modal -->
 <div class="modal-bg" id="contactModal" onclick="if(event.target===this)closeModal('contactModal')">
   <div class="modal-box" style="max-width:320px;position:relative"><button class="modal-close-btn" style="position:absolute;top:12px;right:14px;z-index:1" onclick="closeModal('contactModal')">×</button><div class="modal-qr-body" id="contactModalBody"></div></div>
@@ -797,6 +791,9 @@ function renderShippingInfo(type,logId){const el=document.getElementById('shippi
 }
 function submitOrder(){
   for(const item of cart){const err=checkQtyLimits(item.id,item.qty);if(err){showToast('❌ '+item.name+'：'+err);return;}}
+  // ── 庫存檢查（下單前）──
+  const stockErr=checkStock(cart.map(c=>({id:c.id,name:c.name,qty:c.qty,preorder:c.preorder})));
+  if(stockErr){showToast('❌ '+stockErr);return;}
   const sn=document.getElementById('shipName')?.value.trim(),sp=document.getElementById('shipPhone')?.value.trim();
   const logEl=document.querySelector('input[name=logistics]:checked'),payEl=document.querySelector('input[name=payment]:checked');
   if(!sn){showToast('❌ 請填寫姓名');return;}if(!sp){showToast('❌ 請填寫電話');return;}if(!logEl){showToast('❌ 請選擇配送方式');return;}if(!payEl){showToast('❌ 請選擇付款方式');return;}
@@ -819,6 +816,10 @@ function submitOrder(){
 
   // ── 寫入 Firebase Firestore（跨裝置即時同步到後台）──
   fbWriteOrder(order);
+  // ── 庫存即時扣減 ──
+  deductStock(order.items);
+  // ── Email 通知賣家（非阻塞）──
+  notifySellerByEmail(order);
 
   // ── 共用佇列（同裝置備用）──
   try{
@@ -1030,7 +1031,7 @@ function renderMemberModal(){
   const tier=getTierInfo(currentUser),tiers=shopDB.tierSettings,nt=tiers.find(t=>t.minSpend>currentUser.totalSpent),cts=tiers.filter(t=>t.minSpend<=currentUser.totalSpent).pop()?.minSpend||0,pm=nt?nt.minSpend:tiers[tiers.length-1].minSpend,pp2=pm>cts?Math.min(100,Math.round((currentUser.totalSpent-cts)/(pm-cts)*100)):100;
   const tc=['bronze','silver','gold'].map(t=>{const td=tiers.find(x=>x.tier===t);const ic={bronze:'🥉',silver:'🥈',gold:'🥇'};return`<div class="tier-chip ${t} ${tier.tier===t?'active-tier':''}"><div class="tier-emoji">${ic[t]}</div><div class="tier-name">${td?.label||t}</div><div class="tier-pct">${td?.discount>0?td.discount+'%':'-'}</div><div class="tier-req">滿 ${fmt(td?.minSpend||0)}</div></div>`;}).join('');
   const gifts=shopDB.gifts.filter(g=>g.active).map(g=>`<div class="gift-row"><span style="color:var(--success)">${currentUser.totalSpent>=g.minSpend?'✅':'⬜'}</span><span style="flex:1">${g.name}</span><span style="font-size:11px;color:var(--text3)">消費滿 ${fmt(g.minSpend)}</span></div>`).join('');
-  body.innerHTML=`<div class="tier-bar">${tc}</div><div class="info-grid"><div class="info-cell"><div class="info-cell-label">會員姓名</div><div class="info-cell-val">${currentUser.name}</div></div><div class="info-cell"><div class="info-cell-label">累積消費</div><div class="info-cell-val" style="color:var(--accent-dark)">${fmt(currentUser.totalSpent)}</div></div><div class="info-cell"><div class="info-cell-label">目前等級</div><div class="info-cell-val">${tier.label}</div></div><div class="info-cell"><div class="info-cell-label">專屬折扣</div><div class="info-cell-val" style="color:var(--success)">${tier.discount>0?tier.discount+'% OFF':'標準售價'}</div></div></div>${nt?`<div class="prog-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2)"><span>距離${nt.label}還差 ${fmt(nt.minSpend-currentUser.totalSpent)}</span><span>${pp2}%</span></div><div class="prog-bar-outer"><div class="prog-bar-inner" style="width:${pp2}%"></div></div></div>`:''} ${gifts?`<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">🎁 滿額贈品</div>${gifts}</div>`:''} ${shopDB.settings?.allowWsUpgrade!==false?`<div style="background:linear-gradient(135deg,#e8f0fe,#d4e4ff);border:1.5px solid #a0c0f0;border-radius:10px;padding:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px"><div><div style="font-size:13px;font-weight:600;color:#2850b0">🏭 升等批發會員</div><div style="font-size:11px;color:#5070a0;margin-top:2px">享批發階梯價格，大量購買更優惠</div></div><button style="padding:8px 16px;background:#2850b0;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)" onclick="openWsUpgradeModal()">申請升等 →</button></div>`:''}<div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px;font-weight:600">我的訂單</div><div style="display:flex;gap:10px"><button style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer" onclick="openAccountSettings()">⚙️ 帳號設定</button><button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer" onclick="currentUser=null;renderApp();closeModal('memberModal')">登出</button></div></div>${oh}`;
+  body.innerHTML=`<div class="tier-bar">${tc}</div><div class="info-grid"><div class="info-cell"><div class="info-cell-label">會員姓名</div><div class="info-cell-val">${currentUser.name}</div></div><div class="info-cell"><div class="info-cell-label">累積消費</div><div class="info-cell-val" style="color:var(--accent-dark)">${fmt(currentUser.totalSpent)}</div></div><div class="info-cell"><div class="info-cell-label">目前等級</div><div class="info-cell-val">${tier.label}</div></div><div class="info-cell"><div class="info-cell-label">專屬折扣</div><div class="info-cell-val" style="color:var(--success)">${tier.discount>0?tier.discount+'% OFF':'標準售價'}</div></div></div>${nt?`<div class="prog-wrap"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2)"><span>距離${nt.label}還差 ${fmt(nt.minSpend-currentUser.totalSpent)}</span><span>${pp2}%</span></div><div class="prog-bar-outer"><div class="prog-bar-inner" style="width:${pp2}%"></div></div></div>`:''} ${gifts?`<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">🎁 滿額贈品</div>${gifts}</div>`:''}<div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><div style="font-size:13px;font-weight:600">我的訂單</div><div style="display:flex;gap:10px"><button style="background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer" onclick="openAccountSettings()">⚙️ 帳號設定</button><button style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer" onclick="currentUser=null;renderApp();closeModal('memberModal')">登出</button></div></div>${oh}`;
 }
 function openAccountSettings(){if(!currentUser)return;const body=document.getElementById('accountSettingsBody');body.innerHTML=`<div class="f-group"><label>姓名</label><input type="text" id="accName" value="${currentUser.name}"></div><div class="f-group"><label>電話</label><input type="tel" id="accPhone" value="${currentUser.phone||''}"></div><div class="f-group"><label>Email（無法修改）</label><input type="email" value="${currentUser.email}" disabled style="opacity:.6"></div><button class="btn-full" onclick="saveAccountProfile()" style="margin-top:4px">儲存資料</button><div style="margin:18px 0;border-top:1px dashed var(--border)"></div><div style="font-size:13px;font-weight:600;margin-bottom:10px">🔑 修改密碼</div><div class="f-group"><label>目前密碼</label><input type="password" id="accCurPwd"></div><div class="f-group"><label>新密碼</label><input type="password" id="accNewPwd" placeholder="至少6碼"></div><div class="f-group"><label>確認新密碼</label><input type="password" id="accNewPwd2"></div><button class="btn-full" onclick="changeMyPassword()" style="margin-top:4px;background:var(--surface2);color:var(--text);border:1.5px solid var(--border)">修改密碼</button><div id="accMsg" style="font-size:12px;margin-top:10px;text-align:center"></div>`;openModal('accountSettingsModal');}
 function saveAccountProfile(){const name=document.getElementById('accName').value.trim(),phone=document.getElementById('accPhone').value.trim();if(!name){showToast('❌ 請填寫姓名');return;}const u=shopDB.users.find(x=>x.id===currentUser.id);if(!u)return;u.name=name;u.phone=phone;currentUser.name=name;currentUser.phone=phone;saveShopDB();showToast('✅ 資料已更新');renderApp();renderMemberModal();}
@@ -1043,8 +1044,6 @@ function doOrderQuery(){const raw=document.getElementById('queryPhone').value.tr
   const sorted=[...matched].sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
   res.innerHTML=`<div style="font-size:12px;color:var(--text3);margin-bottom:10px">共找到 ${sorted.length} 筆訂單</div>`+sorted.map(o=>`<div style="border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:#fff"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:var(--mono);font-weight:700;font-size:13px;color:var(--accent-dark)">${o.id}</span><span style="font-size:11px;color:var(--text3)">${o.createdAt}</span></div><div style="font-size:12px;color:var(--text2);margin-bottom:8px">${o.items.map(i=>i.name+'×'+i.qty).join('、')}</div><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="display:flex;gap:6px;flex-wrap:wrap">${sm2[o.status]||o.status}${pm2[o.payStatus]||''}</div><div style="font-weight:700;font-size:15px;color:var(--accent-dark)">${fmt(o.finalTotal)}</div></div>${o.address?`<div style="font-size:11px;color:var(--text3)">📍 ${o.address}</div>`:''}${o.logisticsNum?`<div style="font-size:11px;color:var(--text3);margin-top:3px">🚚 ${lm[o.logistics]||o.logistics} 單號：${o.logisticsNum}</div>`:`<div style="font-size:11px;color:var(--text3);margin-top:3px">🚚 ${lm[o.logistics]||o.logistics}</div>`}</div>`).join('');}
 function doForgotPassword(){const email=document.getElementById('forgotEmail').value.trim(),phone=document.getElementById('forgotPhone').value.trim(),np=document.getElementById('forgotNewPwd').value,res=document.getElementById('forgotResult');if(!email||!phone){res.innerHTML='<p style="color:var(--accent-dark);font-size:13px">❌ 請填寫 Email 與電話</p>';return;}if(!np||np.length<6){res.innerHTML='<p style="color:var(--accent-dark);font-size:13px">❌ 新密碼至少需要6碼</p>';return;}const user=shopDB.users.find(u=>u.email===email&&(u.phone||'').replace(/[-\s]/g,'')===phone.replace(/[-\s]/g,''));if(!user){res.innerHTML='<p style="color:var(--accent-dark);font-size:13px">❌ 查無符合的帳號</p>';return;}if(!shopDB.pwdResetRequests)shopDB.pwdResetRequests=[];shopDB.pwdResetRequests.push({id:Date.now(),userId:user.id,userName:user.name,email:user.email,phone:user.phone,newPwd:np,status:'pending',createdAt:new Date().toISOString().split('T')[0]});saveShopDB();res.innerHTML='<div style="background:#eef7f2;border:1px solid #b8dfc9;border-radius:8px;padding:12px;font-size:13px;color:#2d8a5e">✅ 申請已送出！管理員確認後將重設您的密碼。</div>';['forgotEmail','forgotPhone','forgotNewPwd'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
-function openWsUpgradeModal(){closeModal('memberModal');openModal('wsUpgradeModal');}
-function doWsUpgradeRequest(){if(!currentUser)return;if(!shopDB.wsUpgradeRequests)shopDB.wsUpgradeRequests=[];const ex=shopDB.wsUpgradeRequests.find(r=>r.userId===currentUser.id&&r.status==='pending');if(ex){showToast('⏳ 您已有待審核的申請');closeModal('wsUpgradeModal');return;}const reason=document.getElementById('wsReason').value.trim();shopDB.wsUpgradeRequests.push({id:Date.now(),userId:currentUser.id,userName:currentUser.name,email:currentUser.email,phone:currentUser.phone,reason,status:'pending',createdAt:new Date().toISOString().split('T')[0]});saveShopDB();closeModal('wsUpgradeModal');showToast('✅ 批發升等申請已送出！',4000);}
 
 // Social Float + Contact
 const SI={
@@ -1222,6 +1221,62 @@ function scrollToContact(){
 }
 </script>
 
+
+<!-- ════ EmailJS SDK（訂單通知信）════ -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+// ══ EmailJS 設定（需在後台商店設定填入你的 Service ID / Template ID）══
+// 申請免費帳號：https://www.emailjs.com  每月 200 封免費
+(function initEmailJS(){
+  const ejsId = shopDB?.settings?.emailjsPublicKey || localStorage.getItem('emailjs_public_key');
+  if(ejsId) emailjs.init(ejsId);
+})();
+
+// ── 下單成功通知賣家（寄到後台設定的通知信箱）──
+async function notifySellerByEmail(order){
+  const cfg=shopDB.settings||{};
+  if(!cfg.emailjsServiceId||!cfg.emailjsTemplateId||!cfg.notifyEmail) return;
+  try{
+    const itemLines=order.items.map(i=>i.name+' x'+i.qty+' NT$'+(i.price*i.qty)).join('\n');
+    await emailjs.send(cfg.emailjsServiceId, cfg.emailjsTemplateId, {
+      to_email:   cfg.notifyEmail,
+      order_id:   order.id,
+      buyer_name: order.userName,
+      buyer_phone:order.userPhone,
+      items:      itemLines,
+      total:      'NT$'+Math.round(order.finalTotal).toLocaleString(),
+      logistics:  order.logistics,
+      payment:    order.payment,
+      address:    order.address||'（超商/面交）',
+      created_at: order.createdAt
+    });
+    console.log('✅ EmailJS seller notified');
+  }catch(e){ console.warn('EmailJS failed:', e); }
+}
+
+// ── 訂單狀態更新通知買家（若有留 Email）──
+async function notifyBuyerStatusChange(order, newStatus){
+  const cfg=shopDB.settings||{};
+  if(!cfg.emailjsServiceId||!cfg.emailjsBuyerTemplateId) return;
+  if(!order.userEmail) return;
+  const statusLabel={
+    confirmed:'已確認收到您的訂單',
+    packing:'商品備貨中',
+    shipping:'已出貨，請注意物流資訊',
+    delivered:'商品已到達，感謝您的購買 ♡',
+    cancelled:'訂單已取消'
+  }[newStatus]||newStatus;
+  try{
+    await emailjs.send(cfg.emailjsServiceId, cfg.emailjsBuyerTemplateId, {
+      to_email:   order.userEmail,
+      buyer_name: order.userName,
+      order_id:   order.id,
+      status:     statusLabel
+    });
+  }catch(e){ console.warn('EmailJS buyer notify failed:', e); }
+}
+</script>
+
 <!-- ════ Firebase SDK ════ -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -1276,6 +1331,44 @@ async function fbWriteOrder(order){
       _serverTime:firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){console.warn('Order write failed:',e);}
+}
+
+// ── 下單前庫存檢查（回傳 null=OK，否則回傳錯誤訊息）──
+function checkStock(items){
+  for(const item of items){
+    const pp=shopDB.productPrices[item.id]||{};
+    if(item.preorder)continue; // 預購商品跳過
+    if(pp.stock!=null&&pp.stock<item.qty){
+      return `「${item.name}」庫存不足（剩餘 ${pp.stock} 件），請減少數量或選擇預購`;
+    }
+  }
+  return null;
+}
+
+// ── 庫存即時扣減（下單後扣除 Firebase + 本地）──
+async function deductStock(items){
+  // 先扣本地，前台立即反映
+  items.forEach(function(item){
+    const pp=shopDB.productPrices[item.id];
+    if(!pp||item.preorder)return;
+    pp.stock=Math.max(0,(pp.stock||0)-item.qty);
+  });
+  saveShopDB();
+  // 非阻塞：寫入 Firebase
+  if(!_fbReady||!db)return;
+  try{
+    const batch=db.batch();
+    items.forEach(function(item){
+      const pp=shopDB.productPrices[item.id];
+      if(!pp||item.preorder)return;
+      batch.update(db.collection('products').doc(item.id),{
+        stock: firebase.firestore.FieldValue.increment(-item.qty)
+      });
+    });
+    await batch.commit();
+    // 重渲染商品卡片，更新庫存標示
+    setTimeout(function(){if(typeof applyFilters==='function')applyFilters();},600);
+  }catch(e){console.warn('deductStock Firebase failed:',e);}
 }
 
 // ── Firebase 會員登入 ──
