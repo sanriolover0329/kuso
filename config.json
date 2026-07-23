@@ -3382,7 +3382,7 @@
         "discount": 60
       }
     ],
-    "emailjsPublicKey": "",
+    "emailjsPublicKey": "a1URKkX6mzI4HtbZs",
     "emailjsServiceId": "service_wqt8kwp",
     "emailjsTemplateId": "template_h7p4uw7",
     "emailjsBuyerTemplateId": "template_6qh3cwi",
@@ -3420,5 +3420,5 @@
       "createdAt": 1784361499019
     }
   ],
-  "exportedAt": "2026-07-23T11:11:28.612Z"
+  "exportedAt": "2026-07-23T11:14:48.401Z"
 }
