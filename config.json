@@ -3385,7 +3385,7 @@
     "emailjsPublicKey": "",
     "emailjsServiceId": "service_wqt8kwp",
     "emailjsTemplateId": "template_h7p4uw7",
-    "emailjsBuyerTemplateId": "template_6qh3cwl",
+    "emailjsBuyerTemplateId": "template_6qh3cwi",
     "notifyEmail": "kuso168@gmail.com"
   },
   "announcement": {
@@ -3420,5 +3420,5 @@
       "createdAt": 1784361499019
     }
   ],
-  "exportedAt": "2026-07-23T11:11:21.277Z"
+  "exportedAt": "2026-07-23T11:11:28.612Z"
 }
